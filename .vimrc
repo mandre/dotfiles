@@ -278,8 +278,9 @@ if has("gui_running")
   set guioptions-=l " no scrollbar on the left
   set guioptions-=b " no scrollbar on the bottom
   set mousemodel=popup_setpos
+  set noballooneval
   colorscheme two2tango
-  if has('mac')
+  if has('gui_macvim')
     set guifont=Menlo:h12
     set transparency=10
     set fuoptions=maxvert,maxhorz
@@ -292,6 +293,7 @@ endif
 
 set backupdir=~/tmp,/tmp
 set undodir=~/.vim/.tmp,~/tmp,~/.tmp,/tmp
+let g:yankring_history_dir="~/.vim/.tmp"
 
 "Change to current buffer directory
 "au BufEnter * execute ":lcd " . expand("%:p:h")

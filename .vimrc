@@ -273,10 +273,11 @@ let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
 if has("gui_running")
   " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
   " let &guioptions = substitute(&guioptions, "t", "", "g")
-  set guioptions-=T " no toolbar set guioptions-=m " no menus
+  set guioptions-=T " no toolbar
+  " set guioptions-=m " no menus
   set guioptions-=r " no scrollbar on the right
   set guioptions-=R " no scrollbar on the right
-  set guioptions-=l " no scrollbar on the left
+  set guioptions-=L " no scrollbar on the left
   set guioptions-=b " no scrollbar on the bottom
   set mousemodel=popup_setpos
   set noballooneval

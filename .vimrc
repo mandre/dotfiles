@@ -83,6 +83,7 @@ set nowritebackup
 " set noswapfile
 set undofile
 set autoread
+set sessionoptions="blank,buffers,curdir,folds,help,tabpages,winsize"
 
 " Match and search
 set ignorecase		" Do case insensitive matching

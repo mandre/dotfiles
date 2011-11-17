@@ -105,6 +105,9 @@ endif
 
 set title
 set scrolloff=3
+set sidescroll=1
+set sidescrolloff=3
+set listchars+=precedes:<,extends:>
 set ruler
 set showmode
 set showcmd

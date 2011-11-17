@@ -188,6 +188,11 @@ set statusline=%#warningmsg#%{SyntasticStatuslineFlag()}%*%{fugitive#statusline(
 "  Mappings
 "  ---------------------------------------------------------------------------
 
+" Use - to move current line down
+map - ddp
+" Use _ to move current line up
+map + ddkP
+
 " Center screen when scrolling search results
 nmap n nzz
 nmap N Nzz

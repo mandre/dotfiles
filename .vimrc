@@ -105,6 +105,9 @@ endif
 
 set title
 set scrolloff=3
+set sidescroll=1
+set sidescrolloff=3
+set listchars+=precedes:<,extends:>
 set ruler
 set showmode
 set showcmd
@@ -185,6 +188,11 @@ set statusline=%#warningmsg#%{SyntasticStatuslineFlag()}%*%{fugitive#statusline(
 "  ---------------------------------------------------------------------------
 "  Mappings
 "  ---------------------------------------------------------------------------
+
+" Use - to move current line down
+map - ddp
+" Use _ to move current line up
+map + ddkP
 
 " Center screen when scrolling search results
 " nmap n nzz

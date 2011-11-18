@@ -190,13 +190,18 @@ set statusline=%#warningmsg#%{SyntasticStatuslineFlag()}%*%{fugitive#statusline(
 "  ---------------------------------------------------------------------------
 
 " Use - to move current line down
-map - ddp
-" Use _ to move current line up
-map + ddkP
+noremap - ddp
+" Use + to move current line up
+noremap + ddkP
+
+" <Ctrl>-d deletes the line
+inoremap <c-d> <esc>ddi
+" <Ctrl>-u make the current word uppercase
+inoremap <c-u> <esc>viwUi
 
 " Center screen when scrolling search results
-" nmap n nzz
-" nmap N Nzz
+" nnoremap n nzz
+" nnoremap N Nzz
 
 " Turn off arrow keys (this might not be a good idea for beginners, but it is
 " the best way to ween yourself of arrow keys on to hjkl)
@@ -217,47 +222,47 @@ nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
 " Map ESC
-imap jj <ESC>
+inoremap jj <ESC>
 
 " Use :w!! to save file when current user doesn't have permission
-cmap w!! %!sudo tee > /dev/null %
+cnoremap w!! %!sudo tee > /dev/null %
 
 " Ctrl + space in insert mode activate autocompletion
-" imap <c-space> <c-x><c-o>
+" inoremap <c-space> <c-x><c-o>
 
 " Shift + Enter adds an end
-imap <S-CR> <CR><CR>end<Esc>-cc
+inoremap <S-CR> <CR><CR>end<Esc>-cc
 
 nnoremap <space> :noh<CR>
 
 " Don't use Ex mode, use Q for formatting
-map Q gq
+noremap Q gq
 
 "  ---------------------------------------------------------------------------
 "  Function Keys
 "  ---------------------------------------------------------------------------
 
 " <F2> File explorer
-map <F2> :Ex<CR>
+noremap <F2> :Ex<CR>
 " <F3> Buffer explorer
-map <F3> <Leader>be
+noremap <F3> <Leader>be
 " <F4> Tag list
-map <F4> :TlistToggle<CR>
+noremap <F4> :TlistToggle<CR>
 " <F5> Reload file
-map <F5> :e!<CR>
+noremap <F5> :e!<CR>
 " <F6> Toggle wrap/nowrap
-map <F6> :set wrap!<CR>
+noremap <F6> :set wrap!<CR>
 " <F7> Toggle GUndo tree
-map <F7> :GundoToggle<CR>
+noremap <F7> :GundoToggle<CR>
 " <F8> Comment
-map <F8> :TComment<CR>j
+noremap <F8> :TComment<CR>j
 " <F9> Remove all trailing spaces
-map <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
+noremap <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
 " <F10> YankRing
 nnoremap <silent> <F10> :YRShow<cr>
 inoremap <silent> <F10> <ESC>:YRShow<cr>
 " <F12> Compile using makefile
-map <F12> :make<CR>
+noremap <F12> :make<CR>
 
 "  ---------------------------------------------------------------------------
 "  Plugins

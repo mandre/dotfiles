@@ -212,10 +212,10 @@ inoremap <c-u> <esc>viwUi
 " Turn off arrow keys (this might not be a good idea for beginners, but it is
 " the best way to ween yourself of arrow keys on to hjkl)
 " http://yehudakatz.com/2010/07/29/everyone-who-tried-to-convince-me-to-use-vim-was-wrong/
-" nnoremap <Left> :echoe "Use h"<CR>
-" nnoremap <Right> :echoe "Use l"<CR>
-" nnoremap <Up> :echoe "Use k"<CR>
-" nnoremap <Down> :echoe "Use j"<CR>"
+nnoremap <Left> :echoe "Use h"<CR>
+nnoremap <Right> :echoe "Use l"<CR>
+nnoremap <Up> :echoe "Use k"<CR>
+nnoremap <Down> :echoe "Use j"<CR>"
 " inoremap <up> <nop>
 " inoremap <down> <nop>
 " inoremap <left> <nop>
@@ -228,7 +228,8 @@ nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
 " Map ESC
-inoremap jj <ESC>
+inoremap jk <esc>
+inoremap <esc> <nop>
 
 " Use :w!! to save file when current user doesn't have permission
 cnoremap w!! %!sudo tee > /dev/null %

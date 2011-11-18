@@ -187,8 +187,8 @@ set statusline=%#warningmsg#%{SyntasticStatuslineFlag()}%*%{fugitive#statusline(
 "  ---------------------------------------------------------------------------
 
 " Center screen when scrolling search results
-nmap n nzz
-nmap N Nzz
+" nmap n nzz
+" nmap N Nzz
 
 " Turn off arrow keys (this might not be a good idea for beginners, but it is
 " the best way to ween yourself of arrow keys on to hjkl)

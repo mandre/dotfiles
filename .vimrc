@@ -154,6 +154,7 @@ if has("autocmd")
   " For all Ruby and eRuby, set indent to 2 spaces
   autocmd FileType ruby setlocal ts=2 sw=2 expandtab
   autocmd FileType eruby setlocal ts=2 sw=2 expandtab
+  au BufRead,BufNewFile {Gemfile,Capfile,Kirkfile,Rakefile,Thorfile,config.ru} set ft=ruby
 
   " When editing a file, always jump to the last known cursor position.
   " Don't do it when the position is invalid or when inside an event handler

@@ -189,6 +189,12 @@ set statusline=%#warningmsg#%{SyntasticStatuslineFlag()}%*%{fugitive#statusline(
 "  Mappings
 "  ---------------------------------------------------------------------------
 
+nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+
+" Surround with quotes
+nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
+nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
+
 " Use - to move current line down
 noremap - ddp
 " Use + to move current line up

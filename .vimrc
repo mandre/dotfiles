@@ -154,10 +154,13 @@ if has("autocmd")
   " For all text files set 'textwidth' to 78 characters.
   autocmd FileType text setlocal textwidth=78
 
+  autocmd BufRead,BufNewFile {Gemfile,Rakefile,config.ru} set ft=ruby
   " For all Ruby and eRuby, set indent to 2 spaces
   autocmd FileType ruby setlocal ts=2 sw=2 expandtab
   autocmd FileType eruby setlocal ts=2 sw=2 expandtab
-  au BufRead,BufNewFile {Gemfile,Capfile,Kirkfile,Rakefile,Thorfile,config.ru} set ft=ruby
+
+  " Delete trailing spaces from ruby files
+  autocmd BufWritePre *.rb :%s/\s\+$//e
 
   " When editing a file, always jump to the last known cursor position.
   " Don't do it when the position is invalid or when inside an event handler
@@ -167,8 +170,11 @@ if has("autocmd")
     \   exe "normal g`\"" |
     \ endif
 
-  " Delete trailing spaces from ruby files
-  autocmd BufWritePre *.rb :%s/\s\+$//e
+  "Change to current buffer directory
+  "au BufEnter * execute ":lcd " . expand("%:p:h")
+
+  " When vimrc is edited, automatically reload it
+  autocmd! bufwritepost .vimrc source %
 
   augroup END
 else
@@ -318,9 +324,6 @@ set backupdir=~/tmp,/tmp
 set undodir=~/.vim/.tmp,~/tmp,~/.tmp,/tmp
 let g:yankring_history_dir="~/.vim/.tmp"
 
-"Change to current buffer directory
-"au BufEnter * execute ":lcd " . expand("%:p:h")
-
 " latex specific stuff
 let g:Tex_CompileRule_dvi = 'latex --interaction=nonstopmode $*'
 
@@ -335,7 +338,3 @@ set completeopt=menuone,preview
 if filereadable("/etc/vim/vimrc.local")
   source /etc/vim/vimrc.local
 endif
-
-" When vimrc, either directly or via symlink, is edited, automatically reload it
-autocmd! bufwritepost .vimrc source %
-autocmd! bufwritepost vimrc source %

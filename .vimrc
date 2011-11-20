@@ -181,7 +181,7 @@ else
   set autoindent		" always set autoindenting on
 endif " has("autocmd")
 
-set formatoptions+=n
+set formatoptions+=n1r
 
 "  ---------------------------------------------------------------------------
 "  Status Line

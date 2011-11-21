@@ -84,6 +84,7 @@ set nowritebackup
 set undofile
 set autoread
 set sessionoptions="blank,buffers,curdir,folds,help,tabpages,winsize"
+set nomodeline          " disable mode lines (security measure)
 
 " Match and search
 set ignorecase		" Do case insensitive matching
@@ -251,10 +252,22 @@ nnoremap <space> :noh<CR>
 " Don't use Ex mode, use Q for formatting
 noremap Q gq
 
+" Select pasted text
+nnoremap <leader>v V`]
+
+" Quick yanking to the end of the line
+nmap Y y$
+
+" Run Ack fast
+nnoremap <leader>a :Ack<Space>
+
 "  ---------------------------------------------------------------------------
 "  Function Keys
 "  ---------------------------------------------------------------------------
 
+" <F1> Escape
+inoremap <F1> <ESC>
+noremap <F1> <ESC>
 " <F2> File explorer
 noremap <F2> :Ex<CR>
 " <F3> Buffer explorer
@@ -301,7 +314,7 @@ if has("gui_running")
   " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
   " let &guioptions = substitute(&guioptions, "t", "", "g")
   set guioptions-=T " no toolbar
-  " set guioptions-=m " no menus
+  set guioptions-=m " no menus
   set guioptions-=r " no scrollbar on the right
   set guioptions-=R " no scrollbar on the right
   set guioptions-=L " no scrollbar on the left

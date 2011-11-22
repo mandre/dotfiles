@@ -1,14 +1,17 @@
-set nocompatible               " be iMproved
+" Preamble {{{
+" ---------------------------------------------------------------------------
 
-"  ---------------------------------------------------------------------------
-"  Plugins
-"  ---------------------------------------------------------------------------
+set nocompatible               " be iMproved
 
 filetype on
 filetype off
 set runtimepath+=~/.vim/bundle/vundle/
 
 call vundle#rc()
+
+" }}}
+" Plugins {{{
+" ---------------------------------------------------------------------------
 
 Bundle 'gmarik/vundle'
 
@@ -68,19 +71,17 @@ Bundle 'YankRing.vim'
 " (HT|X)ml tool
 " Bundle 'ragtag.vim'
 
-filetype plugin indent on
-
-"  ---------------------------------------------------------------------------
-"  General
-"  ---------------------------------------------------------------------------
+" }}}
+" General {{{
+" ---------------------------------------------------------------------------
 
 let mapleader = ","
 let g:mapleader = ","
-" set modelines=0
 set history=50		" keep 50 lines of command line history
+set hidden
 set nobackup
 set nowritebackup
-" set noswapfile
+set noswapfile
 set undofile
 set autoread
 set sessionoptions="blank,buffers,curdir,folds,help,tabpages,winsize"
@@ -92,6 +93,9 @@ set smartcase
 set gdefault
 set incsearch		" do incremental searching
 set showmatch		" Show matching brackets.
+" Use sane regexes.
+nnoremap / /\v
+vnoremap / /\v
 
 " Switch syntax highlighting on, when the terminal has colors
 " Also switch on highlighting the last used search pattern.
@@ -100,29 +104,51 @@ if &t_Co > 2 || has("gui_running")
   set hlsearch
 endif
 
-"  ---------------------------------------------------------------------------
-"  UI
-"  ---------------------------------------------------------------------------
+" Wildmenu completion {{{
+set wildmenu
+set wildmode=list:longest
+
+set wildignore+=.hg,.git,.svn                    " Version control
+set wildignore+=*.aux,*.out,*.toc                " LaTeX intermediate files
+set wildignore+=*.jpg,*.bmp,*.gif,*.png,*.jpeg   " binary images
+set wildignore+=*.luac                           " Lua byte code
+set wildignore+=*.o,*.obj,*.exe,*.dll,*.manifest " compiled object files
+set wildignore+=*.pyc                            " Python byte code
+set wildignore+=*.spl                            " compiled spelling word lists
+set wildignore+=*.sw?                            " Vim swap files
+set wildignore+=*.DS_Store?                      " OSX bullshit
+" }}}
+
+" }}}
+" UI {{{
+" ---------------------------------------------------------------------------
 
 set title
 set scrolloff=3
 set sidescroll=1
-set sidescrolloff=3
-set listchars+=precedes:<,extends:>
+set sidescrolloff=10
+set listchars+=precedes:❮,extends:❯
+set showbreak=↪
 set ruler
 set showmode
 set showcmd
 set novisualbell
 set backspace=indent,eol,start
 " set laststatus=2
+set virtualedit+=block
 
 if has("gui_running")
   set cursorline
   " Highlight cursorline ONLY in the active window
-  au WinEnter * setlocal cursorline
-  au WinLeave * setlocal nocursorline
+  augroup cursor_line
+    au!
+    au WinEnter * setlocal cursorline
+    au WinLeave * setlocal nocursorline
+  augroup END
 endif
 
+" Highlight VCS conflict markers
+match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
 "hi def link myTodo Todo
 "match myTodo "\<TBD\>"
 " syn match Todo "TBD" containedIn=ALL
@@ -136,9 +162,9 @@ if has("cscope")
     set csto=1
 endif
 
-"  ---------------------------------------------------------------------------
-"  Text Formatting
-"  ---------------------------------------------------------------------------
+" }}}
+" Text Formatting {{{
+" ---------------------------------------------------------------------------
 
 " Only do this part when compiled with support for autocommands.
 if has("autocmd")
@@ -147,6 +173,13 @@ if has("autocmd")
   " 'cindent' is on in C files, etc.
   " Also load indent files, to automatically do language-dependent indenting.
   filetype plugin indent on
+
+  " Vimscript file settings {{{
+  augroup filetype_vim
+    au!
+    au FileType vim setlocal foldmethod=marker
+  augroup END
+  " }}}
 
   " Put these in an autocmd group, so that we can delete them easily.
   augroup vimrcEx
@@ -177,6 +210,9 @@ if has("autocmd")
   " When vimrc is edited, automatically reload it
   autocmd! bufwritepost .vimrc source %
 
+  " Resize splits when the window is resized
+  au VimResized * exe "normal! \<c-w>="
+
   augroup END
 else
   set autoindent		" always set autoindenting on
@@ -184,23 +220,30 @@ endif " has("autocmd")
 
 set formatoptions+=n1r
 
-"  ---------------------------------------------------------------------------
-"  Status Line
-"  ---------------------------------------------------------------------------
+" }}}
+" Status Line {{{
+" ---------------------------------------------------------------------------
 
-"set statusline=%<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
-set statusline=%#warningmsg#%{SyntasticStatuslineFlag()}%*%{fugitive#statusline()}\ %<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
-" set statusline=%{ruby_debugger#statusline()}
+set statusline=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+set statusline+=%{fugitive#statusline()}
+set statusline+=\ %<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
+" set statusline+=%{ruby_debugger#statusline()}
 
-"  ---------------------------------------------------------------------------
-"  Mappings
-"  ---------------------------------------------------------------------------
+" }}}
+" Mappings {{{
+" ---------------------------------------------------------------------------
 
 nnoremap <leader>ev :vsplit $MYVIMRC<cr>
 
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
 nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
+
+" Easier to type, and I never use the default behavior.
+noremap H ^
+noremap L $
 
 " Use - to move current line down
 noremap - ddp
@@ -261,9 +304,9 @@ nmap Y y$
 " Run Ack fast
 nnoremap <leader>a :Ack<Space>
 
-"  ---------------------------------------------------------------------------
-"  Function Keys
-"  ---------------------------------------------------------------------------
+" }}}
+" Function Keys {{{
+" ---------------------------------------------------------------------------
 
 " <F1> Escape
 inoremap <F1> <ESC>
@@ -271,7 +314,7 @@ noremap <F1> <ESC>
 " <F2> File explorer
 noremap <F2> :Ex<CR>
 " <F3> Buffer explorer
-noremap <F3> <Leader>be
+noremap <F3> :BufExplorer<CR>
 " <F4> Tag list
 noremap <F4> :TlistToggle<CR>
 " <F5> Reload file
@@ -290,9 +333,9 @@ inoremap <silent> <F10> <ESC>:YRShow<cr>
 " <F12> Compile using makefile
 noremap <F12> :make<CR>
 
-"  ---------------------------------------------------------------------------
-"  Plugins
-"  ---------------------------------------------------------------------------
+" }}}
+" Plugins {{{
+" ---------------------------------------------------------------------------
 
 " let g:syntastic_enable_signs=1
 let g:syntastic_auto_loc_list=1
@@ -306,9 +349,12 @@ let g:SuperTabCrMapping = 0
 " Bufexplorer
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
 
-"  ---------------------------------------------------------------------------
-"  GUI
-"  ---------------------------------------------------------------------------
+" }}}
+" GUI {{{
+" ---------------------------------------------------------------------------
+
+" Use a line-drawing char for pretty vertical splits.
+set fillchars+=vert:│
 
 if has("gui_running")
   " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
@@ -322,6 +368,7 @@ if has("gui_running")
   set mousemodel=popup_setpos
   set noballooneval
   colorscheme two2tango
+
   if has('gui_macvim')
     set guifont=Menlo:h12
     set transparency=10
@@ -329,9 +376,9 @@ if has("gui_running")
   endif
 endif
 
-"  ---------------------------------------------------------------------------
-"  Misc
-"  ---------------------------------------------------------------------------
+" }}}
+" Misc {{{
+" ---------------------------------------------------------------------------
 
 set backupdir=~/tmp,/tmp
 set undodir=~/.vim/.tmp,~/tmp,~/.tmp,/tmp
@@ -351,3 +398,5 @@ set completeopt=menuone,preview
 if filereadable("/etc/vim/vimrc.local")
   source /etc/vim/vimrc.local
 endif
+
+" }}}

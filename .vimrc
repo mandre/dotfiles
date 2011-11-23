@@ -47,6 +47,7 @@ Bundle 'kana/vim-textobj-user.git'
 Bundle 'nelstrom/vim-textobj-rubyblock.git'
 
 " Utility
+Bundle 'YankRing.vim'
 Bundle 'LargeFile'
 Bundle 'repeat.vim'
 Bundle 'surround.vim'
@@ -59,7 +60,6 @@ Bundle 'ZoomWin'
 Bundle 'ack.vim'
 Bundle 'sessionman.vim'
 Bundle 'sjl/gundo.vim.git'
-Bundle 'YankRing.vim'
 
 " FuzzyFinder
 " Bundle 'L9'

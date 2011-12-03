@@ -141,9 +141,9 @@ if has("gui_running")
   set cursorline
   " Highlight cursorline ONLY in the active window
   augroup cursor_line
-    au!
-    au WinEnter * setlocal cursorline
-    au WinLeave * setlocal nocursorline
+    autocmd!
+    autocmd WinEnter * setlocal cursorline
+    autocmd WinLeave * setlocal nocursorline
   augroup END
 endif
 
@@ -176,44 +176,54 @@ if has("autocmd")
 
   " Vimscript file settings {{{
   augroup filetype_vim
-    au!
-    au FileType vim setlocal foldmethod=marker
+    autocmd!
+    autocmd FileType vim setlocal foldmethod=marker
   augroup END
   " }}}
 
-  " Put these in an autocmd group, so that we can delete them easily.
-  augroup vimrcEx
-  au!
-
-  " For all text files set 'textwidth' to 78 characters.
-  autocmd FileType text setlocal textwidth=78
-
-  autocmd BufRead,BufNewFile {Gemfile,Rakefile,config.ru} set ft=ruby
-  " For all Ruby and eRuby, set indent to 2 spaces
-  autocmd FileType ruby setlocal ts=2 sw=2 expandtab
-  autocmd FileType eruby setlocal ts=2 sw=2 expandtab
-
-  " Delete trailing spaces from ruby files
-  autocmd BufWritePre *.rb :%s/\s\+$//e
-
-  " When editing a file, always jump to the last known cursor position.
-  " Don't do it when the position is invalid or when inside an event handler
-  " (happens when dropping a file on gvim).
-  autocmd BufReadPost *
-    \ if line("'\"") > 0 && line("'\"") <= line("$") |
-    \   exe "normal g`\"" |
-    \ endif
-
-  "Change to current buffer directory
-  "au BufEnter * execute ":lcd " . expand("%:p:h")
-
-  " When vimrc is edited, automatically reload it
-  autocmd! bufwritepost .vimrc source %
-
-  " Resize splits when the window is resized
-  au VimResized * exe "normal! \<c-w>="
-
+  " text files settings {{{
+  augroup filetype_text
+    autocmd!
+    " For all text files set 'textwidth' to 78 characters.
+    autocmd FileType text setlocal textwidth=78
   augroup END
+  " }}}
+
+  " ruby files settings {{{
+  augroup filetype_ruby
+    autocmd!
+    autocmd BufRead,BufNewFile {Gemfile,Rakefile,config.ru} set ft=ruby
+    " For all Ruby and eRuby, set indent to 2 spaces
+    autocmd FileType ruby setlocal ts=2 sw=2 expandtab
+    autocmd FileType eruby setlocal ts=2 sw=2 expandtab
+
+    " Delete trailing spaces from ruby files
+    autocmd BufWritePre *.rb :%s/\s\+$//e
+  augroup END
+  " }}}
+
+  " Utilities {{{
+  augroup utilities
+    autocmd!
+
+    " When editing a file, always jump to the last known cursor position.
+    " Don't do it when the position is invalid or when inside an event handler
+    " (happens when dropping a file on gvim).
+    autocmd BufReadPost *
+      \ if line("'\"") > 0 && line("'\"") <= line("$") |
+      \   exe "normal g`\"" |
+      \ endif
+
+    "Change to current buffer directory
+    "autocmd BufEnter * execute ":lcd " . expand("%:p:h")
+
+    " Resize splits when the window is resized
+    autocmd VimResized * exe "normal! \<c-w>="
+
+    " When vimrc is edited, automatically reload it
+    autocmd bufwritepost .vimrc source %
+  augroup END
+  " }}}
 else
   set autoindent		" always set autoindenting on
 endif " has("autocmd")
@@ -279,7 +289,7 @@ nnoremap <C-l> <C-w>l
 
 " Map ESC
 inoremap jk <esc>
-inoremap <esc> <nop>
+" inoremap <esc> <nop>
 
 " Use :w!! to save file when current user doesn't have permission
 cnoremap w!! %!sudo tee > /dev/null %
@@ -390,7 +400,7 @@ let g:Tex_CompileRule_dvi = 'latex --interaction=nonstopmode $*'
 set completeopt=menuone,preview
 " Make Vim completion popup menu work just like in an IDE
 " set completeopt=longest,menuone
-" inoremap <expr> <cr> pumvisible() ? "\<c-y>" : "\<c-g>u\<cr>" 
+" inoremap <expr> <cr> pumvisible() ? "\<c-y>" : "\<c-g>u\<cr>"
 " inoremap <expr> <c-n> pumvisible() ? "\<lt>c-n>" : "\<lt>c-n>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>"
 " inoremap <expr> <m-;> pumvisible() ? "\<lt>c-n>" : "\<lt>c-x>\<lt>c-o>\<lt>c-n>\<lt>c-p>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>
 

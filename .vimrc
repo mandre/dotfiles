@@ -45,6 +45,7 @@ Bundle 'ecomba/vim-ruby-refactoring.git'
 " 'var' then 'ar' or 'ir'
 Bundle 'kana/vim-textobj-user.git'
 Bundle 'nelstrom/vim-textobj-rubyblock.git'
+Bundle 'mandre/vim-ruby-block-conv'
 
 " Utility
 Bundle 'YankRing.vim'
@@ -94,8 +95,8 @@ set gdefault
 set incsearch		" do incremental searching
 set showmatch		" Show matching brackets.
 " Use sane regexes.
-nnoremap / /\v
-vnoremap / /\v
+" nnoremap / /\v
+" vnoremap / /\v
 
 " Switch syntax highlighting on, when the terminal has colors
 " Also switch on highlighting the last used search pattern.
@@ -313,6 +314,9 @@ nmap Y y$
 
 " Run Ack fast
 nnoremap <leader>a :Ack<Space>
+
+" Toggle between ruby block styles
+nnoremap <leader>b :B<CR>
 
 " }}}
 " Function Keys {{{

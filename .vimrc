@@ -21,53 +21,54 @@ Bundle 'taglist.vim'
 " Bundle 'a.vim'
 " Bundle 'cscope_macros.vim'
 Bundle 'AutoTag'
-Bundle 'tComment'
-Bundle 'scrooloose/syntastic.git'
+Bundle 'tomtom/tcomment_vim'
+Bundle 'scrooloose/syntastic'
 
 " Snippets
-Bundle 'MarcWeber/vim-addon-mw-utils.git'
-Bundle 'tomtom/tlib_vim.git'
-Bundle 'garbas/vim-snipmate.git'
-Bundle 'honza/snipmate-snippets.git'
+Bundle 'MarcWeber/vim-addon-mw-utils'
+Bundle 'tomtom/tlib_vim'
+Bundle 'garbas/vim-snipmate'
+Bundle 'honza/snipmate-snippets'
 
 " Git
-Bundle 'fugitive.vim'
+Bundle 'tpope/vim-fugitive'
 
 " Ruby
-Bundle 'vim-ruby/vim-ruby.git'
-Bundle 'rails.vim'
-Bundle 'ecomba/vim-ruby-refactoring.git'
-" Bundle 'astashov/vim-ruby-debugger.git'
+Bundle 'vim-ruby/vim-ruby'
+Bundle 'tpope/vim-rails'
+Bundle 'ecomba/vim-ruby-refactoring'
+" Bundle 'astashov/vim-ruby-debugger'
 " http://blog.10to1.be/ruby/2011/02/13/vim-flog-plugin/
-" Bundle 'fousa/vim-flog.git'
+" Bundle 'fousa/vim-flog'
 " :silent exe 'g:flog_enable'
 " http://vimcasts.org/blog/2010/12/a-text-object-for-ruby-blocks/
 " 'var' then 'ar' or 'ir'
-Bundle 'kana/vim-textobj-user.git'
-Bundle 'nelstrom/vim-textobj-rubyblock.git'
+Bundle 'kana/vim-textobj-user'
+Bundle 'nelstrom/vim-textobj-rubyblock'
 Bundle 'mandre/vim-ruby-block-conv'
 
 " Utility
 Bundle 'YankRing.vim'
 Bundle 'LargeFile'
-Bundle 'repeat.vim'
-Bundle 'surround.vim'
+Bundle 'tpope/vim-repeat'
+Bundle 'tpope/vim-surround'
+Bundle 'tpope/vim-unimpaired'
 Bundle 'file-line'
 Bundle 'Align'
 Bundle 'bufexplorer.zip'
 Bundle 'netrw.vim'
 Bundle 'ervandew/supertab'
 Bundle 'ZoomWin'
-Bundle 'ack.vim'
+Bundle 'mileszs/ack.vim'
 Bundle 'sessionman.vim'
-Bundle 'sjl/gundo.vim.git'
+Bundle 'sjl/gundo.vim'
 
 " FuzzyFinder
 " Bundle 'L9'
 " Bundle 'FuzzyFinder'
 
 " Command-T
-" Bundle 'git://git.wincent.com/command-t.git'
+" Bundle 'git://git.wincent.com/command-t'
 
 " (HT|X)ml tool
 " Bundle 'ragtag.vim'

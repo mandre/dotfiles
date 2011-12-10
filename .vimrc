@@ -199,6 +199,9 @@ if has("autocmd")
     autocmd FileType ruby setlocal ts=2 sw=2 expandtab
     autocmd FileType eruby setlocal ts=2 sw=2 expandtab
 
+    " There should be a better way to unset plugin mappings
+    autocmd FileType ruby silent! execute 'unmap <leader>rcpc'
+
     " Delete trailing spaces from ruby files
     autocmd BufWritePre *.rb :%s/\s\+$//e
   augroup END
@@ -316,8 +319,11 @@ nmap Y y$
 " Run Ack fast
 nnoremap <leader>a :Ack<Space>
 
+" Ruby refactoring
 " Toggle between ruby block styles
-nnoremap <leader>b :B<CR>
+nnoremap <leader>rb :B<CR>
+" Toggle between post/pre conditional statements
+nnoremap <leader>rc :RConvertPostConditional<CR>
 
 " }}}
 " Function Keys {{{

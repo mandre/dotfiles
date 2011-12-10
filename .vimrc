@@ -199,9 +199,6 @@ if has("autocmd")
     autocmd FileType ruby setlocal ts=2 sw=2 expandtab
     autocmd FileType eruby setlocal ts=2 sw=2 expandtab
 
-    " There should be a better way to unset plugin mappings
-    autocmd FileType ruby silent! execute 'unmap <leader>rcpc'
-
     " Delete trailing spaces from ruby files
     autocmd BufWritePre *.rb :%s/\s\+$//e
   augroup END
@@ -369,6 +366,9 @@ let g:SuperTabCrMapping = 0
 
 " Bufexplorer
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
+
+" Ruby refactoring
+let g:ruby_refactoring_map_keys=0
 
 " }}}
 " GUI {{{

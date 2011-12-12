@@ -317,8 +317,11 @@ nmap Y y$
 " Run Ack fast
 nnoremap <leader>a :Ack<Space>
 
+" Ruby refactoring
 " Toggle between ruby block styles
-nnoremap <leader>b :B<CR>
+nnoremap <leader>rb :B<CR>
+" Toggle between post/pre conditional statements
+nnoremap <leader>rc :RConvertPostConditional<CR>
 
 " }}}
 " Function Keys {{{
@@ -364,6 +367,9 @@ let g:SuperTabCrMapping = 0
 
 " Bufexplorer
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
+
+" Ruby refactoring
+let g:ruby_refactoring_map_keys=0
 
 " }}}
 " GUI {{{

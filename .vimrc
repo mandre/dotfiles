@@ -44,6 +44,7 @@ Bundle 'ecomba/vim-ruby-refactoring'
 " http://vimcasts.org/blog/2010/12/a-text-object-for-ruby-blocks/
 " 'var' then 'ar' or 'ir'
 Bundle 'kana/vim-textobj-user'
+Bundle 'argtextobj.vim'
 Bundle 'nelstrom/vim-textobj-rubyblock'
 Bundle 'mandre/vim-ruby-block-conv'
 

@@ -63,6 +63,7 @@ Bundle 'ZoomWin'
 Bundle 'mileszs/ack.vim'
 Bundle 'sessionman.vim'
 Bundle 'sjl/gundo.vim'
+Bundle 'henrik/vim-indexed-search'
 
 " FuzzyFinder
 " Bundle 'L9'
@@ -370,6 +371,9 @@ let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
 
 " Ruby refactoring
 let g:ruby_refactoring_map_keys=0
+
+" Show shorter messages for indexed search
+let g:indexed_search_shortmess=1
 
 " }}}
 " GUI {{{

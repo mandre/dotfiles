@@ -81,6 +81,7 @@ Bundle 'henrik/vim-indexed-search'
 
 let mapleader = ","
 let g:mapleader = ","
+set encoding=utf-8
 set history=50		" keep 50 lines of command line history
 set hidden
 set nobackup

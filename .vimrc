@@ -36,6 +36,7 @@ Bundle 'tpope/vim-fugitive'
 " Ruby
 Bundle 'vim-ruby/vim-ruby'
 Bundle 'tpope/vim-rails'
+Bundle 'tpope/vim-endwise'
 Bundle 'ecomba/vim-ruby-refactoring'
 " Bundle 'astashov/vim-ruby-debugger'
 " http://blog.10to1.be/ruby/2011/02/13/vim-flog-plugin/

@@ -66,6 +66,7 @@ Bundle 'mileszs/ack.vim'
 Bundle 'sessionman.vim'
 Bundle 'sjl/gundo.vim'
 Bundle 'henrik/vim-indexed-search'
+Bundle 'xolox/vim-notes'
 
 " FuzzyFinder
 " Bundle 'L9'
@@ -412,6 +413,7 @@ endif
 set backupdir=~/tmp,/tmp
 set undodir=~/.vim/.tmp,~/tmp,~/.tmp,/tmp
 let g:yankring_history_dir="~/.vim/.tmp"
+let g:notes_directory = '~/.vim/notes'
 
 " latex specific stuff
 let g:Tex_CompileRule_dvi = 'latex --interaction=nonstopmode $*'

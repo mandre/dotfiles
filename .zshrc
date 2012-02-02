@@ -29,9 +29,33 @@ ZSH_THEME="afowler"
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git ruby vi-mode vundle rvm)
+plugins=(git ruby vi-mode vundle macports osx redis-cli rvm bundler)
 
 source $ZSH/oh-my-zsh.sh
 
-# Customize to your needs...
-export PATH=/home/martin/.rvm/gems/ruby-1.9.2-p290/bin:/home/martin/.rvm/gems/ruby-1.9.2-p290@global/bin:/home/martin/.rvm/rubies/ruby-1.9.2-p290/bin:/home/martin/.rvm/bin:/home/martin/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+# Path additions
+# List items in the reverse order you want them to appear in $PATH (i.e. last
+# items appear first ).
+PATH=/usr/X11/bin:$PATH     # X11 Stuff
+PATH=/usr/local/bin:$PATH   # User binaries
+PATH=/sbin:$PATH            # System binaries
+PATH=/usr/sbin:$PATH        # System binaries 
+PATH=/bin:$PATH             # System binaries
+PATH=/usr/bin:$PATH         # System binaries
+PATH=$HOME/bin:$PATH        # Personal binaries
+PATH=/opt/local/sbin:$PATH  # MacPorts
+PATH=/opt/local/bin:$PATH   # MacPorts
+ 
+export PATH
+
+
+alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
+alias gvimdiff='/Applications/MacVim.app/Contents/MacOS/Vim -g -d'
+
+# load RVM
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
+
+# Speed up git completion for huge repositories
+__git_files () { 
+	_wanted files expl 'local files' _files 
+}

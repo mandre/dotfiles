@@ -361,6 +361,11 @@ noremap <F12> :make<CR>
 " Plugins {{{
 " ---------------------------------------------------------------------------
 
+if has('mac')
+  " Taglist
+  let Tlist_Ctags_Cmd = '/opt/local/bin/ctags'
+endif
+
 " let g:syntastic_enable_signs=1
 let g:syntastic_auto_loc_list=1
 " let g:ruby_debugger_progname = 'mvim'

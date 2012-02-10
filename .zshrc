@@ -31,10 +31,10 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 if [[ -n $GDMSESSION ]]; then
 	# Linux
-	plugins=(git ruby vi-mode vundle redis-cli rvm bundler debian)
+	plugins=(git vi-mode redis-cli rvm bundler pod debian)
 else
 	# Mac
-	plugins=(git ruby vi-mode vundle redis-cli rvm bundler macports osx)
+	plugins=(git vi-mode redis-cli rvm bundler pod macports)
 fi
 
 source $ZSH/oh-my-zsh.sh

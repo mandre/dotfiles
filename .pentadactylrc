@@ -1,9 +1,16 @@
 "1.0rc1
 
+set mapleader=','
+
 loadplugins '\.(js|penta)$'
 group user
 map -count -modes=n,v <M-Left> -builtin <count>:tabNext<Return>
 map -count -modes=n,v <M-Right> -builtin <count>:tabnext<Return>
 set hlfind
+
+nnoremap j 3j
+nnoremap k 3k
+
+nnoremap <Leader><space> <esc>:noh<CR>
 
 " vim: set ft=pentadactyl:

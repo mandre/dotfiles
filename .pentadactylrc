@@ -6,11 +6,21 @@ loadplugins '\.(js|penta)$'
 group user
 map -count -modes=n,v <M-Left> -builtin <count>:tabNext<Return>
 map -count -modes=n,v <M-Right> -builtin <count>:tabnext<Return>
-set hlfind
 
+" Go faster
 nnoremap j 3j
 nnoremap k 3k
 
+" Open help in new tab
+set newtab='help'
+
+" Only show tab line when there are multiple tabs
+set showtabline=multitab
+
+" Multiple URLs are comma-separated
+set urlseparator=', '
+
+set hlfind
 nnoremap <Leader><space> <esc>:noh<CR>
 
 " vim: set ft=pentadactyl:

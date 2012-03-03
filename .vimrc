@@ -105,6 +105,13 @@ set showmatch		" Show matching brackets.
 " nnoremap / /\v
 " vnoremap / /\v
 
+" Spell
+if has("spell")
+  " set spelllang=fr
+  set spelllang=en_us
+  nnoremap <leader>s :set spell!<CR>
+endif
+
 " Switch syntax highlighting on, when the terminal has colors
 " Also switch on highlighting the last used search pattern.
 if &t_Co > 2 || has("gui_running")

@@ -4,8 +4,10 @@ set mapleader=','
 
 loadplugins '\.(js|penta)$'
 group user
-map -count -modes=n,v <M-Left> -builtin <count>:tabNext<Return>
-map -count -modes=n,v <M-Right> -builtin <count>:tabnext<Return>
+map -count -modes=n,v <M-Left> -builtin <count>:tabNext<CR>
+map -count -modes=n,v <M-Right> -builtin <count>:tabnext<CR>
+map -count -modes=n,v <S-j> -builtin <count>:tabNext<CR>
+map -count -modes=n,v <S-k> -builtin <count>:tabnext<CR>
 
 " Go faster
 nnoremap j 3j

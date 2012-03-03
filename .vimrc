@@ -126,7 +126,6 @@ set wildmode=list:longest
 set wildignore+=.hg,.git,.svn                    " Version control
 set wildignore+=*.aux,*.out,*.toc                " LaTeX intermediate files
 set wildignore+=*.jpg,*.bmp,*.gif,*.png,*.jpeg   " binary images
-set wildignore+=*.luac                           " Lua byte code
 set wildignore+=*.o,*.obj,*.exe,*.dll,*.manifest " compiled object files
 set wildignore+=*.pyc                            " Python byte code
 set wildignore+=*.spl                            " compiled spelling word lists
@@ -260,19 +259,20 @@ set statusline+=\ %<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
 " Mappings {{{
 " ---------------------------------------------------------------------------
 
+" Edit vim config
 nnoremap <leader>ev :vsplit $MYVIMRC<cr>
 
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
 nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
 
-" Easier to type, and I never use the default behavior.
+" Easier start/end of line
 noremap H ^
 noremap L $
 
-" Use - to move current line down
+" Move current line down
 noremap - ddp
-" Use + to move current line up
+" Move current line up
 noremap + ddkP
 
 " <Ctrl>-d deletes the line
@@ -284,9 +284,7 @@ inoremap <c-u> <esc>viwUi
 " nnoremap n nzz
 " nnoremap N Nzz
 
-" Turn off arrow keys (this might not be a good idea for beginners, but it is
-" the best way to ween yourself of arrow keys on to hjkl)
-" http://yehudakatz.com/2010/07/29/everyone-who-tried-to-convince-me-to-use-vim-was-wrong/
+" Turn off arrow keys
 nnoremap <Left> :echoe "Use h"<CR>
 nnoremap <Right> :echoe "Use l"<CR>
 nnoremap <Up> :echoe "Use k"<CR>
@@ -309,12 +307,10 @@ inoremap jk <esc>
 " Use :w!! to save file when current user doesn't have permission
 cnoremap w!! %!sudo tee > /dev/null %
 
-" Ctrl + space in insert mode activate autocompletion
-" inoremap <c-space> <c-x><c-o>
-
 " Shift + Enter adds an end
 inoremap <S-CR> <CR><CR>end<Esc>-cc
 
+" Stop highlight search
 nnoremap <space> :noh<CR>
 
 " Don't use Ex mode, use Q for formatting

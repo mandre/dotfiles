@@ -161,12 +161,6 @@ if has("gui_running")
   augroup END
 endif
 
-" Highlight VCS conflict markers
-match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
-"hi def link myTodo Todo
-"match myTodo "\<TBD\>"
-" syn match Todo "TBD" containedIn=ALL
-
 if has("cscope")
     " use both cscope and ctag for 'ctrl-]', ':ta', and 'vim -t'
     set cscopetag
@@ -442,6 +436,12 @@ set completeopt=menuone,preview
 " inoremap <expr> <cr> pumvisible() ? "\<c-y>" : "\<c-g>u\<cr>"
 " inoremap <expr> <c-n> pumvisible() ? "\<lt>c-n>" : "\<lt>c-n>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>"
 " inoremap <expr> <m-;> pumvisible() ? "\<lt>c-n>" : "\<lt>c-x>\<lt>c-o>\<lt>c-n>\<lt>c-p>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>
+
+" Highlight VCS conflict markers
+" match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
+" hi def link myTodo Todo
+" match myTodo "\<TBD\>"
+" syn match Todo "TBD" containedIn=ALL
 
 " Source a global configuration file if available
 if filereadable("/etc/vim/vimrc.local")

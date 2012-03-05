@@ -221,6 +221,8 @@ if has("autocmd")
     autocmd!
     " Show Git diff in window split when commiting
     autocmd FileType gitcommit DiffGitCached | wincmd L | wincmd p
+    " Spellcheck commit messages
+    autocmd FileType gitcommit setlocal spell!
   augroup END
   " }}}
 

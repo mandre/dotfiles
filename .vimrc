@@ -216,6 +216,14 @@ if has("autocmd")
   augroup END
   " }}}
 
+  " git commit messages {{{
+  augroup filetype_gitcommit
+    autocmd!
+    " Show Git diff in window split when commiting
+    autocmd FileType gitcommit DiffGitCached | wincmd L | wincmd p
+  augroup END
+  " }}}
+
   " Utilities {{{
   augroup utilities
     autocmd!

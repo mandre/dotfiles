@@ -321,8 +321,8 @@ nnoremap <leader>v V`]
 " Quick yanking to the end of the line
 nmap Y y$
 
-" Run Ack fast
-nnoremap <leader>a :Ack<Space>
+" Ack the word under the cursor
+nnoremap <leader>a :Ack <cword><CR>
 
 " Ruby refactoring
 " Toggle between ruby block styles

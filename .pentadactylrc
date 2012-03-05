@@ -22,6 +22,8 @@ set showtabline=multitab
 " Multiple URLs are comma-separated
 set urlseparator=', '
 
+nnoremap <bs> <nop>
+
 set hlfind
 nnoremap <Leader><space> <esc>:noh<CR>
 

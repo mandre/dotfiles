@@ -200,7 +200,6 @@ if has("autocmd")
   " ruby files settings {{{
   augroup filetype_ruby
     autocmd!
-    autocmd BufRead,BufNewFile {Gemfile,Rakefile,config.ru} set ft=ruby
     " For all Ruby and eRuby, set indent to 2 spaces
     autocmd FileType ruby setlocal ts=2 sw=2 expandtab
     autocmd FileType eruby setlocal ts=2 sw=2 expandtab

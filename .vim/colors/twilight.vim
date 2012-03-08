@@ -19,11 +19,11 @@ endif
 let g:colors_name = "twilight"
 
 hi Normal                    guifg=#F8F8F8 guibg=#141414
-hi Cursor                    guibg=#FFFFFF
-hi CursorLine                guibg=#4C4C4C
+hi Cursor                    guibg=#fffd00
+hi CursorLine                guibg=#212628
 hi LineNr                    guifg=#888888 guibg=#DEDEDE
 hi Search                    guibg=#5A647E
-hi Visual                    guibg=#5A647E
+hi Visual                    guibg=#404040
 hi Directory                 guifg=#7587A6 gui=NONE
 hi SpecialKey                guifg=#4C4C4C
 hi NonText                   guifg=#4C4C4C gui=NONE
@@ -36,11 +36,13 @@ hi Question                  guifg=#359926
 hi WildMenu                  guibg=#E9C062
 hi Title                     guifg=#FFFFFF
 
+hi StatusLine                guifg=#303030 guibg=#babdb6 gui=NONE
+hi StatusLineNC              guifg=#babdb6 guibg=#303030 gui=NONE
+hi VertSplit                 guifg=#babdb6 guibg=#303030 gui=NONE
+
 " Popup Menu
-hi Pmenu                     guifg=#FFFFFF guibg=#4C4C4C gui=NONE
-hi PmenuSel                  guifg=#000000 guibg=#075D7F gui=NONE
-hi PMenuSbar                 guibg=#7587A6 gui=NONE
-hi PMenuThumb                guibg=#AAAAAA gui=NONE
+hi Pmenu                     guifg=#605958 guibg=#303030 gui=NONE
+hi PmenuSel                  guifg=#a09998 guibg=#404040 gui=NONE
 
 " Folding
 hi Folded                    guifg=#99B1D8 guibg=#4C4C4C
@@ -55,7 +57,7 @@ hi rubyRegexpEscape          guifg=#CF7D34
 
 "rubyComment
 hi Comment                   guifg=#5F5A60 gui=italic
-hi Todo                      guifg=#5F5A60 guibg=NONE gui=italic
+hi Todo                      guifg=#E3D796 guibg=NONE gui=bold
 
 "rubyPseudoVariable
 "nil, self, symbols, etc

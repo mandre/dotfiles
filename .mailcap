@@ -1,0 +1,6 @@
+image/*; /usr/bin/eog '%s'; test=test -n "$DISPLAY"
+video/*; /usr/bin/mplayer2 '%s'; test=test -n "$DISPLAY"
+audio/*; /usr/bin/mplayer2 '%s'; needsterminal
+application/pdf; /usr/bin/evince '%s'; test=test -n "$DISPLAY"
+application/ps; /usr/bin/evince '%s'; test=test -n "$DISPLAY"
+application/x-dvi; /usr/bin/evince '%s'; description=TeX DVI; test=test -n "$DISPLAY"; nametemplate=%s.dvi

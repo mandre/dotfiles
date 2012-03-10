@@ -1,0 +1,64 @@
+#!/bin/sh
+# Filename:      hgmergevim
+# Purpose:       mercurial merge script for vim
+# Authors:       grml-team (grml.org), (c) Michael Gebetsroither <gebi@grml.org>
+# Bug-Reports:   see http://grml.org/bugs/
+# License:       This file is licensed under the GPL v2.
+################################################################################
+
+set -e # bail out quickly on failure
+
+LOCAL=$1
+BASE=$2
+OTHER=$3
+
+BACKUP=$LOCAL.orig
+
+Rm ()
+{
+	if [ -f $BACKUP ]; then
+		rm  -f $BACKUP
+	else
+		:
+	fi
+}
+
+Restore ()
+{
+	cp $BACKUP $LOCAL
+}
+
+ExitOK ()
+{
+	Rm
+	exit $?
+}
+
+# Back up our file
+cp $LOCAL $BACKUP
+
+# Attempt to do a non-interactive merge
+if which merge > /dev/null 2>&1 ; then
+	if merge $LOCAL $BASE $OTHER 2> /dev/null; then
+		# success!
+		ExitOK
+	fi
+	Restore
+elif which diff3 > /dev/null 2>&1 ; then
+	if diff3 -m $BACKUP $BASE $OTHER > $LOCAL ; then
+		# success
+		ExitOK
+	fi
+	Restore
+fi
+
+#if emacs -q --no-site-file --eval "(ediff-merge-with-ancestor \"$BACKUP\" \"$OTHER\" \"$BASE\" nil \"$LOCAL\")"
+if vim -d "$LOCAL" "$OTHER" "$BASE"
+then
+	ExitOK
+fi
+
+echo "vimdiff-merge: failed to merge files"
+exit 1
+
+# End of file

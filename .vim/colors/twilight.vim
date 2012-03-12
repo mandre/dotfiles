@@ -18,7 +18,7 @@ if exists("syntax_on")
 endif
 let g:colors_name = "twilight"
 
-hi Normal                    guifg=#F8F8F8 guibg=#141414
+hi Normal                    guifg=#F8F8F8 guibg=#000000
 hi Cursor                    guibg=#fffd00
 hi CursorLine                guibg=#212628
 hi LineNr                    guifg=#888888 guibg=#DEDEDE

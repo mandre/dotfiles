@@ -27,4 +27,10 @@ nnoremap <bs> <nop>
 set hlfind
 nnoremap <Leader><space> <esc>:noh<CR>
 
+" Smarter 'd' key
+set tabclose=left,opener,previous,right
+nnoremap d :tabclose<CR>
+
+colorscheme vimium
+
 " vim: set ft=pentadactyl:

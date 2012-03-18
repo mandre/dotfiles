@@ -1,77 +1,38 @@
-# Path to your oh-my-zsh configuration.
-ZSH=$HOME/.oh-my-zsh
+#
+# Sets Oh My Zsh options.
+#
+# Authors:
+#   Sorin Ionescu <sorin.ionescu@gmail.com>
+#
 
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
-ZSH_THEME="mandre"
+# Set the key mapping style to 'emacs' or 'vi'.
+zstyle ':omz:editor' keymap 'vi'
 
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+# Auto convert .... to ../..
+zstyle ':omz:editor' dot-expansion 'no'
 
-# Set to this to use case-sensitive completion
-# CASE_SENSITIVE="true"
+# Set case-sensitivity for completion, history lookup, etc.
+zstyle ':omz:*:*' case-sensitive 'no'
 
-# Comment this out to disable weekly auto-update checks
-# DISABLE_AUTO_UPDATE="true"
+# Color output (auto set to 'no' on dumb terminals).
+zstyle ':omz:*:*' color 'yes'
 
-# Uncomment following line if you want to disable colors in ls
-# DISABLE_LS_COLORS="true"
+# Auto set the tab and window titles.
+zstyle ':omz:terminal' auto-title 'yes'
 
-# Uncomment following line if you want to disable autosetting terminal title.
-# DISABLE_AUTO_TITLE="true"
+# Set the plugins to load (see $OMZ/plugins/).
+zstyle ':omz:load' plugin 'archive' 'git' 'ruby'
 
-# Uncomment following line if you want red dots to be displayed while waiting for completion
-COMPLETION_WAITING_DOTS="true"
+# Set the prompt theme to load.
+# Setting it to 'random' loads a random theme.
+# Auto set to 'off' on dumb terminals.
+zstyle ':omz:prompt' theme 'mandre'
 
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-if [[ -n $GDMSESSION ]]; then
-	# Linux
-	plugins=(git vi-mode redis-cli rvm bundler pod debian)
-else
-	# Mac
-	plugins=(git vi-mode redis-cli rvm bundler pod macports)
-fi
+# This will make you shout: OH MY ZSHELL!
+source "$HOME/.oh-my-zsh/init.zsh"
 
-source $ZSH/oh-my-zsh.sh
+# Customize to your needs...
 
-# Path additions
-# List items in the reverse order you want them to appear in $PATH (i.e. last
-# items appear first ).
-if [[ -n $GDMSESSION ]]; then
-	# Linux
-	PATH=/usr/local/bin:$PATH   # User binaries
-	PATH=/sbin:$PATH            # System binaries
-	PATH=/usr/sbin:$PATH        # System binaries
-	PATH=/bin:$PATH             # System binaries
-	PATH=/usr/bin:$PATH         # System binaries
-	PATH=$HOME/bin:$PATH        # Personal binaries
-else
-	# Mac
-	PATH=/usr/X11/bin:$PATH     # X11 Stuff
-	PATH=/usr/local/bin:$PATH   # User binaries
-	PATH=/sbin:$PATH            # System binaries
-	PATH=/usr/sbin:$PATH        # System binaries
-	PATH=/bin:$PATH             # System binaries
-	PATH=/usr/bin:$PATH         # System binaries
-	PATH=$HOME/bin:$PATH        # Personal binaries
-	PATH=/opt/local/sbin:$PATH  # MacPorts
-	PATH=/opt/local/bin:$PATH   # MacPorts
-
-	alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
-	alias gvimdiff='/Applications/MacVim.app/Contents/MacOS/Vim -g -d'
-fi
- 
-export PATH
-
-# load RVM
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
-
-# Speed up git completion for huge repositories
-__git_files () { 
-	_wanted files expl 'local files' _files 
-}
+pod() { cd ~/dev/pod/modules/pod/$1; }
+_pod() { _files -W ~/dev/pod/modules/pod -/; }
+compdef _pod pod

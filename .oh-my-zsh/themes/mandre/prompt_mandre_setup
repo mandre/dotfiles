@@ -1,0 +1,38 @@
+#
+# A simple theme loosely based on afowler.
+#
+# Authors:
+#   Martin Andre <martin.andre@gmail.com>
+#
+
+function prompt_mandre_precmd () {
+  vcs_info
+}
+
+function prompt_mandre_setup() {
+  setopt LOCAL_OPTIONS
+  unsetopt XTRACE KSH_ARRAYS
+  prompt_opts=(cr percent subst)
+
+  autoload -Uz add-zsh-hook
+  autoload -Uz vcs_info
+
+  add-zsh-hook precmd prompt_mandre_precmd
+
+  zstyle ':omz:completion' indicator '%B%F{red}...%f%b'
+  zstyle ':omz:prompt' vicmd '%B%F{red}❮%f%b%F{red}❮❮%f'
+
+  zstyle ':vcs_info:*' enable bzr git hg svn
+  zstyle ':vcs_info:*' check-for-changes true # Can be slow on big repos.
+  zstyle ':vcs_info:*' unstagedstr '☢'
+  zstyle ':vcs_info:*' formats ' %F{yellow}‹%b%c%u›%f'
+  zstyle ':vcs_info:*' actionformats " %F{yellow}‹%b%c%u|%a›%f"
+  zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%r'
+
+  PROMPT='${SSH_TTY:+"%n@%m %B%F{blue}::%f%b "}%F{green}%2~%f${vcs_info_msg_0_} %(!.%B%F{red}#%f%b.%B%F{blue}»%f%b) '
+  RPROMPT='%(?::%F{red}%? %B↵%b%f)${VIM:+" %B%F{green}V%f%b"}${MC_SID:+" %B%F{blue}☪%f%b"}'
+  SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
+}
+
+prompt_mandre_setup "$@"
+

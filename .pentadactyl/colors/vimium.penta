@@ -11,9 +11,7 @@ style -name=yourUglyStatusline * #dactyl-statusline-field-container { padding-le
 style -name=yourUglyStatuslineMozSelection * #dactyl-statusline-field-container *::-moz-selection { background: rgba(0,0,0,0.2); }
 style -name=yourUglyStatuslineChildren * #dactyl-statusline-field-container * { font-family: "Lucida Grande", "Arial", "Sans"; font-size: 12px; font-weight: normal; }
 style -name=yourUglyStatuslineZoomLevel * #dactyl-statusline-field-container #dactyl-statusline-field-zoomlevel { display: none; }
-style -name=yourUglyStatuslineBufferPosition * #dactyl-statusline-field-container #dactyl-statusline-field-bufferposition { display: none; }
 style -name=yourUglyStatuslineTabCount * #dactyl-statusline-field-container #dactyl-statusline-field-tabcount { display: none; }
-style -name=yourUglyStatuslineProgress * #dactyl-statusline-field-container #dactyl-statusline-field-progress { display: none; }
 hi StatusLine         background: Black !important; font-size: 12px; font-family: "Lucida Grande", "Arial", "Sans"; color: white; padding: 0px 3px 4px;
 hi StatusLineNormal   background: Black !important; font-size: 12px; color: white;
 hi StatusLineBroken   background: Black !important; font-size: 12px; color: white;
@@ -26,7 +24,6 @@ hi CmdLine            font-family: "Lucida Grande", "Arial", "Sans"; font-size: 
 " }}}
 " Completion {{{
 hi CompDesc           padding-left: 6px;
-hi CompIcon           display: none;
 hi CompItem[selected] background: #FFC542 !important;
 hi CompTitle          text-transform: uppercase; background: -moz-linear-gradient(top, #FFF785, #FFC542); font-size: 11px; padding: 1px 3px 0px 3px; font-family : "Helvetica Neue", "Helvetica", "Arial", "Sans"; font-weight: bold; color: #302505;
 hi CompTitleSep       -a background: #C38A22;

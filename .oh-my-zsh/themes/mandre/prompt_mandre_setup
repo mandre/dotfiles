@@ -24,7 +24,7 @@ function prompt_mandre_setup() {
 
   zstyle ':vcs_info:*' enable bzr git hg svn
   zstyle ':vcs_info:*' check-for-changes true # Can be slow on big repos.
-  zstyle ':vcs_info:*' unstagedstr '☢'
+  zstyle ':vcs_info:*' unstagedstr '*'
   zstyle ':vcs_info:*' formats ' %F{yellow}‹%b%c%u›%f'
   zstyle ':vcs_info:*' actionformats " %F{yellow}‹%b%c%u|%a›%f"
   zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%r'

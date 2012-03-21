@@ -151,15 +151,15 @@ set backspace=indent,eol,start
 " set laststatus=2
 set virtualedit+=block
 
-if has("gui_running")
-  set cursorline
-  " Highlight cursorline ONLY in the active window
-  augroup cursor_line
-    autocmd!
-    autocmd WinEnter * setlocal cursorline
-    autocmd WinLeave * setlocal nocursorline
-  augroup END
-endif
+" if has("gui_running")
+"   set cursorline
+"   " Highlight cursorline ONLY in the active window
+"   augroup cursor_line
+"     autocmd!
+"     autocmd WinEnter * setlocal cursorline
+"     autocmd WinLeave * setlocal nocursorline
+"   augroup END
+" endif
 
 if has("cscope")
     " use both cscope and ctag for 'ctrl-]', ':ta', and 'vim -t'
@@ -332,6 +332,9 @@ nnoremap <leader>rb :B<CR>
 " Toggle between post/pre conditional statements
 nnoremap <leader>rc :RConvertPostConditional<CR>
 
+" Easy completion of method name in insert mode
+inoremap <c-x><c-]> <c-]>
+
 " }}}
 " Function Keys {{{
 " ---------------------------------------------------------------------------
@@ -406,7 +409,7 @@ if has("gui_running")
   set guioptions-=b " no scrollbar on the bottom
   set mousemodel=popup_setpos
   set noballooneval
-  colorscheme two2tango
+  colorscheme twilight
 
   if has('gui_macvim')
     set guifont=Menlo:h12

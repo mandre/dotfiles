@@ -33,6 +33,27 @@ source "$HOME/.oh-my-zsh/init.zsh"
 
 # Customize to your needs...
 
+# Additional PATH settings
+if [[ -n $GDMSESSION ]]; then
+	# Linux
+	PATH=$HOME/bin:$PATH        # Personal binaries
+else
+	# Mac
+	PATH=$HOME/bin:$PATH        # Personal binaries
+	PATH=/opt/local/sbin:$PATH  # MacPorts
+	PATH=/opt/local/bin:$PATH   # MacPorts
+
+	alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
+	alias gvimdiff='/Applications/MacVim.app/Contents/MacOS/Vim -g -d'
+fi
+export PATH
+
+# Custom commands
 pod() { cd ~/dev/pod/modules/pod/$1; }
 _pod() { _files -W ~/dev/pod/modules/pod -/; }
 compdef _pod pod
+
+# Speed up git completion for huge repositories
+__git_files () {
+	_wanted files expl 'local files' _files
+}

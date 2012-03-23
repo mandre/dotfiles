@@ -68,6 +68,8 @@ Bundle 'sjl/gundo.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
 
+Bundle 'CSApprox'
+
 " FuzzyFinder
 " Bundle 'L9'
 " Bundle 'FuzzyFinder'
@@ -396,6 +398,7 @@ let g:yankring_manual_clipboard_check=0
 " Use a line-drawing char for pretty vertical splits.
 set fillchars+=vert:│
 
+colorscheme twilight
 if has("gui_running")
   " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
   " let &guioptions = substitute(&guioptions, "t", "", "g")
@@ -407,7 +410,6 @@ if has("gui_running")
   set guioptions-=b " no scrollbar on the bottom
   set mousemodel=popup_setpos
   set noballooneval
-  colorscheme twilight
 
   if has('gui_macvim')
     set guifont=Menlo:h12
@@ -417,7 +419,6 @@ if has("gui_running")
 else
   set mouse=a
   set t_Co=256
-  colorscheme twilight256
 endif
 
 " }}}

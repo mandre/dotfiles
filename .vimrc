@@ -414,6 +414,10 @@ if has("gui_running")
     set transparency=10
     set fuoptions=maxvert,maxhorz
   endif
+else
+  set mouse=a
+  set t_Co=256
+  colorscheme twilight256
 endif
 
 " }}}

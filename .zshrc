@@ -33,6 +33,8 @@ source "$HOME/.oh-my-zsh/init.zsh"
 
 # Customize to your needs...
 
+export TERM=xterm-256color
+
 # Custom commands
 pod() { cd ~/dev/pod/modules/pod/$1; }
 _pod() { _files -W ~/dev/pod/modules/pod -/; }

@@ -370,12 +370,12 @@ noremap <F12> :make<CR>
 
 " let g:syntastic_enable_signs=1
 let g:syntastic_auto_loc_list=1
-" let g:ruby_debugger_progname = 'mvim'
+" let g:ruby_debugger_progname='mvim'
 " let g:CommandTMatchWindowAtTop=1 " show window at top
 
 " SuperTab
-let g:SuperTabDefaultCompletionType = "context"
-let g:SuperTabCrMapping = 0
+let g:SuperTabDefaultCompletionType="context"
+let g:SuperTabCrMapping=0
 
 " Bufexplorer
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
@@ -385,6 +385,9 @@ let g:ruby_refactoring_map_keys=0
 
 " Show shorter messages for indexed search
 let g:indexed_search_shortmess=1
+
+" Stop yankring from complaining
+let g:yankring_manual_clipboard_check=0
 
 " }}}
 " GUI {{{

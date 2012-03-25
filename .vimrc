@@ -68,8 +68,6 @@ Bundle 'sjl/gundo.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
 
-Bundle 'CSApprox'
-
 " FuzzyFinder
 " Bundle 'L9'
 " Bundle 'FuzzyFinder'

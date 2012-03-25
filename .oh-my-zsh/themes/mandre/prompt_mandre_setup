@@ -20,7 +20,8 @@ function prompt_mandre_setup() {
   add-zsh-hook precmd prompt_mandre_precmd
 
   zstyle ':omz:completion' indicator '%B%F{red}...%f%b'
-  zstyle ':omz:prompt' vicmd '%B%F{red}❮%f%b%F{red}❮❮%f'
+  zstyle ':omz:prompt:vi' insert ''
+  zstyle ':omz:prompt:vi' command ' %B%F{red}❮%f%b%F{red}❮❮%f'
 
   zstyle ':vcs_info:*' enable bzr git hg svn
   zstyle ':vcs_info:*' check-for-changes true # Can be slow on big repos.
@@ -30,7 +31,7 @@ function prompt_mandre_setup() {
   zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%r'
 
   PROMPT='${SSH_TTY:+"%n@%m %B%F{blue}::%f%b "}%F{green}%2~%f${vcs_info_msg_0_} %(!.%B%F{red}#%f%b.%B%F{blue}»%f%b) '
-  RPROMPT='%(?::%F{red}%? %B↵%b%f)${VIM:+" %B%F{green}V%f%b"}${MC_SID:+" %B%F{blue}☪%f%b"}'
+  RPROMPT='${vi_prompt_info}%(?::%F{red}%? %B↵%b%f)${VIM:+" %B%F{green}V%f%b"}${MC_SID:+" %B%F{blue}☪%f%b"}'
   SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
 }
 

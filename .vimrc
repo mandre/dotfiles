@@ -206,6 +206,9 @@ if has("autocmd")
     autocmd FileType ruby setlocal ts=2 sw=2 expandtab
     autocmd FileType eruby setlocal ts=2 sw=2 expandtab
 
+    " Use # to create string interpolation with vim-surround
+    autocmd FileType ruby let b:surround_35 = "#{\r}"
+
     " Delete trailing spaces from ruby files
     autocmd BufWritePre *.rb :%s/\s\+$//e
   augroup END

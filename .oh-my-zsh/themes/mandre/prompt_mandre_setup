@@ -19,7 +19,7 @@ function prompt_mandre_setup() {
 
   add-zsh-hook precmd prompt_mandre_precmd
 
-  zstyle ':omz:completion' indicator '%B%F{red}...%f%b'
+  zstyle ':omz:editor' completing '%B%F{red}...%f%b'
   zstyle ':omz:prompt:vi' insert ''
   zstyle ':omz:prompt:vi' command ' %B%F{red}❮%f%b%F{red}❮❮%f'
 

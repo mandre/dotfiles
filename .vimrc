@@ -418,6 +418,8 @@ if has("gui_running")
     set fuoptions=maxvert,maxhorz
   endif
 else
+  set clipboard=unnamed
+  set ttymouse=xterm2
   set mouse=a
   set t_Co=256
 endif

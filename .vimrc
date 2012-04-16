@@ -36,14 +36,11 @@ Bundle 'tpope/vim-fugitive'
 " Ruby
 Bundle 'vim-ruby/vim-ruby'
 Bundle 'tpope/vim-rails'
-Bundle 'tpope/vim-endwise'
 Bundle 'ecomba/vim-ruby-refactoring'
 " Bundle 'astashov/vim-ruby-debugger'
 " http://blog.10to1.be/ruby/2011/02/13/vim-flog-plugin/
 " Bundle 'fousa/vim-flog'
 " :silent exe 'g:flog_enable'
-" http://vimcasts.org/blog/2010/12/a-text-object-for-ruby-blocks/
-" 'var' then 'ar' or 'ir'
 Bundle 'kana/vim-textobj-user'
 Bundle 'argtextobj.vim'
 Bundle 'nelstrom/vim-textobj-rubyblock'
@@ -52,6 +49,7 @@ Bundle 'mandre/vim-ruby-block-conv'
 " Utility
 Bundle 'YankRing.vim'
 Bundle 'LargeFile'
+Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-repeat'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
@@ -67,6 +65,7 @@ Bundle 'sessionman.vim'
 Bundle 'sjl/gundo.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
+Bundle 'scrooloose/nerdtree'
 
 " FuzzyFinder
 " Bundle 'L9'

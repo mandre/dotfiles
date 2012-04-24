@@ -50,3 +50,8 @@ compdef _pod pod
 __git_files () {
 	_wanted files expl 'local files' _files
 }
+
+bindkey '^R' history-incremental-search-backward
+bindkey '^S' history-incremental-search-forward
+bindkey '^P' history-search-backward
+bindkey '^N' history-search-forward

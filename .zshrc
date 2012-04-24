@@ -5,11 +5,14 @@
 #   Sorin Ionescu <sorin.ionescu@gmail.com>
 #
 
+# Set the path to Oh My Zsh.
+export OMZ="$HOME/.oh-my-zsh"
+
 # Set the key mapping style to 'emacs' or 'vi'.
-zstyle ':omz:editor' keymap 'vi'
+zstyle ':omz:module:editor' keymap 'vi'
 
 # Auto convert .... to ../..
-zstyle ':omz:editor' dot-expansion 'no'
+zstyle ':omz:module:editor' dot-expansion 'no'
 
 # Set case-sensitivity for completion, history lookup, etc.
 zstyle ':omz:*:*' case-sensitive 'no'
@@ -18,7 +21,7 @@ zstyle ':omz:*:*' case-sensitive 'no'
 zstyle ':omz:*:*' color 'yes'
 
 # Auto set the tab and window titles.
-zstyle ':omz:terminal' auto-title 'yes'
+zstyle ':omz:module:terminal' auto-title 'yes'
 
 # Set the Zsh modules to load (man zshmodules).
 # zstyle ':omz:load' module 'attr' 'stat'
@@ -26,16 +29,19 @@ zstyle ':omz:terminal' auto-title 'yes'
 # Set the Zsh functions to load (man zshcontrib).
 # zstyle ':omz:load' function 'zargs' 'zmv'
 
-# Set the plugins to load (browse plugins).
-zstyle ':omz:load' plugin 'archive' 'git' 'ruby' 'macports'
+# Set the Oh My Zsh modules to load (browse modules).
+zstyle ':omz:load' omodule 'environment' 'terminal' 'editor' 'completion' \
+  'history' 'directory' 'spectrum' 'alias' 'utility' 'prompt' \
+  'archive' 'git' 'ruby' 'syntax-highlighting'
 
 # Set the prompt theme to load.
 # Setting it to 'random' loads a random theme.
 # Auto set to 'off' on dumb terminals.
-zstyle ':omz:prompt' theme 'mandre'
+zstyle ':omz:module:prompt' theme 'mandre'
 
 # This will make you shout: OH MY ZSHELL!
-source "$HOME/.oh-my-zsh/init.zsh"
+source "$OMZ/init.zsh"
+
 
 # Customize to your needs...
 

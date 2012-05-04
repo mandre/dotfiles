@@ -22,11 +22,11 @@ hi Normal                    guifg=#F8F8F8 guibg=#000000 ctermfg=231 ctermbg=16
 hi Cursor                    guibg=#fffd00 ctermbg=226 
 hi CursorLine                guibg=#212628 ctermbg=235
 hi LineNr                    guifg=#888888 guibg=#DEDEDE ctermfg=102 ctermbg=253
-hi Visual                    guibg=#404040 ctermbg=238
-hi Directory                 guifg=#7587A6 gui=NONE cterm=NONE ctermfg=103
+hi Visual                    guibg=#404040 ctermbg=237
+hi Directory                 guifg=#7587A6 gui=NONE cterm=NONE ctermfg=67
 hi SpecialKey                guifg=#4C4C4C ctermfg=239
 hi NonText                   guifg=#4C4C4C gui=NONE cterm=NONE ctermfg=239
-hi MatchParen                guibg=#7587A6 ctermbg=103
+hi MatchParen                guibg=#7587A6 ctermbg=67
 hi ErrorMsg                  guifg=#F8F8F8 guibg=#B22518 ctermfg=231 ctermbg=124
 hi WarningMsg                guifg=#B22518 ctermfg=124
 hi Search                    guifg=#FFFFFF guibg=#075D7F ctermfg=231 ctermbg=24
@@ -55,13 +55,13 @@ hi Special                   guifg=#E9C062 ctermfg=179
 hi rubyRegexpEscape          guifg=#CF7D34 ctermfg=173
 
 "rubyComment
-hi Comment                   guifg=#5F5A60 gui=italic ctermfg=59
+hi Comment                   guifg=#5F5A60 gui=italic ctermfg=240
 hi Todo                      guifg=#E3D796 guibg=NONE gui=bold cterm=bold ctermfg=186 ctermbg=NONE
 
 "rubyPseudoVariable
 "nil, self, symbols, etc
-hi Constant                  guifg=#CF6A4C ctermfg=167
-hi rubyConstant              guifg=#9B859D ctermfg=246
+hi Constant                  guifg=#CF6A4C ctermfg=130
+hi rubyConstant              guifg=#9B859D ctermfg=139
 
 "rubyClass, rubyModule, rubyDefine
 "def, end, include, etc
@@ -78,11 +78,11 @@ hi Error                     guifg=#F8F8F8 guibg=#562D56 ctermfg=231 ctermbg=238
 "rubyFunction
 hi link rubyModuleDeclaration Function
 hi link rubyClassDeclaration Function
-hi                           Function guifg=#9B703F gui=NONE cterm=NONE ctermfg=95
+hi                           Function guifg=#9B703F gui=NONE cterm=NONE ctermfg=65
 
 "rubyIdentifier
 "@var, @@var, $var, etc
-hi Identifier                guifg=#7587A6 gui=NONE cterm=NONE ctermfg=103
+hi Identifier                guifg=#7587A6 gui=NONE cterm=NONE ctermfg=67
 
 "rubyInclude
 "include, autoload, extend, load, require
@@ -96,13 +96,13 @@ hi Keyword                   guifg=#CDA869 ctermfg=179
 hi Macro                     guifg=#CDA869 gui=NONE cterm=NONE ctermfg=179
 
 "rubyInteger
-hi Number                    guifg=#CF6A4C ctermfg=167
+hi Number                    guifg=#CF6A4C ctermfg=130
 
 " #if, #else, #endif
 hi PreCondit                 guifg=#CDA869 gui=NONE cterm=NONE ctermfg=179
 
 " generic preprocessor
-hi PreProc                   guifg=#8996A8 gui=NONE cterm=NONE ctermfg=103
+hi PreProc                   guifg=#8996A8 gui=NONE cterm=NONE ctermfg=67
 
 "rubyControl, rubyAccess, rubyEval
 "case, begin, do, for, if unless, while, until else, etc.
@@ -113,7 +113,7 @@ hi link rubyStringDelimiter  String
 hi link rubyStringEscape     Delimiter
 hi String                    guifg=#8F9D6A ctermfg=107
 
-hi Type                      guifg=#7587A6 gui=NONE cterm=NONE ctermfg=103
+hi Type                      guifg=#7587A6 gui=NONE cterm=NONE ctermfg=67
 
 " Diffs
 hi DiffText                  guifg=#F8F8F8 guibg=#0E2231 gui=italic ctermfg=231 ctermbg=234
@@ -140,7 +140,7 @@ hi hamlTag                   guifg=#F9EE98 ctermfg=228
 " Javascript
 hi link javaScript           Normal
 hi link javascriptType       Keyword
-hi jQuery                    guifg=#9B859D ctermfg=246
+hi jQuery                    guifg=#9B859D ctermfg=139
 
 " SASS
 hi link sassId               sassClass

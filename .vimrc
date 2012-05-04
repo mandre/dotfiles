@@ -270,6 +270,7 @@ set statusline+=\ %<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
 nnoremap <leader>ev :vsplit $MYVIMRC<cr>
 nnoremap <leader>ez :vsplit $HOME/.zshrc<cr>
 nnoremap <leader>et :vsplit $HOME/.tmux.conf<cr>
+nnoremap <leader>es :vsplit $HOME/.ssh/config<cr>
 
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel

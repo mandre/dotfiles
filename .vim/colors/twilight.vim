@@ -18,7 +18,7 @@ if exists("syntax_on")
 endif
 let g:colors_name = "twilight"
 
-hi Normal                    guifg=#F8F8F8 guibg=#000000 ctermfg=231 ctermbg=16
+hi Normal                    guifg=#F8F8F8 guibg=#000000 ctermfg=231 ctermbg=none
 hi Cursor                    guibg=#fffd00 ctermbg=226 
 hi CursorLine                guibg=#212628 ctermbg=235
 hi LineNr                    guifg=#888888 guibg=#DEDEDE ctermfg=102 ctermbg=253
@@ -78,7 +78,7 @@ hi Error                     guifg=#F8F8F8 guibg=#562D56 ctermfg=231 ctermbg=238
 "rubyFunction
 hi link rubyModuleDeclaration Function
 hi link rubyClassDeclaration Function
-hi                           Function guifg=#9B703F gui=NONE cterm=NONE ctermfg=65
+hi                           Function guifg=#9B703F gui=NONE cterm=none ctermfg=94
 
 "rubyIdentifier
 "@var, @@var, $var, etc

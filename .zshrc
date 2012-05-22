@@ -30,9 +30,22 @@ zstyle ':omz:module:terminal' auto-title 'yes'
 # zstyle ':omz:load' function 'zargs' 'zmv'
 
 # Set the Oh My Zsh modules to load (browse modules).
-zstyle ':omz:load' omodule 'environment' 'terminal' 'editor' 'completion' \
-  'history' 'directory' 'spectrum' 'alias' 'utility' 'prompt' \
-  'archive' 'git' 'ruby' 'syntax-highlighting'
+# The order matters.
+zstyle ':omz:load' omodule \
+  'environment' \
+  'terminal' \
+  'editor' \
+  'history' \
+  'directory' \
+  'spectrum' \
+  'alias' \
+  'completion' \
+  'utility' \
+  'prompt' \
+  'archive' \
+  'git' \
+  'ruby' \
+  # 'macports'
 
 # Set the prompt theme to load.
 # Setting it to 'random' loads a random theme.

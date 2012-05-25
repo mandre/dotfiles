@@ -210,6 +210,9 @@ if has("autocmd")
 
     " Delete trailing spaces from ruby files
     autocmd BufWritePre *.rb :%s/\s\+$//e
+
+    " Annoying plugins keep turning ballooneval on
+    autocmd BufEnter *.rb setlocal noballooneval
   augroup END
   " }}}
 
@@ -412,7 +415,6 @@ if has("gui_running")
   set guioptions-=L " no scrollbar on the left
   set guioptions-=b " no scrollbar on the bottom
   set mousemodel=popup_setpos
-  set noballooneval
 
   if has('gui_macvim')
     set guifont=Menlo:h12

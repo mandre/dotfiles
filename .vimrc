@@ -421,6 +421,9 @@ let g:indexed_search_shortmess=1
 " Stop yankring from complaining
 let g:yankring_manual_clipboard_check=0
 
+" NERDTree
+let g:NERDTreeHijackNetrw=0
+
 " }}}
 " GUI {{{
 " ---------------------------------------------------------------------------

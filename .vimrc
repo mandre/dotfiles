@@ -283,11 +283,6 @@ nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
 noremap H ^
 noremap L $
 
-" Move current line down
-noremap - ddp
-" Move current line up
-noremap + ddkP
-
 " <Ctrl>-d deletes the line
 inoremap <c-d> <esc>ddi
 " <Ctrl>-u make the current word uppercase
@@ -296,12 +291,6 @@ inoremap <c-u> <esc>viwUi
 " Center screen when scrolling search results
 " nnoremap n nzz
 " nnoremap N Nzz
-
-" Turn off arrow keys
-nnoremap <Left> :echoe "Use h"<CR>
-nnoremap <Right> :echoe "Use l"<CR>
-nnoremap <Up> :echoe "Use k"<CR>
-nnoremap <Down> :echoe "Use j"<CR>"
 
 " Move between splits
 nnoremap <C-h> <C-w>h

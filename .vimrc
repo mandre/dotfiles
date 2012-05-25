@@ -17,7 +17,8 @@ Bundle 'gmarik/vundle'
 
 " Programming
 Bundle 'matchit.zip'
-Bundle 'taglist.vim'
+" Bundle 'taglist.vim'
+Bundle 'majutsushi/tagbar'
 " Bundle 'a.vim'
 " Bundle 'cscope_macros.vim'
 Bundle 'AutoTag'

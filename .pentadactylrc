@@ -34,4 +34,33 @@ nnoremap d :tabclose<CR>
 
 colorscheme vimium
 
+" URL based filetype detection in external editor
+" http://ingo-karkat.de/blog/2012/05/22/Pentadactyl%20set%20filetype%20in%20external%20Vim%20editor%20based%20on%20URL.html
+Inoremap <C-i> -javascript editExternallyWithFiletype()
+
+javascript <<EOF
+function editExternallyWithFiletype() {
+    var save_editor = options["editor"];
+    var filetype = editExternallyFiletype();
+    if (filetype) {
+        options["editor"] += " \"+setf " + filetype + "\"";
+    }
+    editor.editFieldExternally();
+    options["editor"] = save_editor;
+}
+
+function editExternallyFiletype() {
+    var host = buffer.URL.host
+    switch(host.replace(/^www\./, "")) {
+        case "github.com":
+            if (! buffer.URL.path.match("/wiki/"))
+                return "markdown";
+        case "stackoverflow.com":
+            return "markdown";
+    }
+    if (host.match(/.*\.wikia\.com$/) || host.match(/.*\.wikipedia\.org$/))
+        return "mediawiki";
+}
+EOF
+
 " vim: set ft=pentadactyl:

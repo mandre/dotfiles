@@ -212,8 +212,10 @@ if has("autocmd")
     " Delete trailing spaces from ruby files
     autocmd BufWritePre *.rb :%s/\s\+$//e
 
-    " Annoying plugins keep turning ballooneval on
-    autocmd BufEnter *.rb setlocal noballooneval
+    if has("balloon_eval")
+      " Annoying plugins keep turning ballooneval on
+      autocmd BufEnter *.rb setlocal noballooneval
+    endif
   augroup END
   " }}}
 

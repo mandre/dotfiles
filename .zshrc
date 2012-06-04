@@ -5,9 +5,6 @@
 #   Sorin Ionescu <sorin.ionescu@gmail.com>
 #
 
-# Set the path to Oh My Zsh.
-export OMZ="$HOME/.oh-my-zsh"
-
 # Set the key mapping style to 'emacs' or 'vi'.
 zstyle ':omz:module:editor' keymap 'vi'
 
@@ -24,10 +21,10 @@ zstyle ':omz:*:*' color 'yes'
 zstyle ':omz:module:terminal' auto-title 'yes'
 
 # Set the Zsh modules to load (man zshmodules).
-# zstyle ':omz:load' module 'attr' 'stat'
+# zstyle ':omz:load' zmodule 'attr' 'stat'
 
 # Set the Zsh functions to load (man zshcontrib).
-# zstyle ':omz:load' function 'zargs' 'zmv'
+# zstyle ':omz:load' zfunction 'zargs' 'zmv'
 
 # Set the Oh My Zsh modules to load (browse modules).
 # The order matters.

@@ -55,8 +55,8 @@ function editExternallyFiletype() {
         case "github.com":
             if (! buffer.URL.path.match("/wiki/"))
                 return "markdown";
-        case "stackoverflow.com":
-            return "markdown";
+        case "mail.google.com":
+            return "mail";
     }
     if (host.match(/.*\.wikia\.com$/) || host.match(/.*\.wikipedia\.org$/))
         return "mediawiki";

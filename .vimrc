@@ -17,7 +17,6 @@ Bundle 'gmarik/vundle'
 
 " Programming
 Bundle 'matchit.zip'
-" Bundle 'taglist.vim'
 Bundle 'majutsushi/tagbar'
 " Bundle 'a.vim'
 " Bundle 'cscope_macros.vim'
@@ -365,6 +364,7 @@ function! ToggleNERDTreeAndTagbar()
 
   " Jump back to the original window
   for window in range(1, winnr('$'))
+    execute window . 'wincmd ='
     execute window . 'wincmd w'
     if exists('w:jumpbacktohere')
       unlet w:jumpbacktohere
@@ -425,6 +425,9 @@ let g:yankring_manual_clipboard_check=0
 
 " NERDTree
 let g:NERDTreeHijackNetrw=0
+
+" Put tagbar on the left
+let g:tagbar_left=1
 
 " }}}
 " GUI {{{

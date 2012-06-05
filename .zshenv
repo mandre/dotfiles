@@ -67,6 +67,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
   # Alias
   alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
   alias gvimdiff='/Applications/MacVim.app/Contents/MacOS/Vim -g -d'
+  alias tmux='tmux -2 -f ~/.tmux-osx.conf'
 
   # MacPorts path
   path+=(/opt/local/{bin,sbin})

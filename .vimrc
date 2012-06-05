@@ -304,6 +304,9 @@ nnoremap <C-l> <C-w>l
 inoremap jk <esc>
 " inoremap <esc> <nop>
 
+" Expand current file path
+cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
+
 " Use :w!! to save file when current user doesn't have permission
 cnoremap w!! %!sudo tee > /dev/null %
 

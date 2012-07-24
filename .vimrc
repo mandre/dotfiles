@@ -218,6 +218,13 @@ if has("autocmd")
   augroup END
   " }}}
 
+  " javascript files settings {{{
+  augroup filetype_js
+    autocmd!
+    autocmd FileType javascript setlocal ts=2 sw=2 expandtab
+  augroup END
+  " }}}
+
   " git commit messages {{{
   augroup filetype_gitcommit
     autocmd!

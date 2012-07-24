@@ -1,7 +1,5 @@
 "1.0rc1
 
-set mapleader=','
-
 loadplugins '\.(js|penta)$'
 group user
 map -count -modes=n,v <A-h> -builtin <count>:tabNext<CR>
@@ -12,8 +10,8 @@ map -count -modes=n,v <A-Left> -builtin <count>:tabNext<CR>
 map -count -modes=n,v <A-Right> -builtin <count>:tabnext<CR>
 
 " Move faster
-nnoremap j 3j
-nnoremap k 3k
+nmap -builtin j 3j
+nmap -builtin k 3k
 
 " Open help in new tab
 set newtab='help'
@@ -24,19 +22,19 @@ set showtabline=multitab
 " Multiple URLs are comma-separated
 set urlseparator=', '
 
-nnoremap <bs> <nop>
+nmap -builtin <bs> <nop>
 
 set hlfind
-nnoremap <Leader><space> <esc>:noh<CR>
+nmap -builtin ,<space> <esc>:noh<CR>
 
 " Smarter 'd' key
-nnoremap d :tabclose<CR>
+nmap -builtin d :tabclose<CR>
 
 colorscheme vimium
 
 " URL based filetype detection in external editor
 " http://ingo-karkat.de/blog/2012/05/22/Pentadactyl%20set%20filetype%20in%20external%20Vim%20editor%20based%20on%20URL.html
-Inoremap <C-i> -javascript editExternallyWithFiletype()
+Imap -builtin <C-i> -javascript editExternallyWithFiletype()
 
 javascript <<EOF
 function editExternallyWithFiletype() {

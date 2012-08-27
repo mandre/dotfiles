@@ -46,6 +46,9 @@ Bundle 'argtextobj.vim'
 Bundle 'nelstrom/vim-textobj-rubyblock'
 Bundle 'mandre/vim-ruby-block-conv'
 
+" JS
+Bundle 'nono/vim-handlebars'
+
 " Utility
 Bundle 'YankRing.vim'
 Bundle 'LargeFile'

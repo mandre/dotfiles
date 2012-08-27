@@ -238,6 +238,14 @@ if has("autocmd")
   augroup END
   " }}}
 
+  " command window {{{
+  augroup command_window
+    autocmd!
+    " Have <esc> leave cmdline-window
+    autocmd CmdwinEnter * nnoremap <buffer> <ESC> :q<CR>
+  augroup END
+  " }}}
+
   " Utilities {{{
   augroup utilities
     autocmd!

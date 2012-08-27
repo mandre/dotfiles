@@ -310,6 +310,14 @@ nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
+" Make something useful from these arrow keys
+nmap <Left> <<
+nmap <Right> >>
+vmap <Left> <gv
+vmap <Right> >gv
+nmap <Up> [m
+nmap <Down> ]m
+
 " Map ESC
 inoremap jk <esc>
 " inoremap <esc> <nop>

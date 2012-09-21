@@ -5,8 +5,43 @@
 #   Sorin Ionescu <sorin.ionescu@gmail.com>
 #
 
-# Set the path to Oh My Zsh.
-export OMZ="$HOME/.prezto"
+#
+# Browser
+#
+
+if [[ "$OSTYPE" == darwin* ]]; then
+  export BROWSER='open'
+fi
+
+#
+# Editors
+#
+
+export EDITOR='vim'
+export VISUAL='vim'
+export PAGER='less'
+
+#
+# Language
+#
+
+if [[ -z "$LANG" ]]; then
+  eval "$(locale)"
+fi
+
+#
+# Less
+#
+
+# Set the default Less options.
+# Mouse-wheel scrolling has been disabled by -X (disable screen clearing).
+# Remove -X and -F (exit if the content fits on one screen) to enable it.
+export LESS='-F -g -i -M -R -X -z-4'
+
+# Set the Less input preprocessor.
+if (( $+commands[lesspipe.sh] )); then
+  export LESSOPEN='| /usr/bin/env lesspipe.sh %s 2>&-'
+fi
 
 #
 # Paths
@@ -54,28 +89,21 @@ done
 unset path_file
 
 #
-# Language
+# Temporary Files
 #
 
-if [[ -z "$LANG" ]]; then
-  eval "$(locale)"
+if [[ -d "$TMPDIR" ]]; then
+  export TMPPREFIX="${TMPDIR%/}/zsh"
+  if [[ ! -d "$TMPPREFIX" ]]; then
+    mkdir -p "$TMPPREFIX"
+  fi
 fi
 
 #
-# Editors
+# MacOSX specific
 #
 
-export EDITOR='vim'
-export VISUAL='vim'
-export PAGER='less'
-
 if [[ "$OSTYPE" == darwin* ]]; then
-  #
-  # Browser (Default)
-  #
-
-  export BROWSER='open'
-
   # Alias
   alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
   alias gvimdiff='/Applications/MacVim.app/Contents/MacOS/Vim -g -d'
@@ -87,18 +115,4 @@ if [[ "$OSTYPE" == darwin* ]]; then
     /opt/local/{bin,sbin}    # MacPorts
   )
   # eval "$(rbenv init -)"
-fi
-
-#
-# Less
-#
-
-# Set the default Less options.
-# Mouse-wheel scrolling has been disabled by -X (disable screen clearing).
-# Remove -X and -F (exit if the content fits on one screen) to enable it.
-export LESS='-F -g -i -M -R -X -z-4'
-
-# Set the Less input preprocessor.
-if (( $+commands[lesspipe.sh] )); then
-  export LESSOPEN='| /usr/bin/env lesspipe.sh %s 2>&-'
 fi

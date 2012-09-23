@@ -116,10 +116,10 @@ hi String                    guifg=#8F9D6A ctermfg=107
 hi Type                      guifg=#7587A6 gui=NONE cterm=NONE ctermfg=67
 
 " Diffs
-hi DiffText                  guifg=#F8F8F8 guibg=#0E2231 gui=italic ctermfg=231 ctermbg=234
-hi DiffAdd                   guifg=#F8F8F8 guibg=#253B22 ctermfg=231 ctermbg=236
-hi DiffDelete                guifg=#F8F8F8 guibg=#420E09 gui=NONE cterm=NONE ctermfg=231 ctermbg=52
-hi DiffChange                guifg=#F8F8F8 guibg=#4A410D ctermfg=231 ctermbg=58
+hi DiffAdd      guifg=fg        guibg=#405040   ctermfg=fg     ctermbg=22        gui=none      cterm=none
+hi DiffChange   guifg=fg        guibg=#605040   ctermfg=fg     ctermbg=58        gui=none      cterm=none
+hi DiffDelete   guifg=fg        guibg=#504040   ctermfg=fg     ctermbg=52        gui=none      cterm=none
+hi DiffText     guifg=#e0b050   guibg=#605040   ctermfg=220    ctermbg=58        gui=bold      cterm=bold
 
 " HTML
 hi link xmlTag               HtmlTag
@@ -148,3 +148,7 @@ hi link cssFunctionName      Type
 hi StorageClass              guifg=#F8F8F8 ctermfg=231
 hi sassMixing                guifg=#9B5C2E ctermfg=94
 hi sassClass                 guifg=#F9EE98 ctermfg=228
+
+hi diffAdded     guifg=#405040   ctermfg=22        gui=none      cterm=none
+hi diffChanged   guifg=#605040   ctermfg=58        gui=none      cterm=none
+hi diffRemoved   guifg=#504040   ctermfg=52        gui=none      cterm=none

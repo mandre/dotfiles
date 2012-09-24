@@ -36,6 +36,9 @@ colorscheme vimium
 " http://ingo-karkat.de/blog/2012/05/22/Pentadactyl%20set%20filetype%20in%20external%20Vim%20editor%20based%20on%20URL.html
 Imap -builtin <C-i> -javascript editExternallyWithFiletype()
 
+" workaround for github command bar
+set passkeys+=github.com:<Return>
+
 javascript <<EOF
 function editExternallyWithFiletype() {
     var save_editor = options["editor"];

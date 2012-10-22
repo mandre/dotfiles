@@ -58,7 +58,7 @@ Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
 Bundle 'tpope/vim-markdown'
 Bundle 'file-line'
-Bundle 'Align'
+Bundle 'godlygeek/tabular'
 Bundle 'bufexplorer.zip'
 Bundle 'netrw.vim'
 Bundle 'ervandew/supertab'
@@ -298,6 +298,12 @@ nnoremap <leader>es :vsplit $HOME/.ssh/config<cr>
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
 nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
+
+" Tabularize
+nnoremap <leader>a= :Tabularize /=<cr>
+vnoremap <leader>a= :Tabularize /=<cr>
+nnoremap <leader>a: :Tabularize /:\zs<cr>
+vnoremap <leader>a: :Tabularize /:\zs<cr>
 
 " Easier start/end of line
 noremap H ^

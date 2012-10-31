@@ -46,14 +46,14 @@ zstyle ':prezto:load' pmodule \
 zstyle ':prezto:module:editor' keymap 'vi'
 
 # Auto convert .... to ../..
-# zstyle ':prezto:module:editor' dot-expansion 'no'
+# zstyle ':prezto:module:editor' dot-expansion 'yes'
 
 #
 # Git
 #
 
 # Ignore submodules when they are 'dirty', 'untracked', 'all', or 'none'.
-# zstyle ':prezto:module:git:ignore' submodule 'all'
+# zstyle ':prezto:module:git:status:ignore' submodules 'all'
 
 #
 # GNU Utility
@@ -84,6 +84,13 @@ zstyle ':prezto:module:prompt' theme 'mandre'
 
 # Auto start a session when Zsh is launched.
 # zstyle ':prezto:module:screen' auto-start 'yes'
+
+#
+# GPG-Agent
+#
+
+# Enable SSH-Agent protocol emulation.
+# zstyle ':prezto:module:gpg-agent' ssh-support 'yes'
 
 #
 # SSH-Agent

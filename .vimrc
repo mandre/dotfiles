@@ -18,8 +18,6 @@ Bundle 'gmarik/vundle'
 " Programming
 Bundle 'matchit.zip'
 Bundle 'majutsushi/tagbar'
-" Bundle 'a.vim'
-" Bundle 'cscope_macros.vim'
 Bundle 'AutoTag'
 Bundle 'tomtom/tcomment_vim'
 Bundle 'scrooloose/syntastic'
@@ -36,11 +34,8 @@ Bundle 'tpope/vim-fugitive'
 " Ruby
 Bundle 'vim-ruby/vim-ruby'
 Bundle 'tpope/vim-rails'
+" Bundle 'tpope/vim-bundler'
 Bundle 'ecomba/vim-ruby-refactoring'
-" Bundle 'astashov/vim-ruby-debugger'
-" http://blog.10to1.be/ruby/2011/02/13/vim-flog-plugin/
-" Bundle 'fousa/vim-flog'
-" :silent exe 'g:flog_enable'
 Bundle 'kana/vim-textobj-user'
 Bundle 'argtextobj.vim'
 Bundle 'nelstrom/vim-textobj-rubyblock'
@@ -66,13 +61,10 @@ Bundle 'ZoomWin'
 Bundle 'mileszs/ack.vim'
 Bundle 'sessionman.vim'
 Bundle 'sjl/gundo.vim'
+" Bundle 'sjl/vitality.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
 Bundle 'scrooloose/nerdtree'
-
-" FuzzyFinder
-" Bundle 'L9'
-" Bundle 'FuzzyFinder'
 
 " Command-T
 " Bundle 'git://git.wincent.com/command-t'
@@ -437,12 +429,16 @@ noremap <F12> :make<CR>
 " Plugins {{{
 " ---------------------------------------------------------------------------
 
-let g:syntastic_auto_loc_list=1
+let g:vundle_default_git_proto = 'git'
+
+" Ruby
+" let g:rubycomplete_buffer_loading=1
+let ruby_space_errors=1
+
+" let g:syntastic_auto_loc_list=2
 let g:syntastic_enable_signs=1
 let g:syntastic_error_symbol='✗'
 let g:syntastic_warning_symbol='⚠'
-" let g:ruby_debugger_progname='mvim'
-" let g:CommandTMatchWindowAtTop=1 " show window at top
 
 " SuperTab
 let g:SuperTabDefaultCompletionType="context"
@@ -487,7 +483,7 @@ if has("gui_running")
 
   if has('gui_macvim')
     set guifont=Menlo:h12
-    set transparency=10
+    set transparency=15
     set fuoptions=maxvert,maxhorz
   endif
 else

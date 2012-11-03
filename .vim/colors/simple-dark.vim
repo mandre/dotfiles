@@ -31,7 +31,7 @@ let colors_name="simple-dark"
 set background=dark
 
 " General Colors
-hi Normal       guifg=#c6c6c6   guibg=#262626   ctermfg=251    ctermbg=none       gui=none      cterm=none
+hi Normal       guifg=#c6c6c6   guibg=#060a0f   ctermfg=251    ctermbg=none       gui=none      cterm=none
 hi Comment      guifg=#8a8a8a   guibg=NONE      ctermfg=245    ctermbg=NONE      gui=none      cterm=none
 hi Constant     guifg=#d7d7af   guibg=NONE      ctermfg=187    ctermbg=NONE      gui=none      cterm=none
 hi Identifier   guifg=fg        guibg=NONE      ctermfg=fg     ctermbg=NONE      gui=bold      cterm=bold
@@ -56,20 +56,20 @@ hi CursorColumn guifg=NONE      guibg=#444444   ctermfg=NONE   ctermbg=238      
 hi CursorLine   guifg=NONE      guibg=#444444   ctermfg=NONE   ctermbg=238       gui=none      cterm=none
 hi Visual       guifg=NONE      guibg=#005f87   ctermfg=NONE   ctermbg=24        gui=none      cterm=none
 hi VisualNOS    guifg=fg        guibg=NONE      ctermfg=fg     ctermbg=NONE      gui=underline cterm=underline
-hi IncSearch    guifg=bg        guibg=#87ffff   ctermfg=none     ctermbg=123       gui=none      cterm=none
-hi Search       guifg=bg        guibg=#ffd75f   ctermfg=none     ctermbg=221       gui=none      cterm=none
+hi IncSearch    guifg=bg        guibg=#87ffff   ctermfg=233     ctermbg=123       gui=none      cterm=none
+hi Search       guifg=bg        guibg=#ffd75f   ctermfg=233     ctermbg=221       gui=none      cterm=none
 
 " UI
 hi Pmenu        guifg=#121212   guibg=#b2b2b2   ctermfg=233    ctermbg=249       gui=none      cterm=none
 hi PmenuSel     guifg=fg        guibg=#585858   ctermfg=fg     ctermbg=240       gui=none      cterm=none
 hi PMenuSbar    guifg=#121212   guibg=#c6c6c6   ctermfg=233    ctermbg=251       gui=none      cterm=none
 hi PMenuThumb   guifg=fg        guibg=#767676   ctermfg=fg     ctermbg=243       gui=none      cterm=none
-hi StatusLine   guifg=#121212   guibg=#b2b2b2   ctermfg=233    ctermbg=249       gui=none      cterm=none
-hi StatusLineNC guifg=#121212   guibg=#767676   ctermfg=233    ctermbg=243       gui=none      cterm=none
+hi StatusLine   guifg=#303030   guibg=#babdb6   ctermfg=236    ctermbg=250       gui=none      cterm=none
+hi StatusLineNC guifg=#babdb6   guibg=#303030   ctermfg=250    ctermbg=236       gui=none      cterm=none
 hi TabLine      guifg=#121212   guibg=#b2b2b2   ctermfg=233    ctermbg=249       gui=none      cterm=none
 hi TabLineFill  guifg=#121212   guibg=#b2b2b2   ctermfg=233    ctermbg=249       gui=none      cterm=none
 hi TabLineSel   guifg=fg        guibg=#585858   ctermfg=fg     ctermbg=240       gui=bold      cterm=bold
-hi VertSplit    guifg=#8a8a8a   guibg=#b2b2b2   ctermfg=245    ctermbg=249       gui=none      cterm=none
+hi VertSplit    guifg=#babdb6   guibg=#060a0f   ctermfg=250    ctermbg=none      gui=none      cterm=none
 hi Folded       guifg=fg        guibg=#585858   ctermfg=fg     ctermbg=240       gui=none      cterm=none
 hi FoldColumn   guifg=fg        guibg=#585858   ctermfg=fg     ctermbg=240       gui=none      cterm=none
 
@@ -84,6 +84,10 @@ hi DiffAdd      guifg=fg        guibg=#405040   ctermfg=fg     ctermbg=22       
 hi DiffChange   guifg=fg        guibg=#605040   ctermfg=fg     ctermbg=58        gui=none      cterm=none
 hi DiffDelete   guifg=fg        guibg=#504040   ctermfg=fg     ctermbg=52        gui=none      cterm=none
 hi DiffText     guifg=#e0b050   guibg=#605040   ctermfg=220    ctermbg=58        gui=bold      cterm=bold
+
+hi diffAdded     guifg=#405040   ctermfg=22        gui=none      cterm=none
+hi diffChanged   guifg=#605040   ctermfg=58        gui=none      cterm=none
+hi diffRemoved   guifg=#504040   ctermfg=52        gui=none      cterm=none
 
 " Misc
 hi Directory    guifg=fg        guibg=NONE      ctermfg=fg     ctermbg=NONE      gui=bold      cterm=bold

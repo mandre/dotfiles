@@ -18,18 +18,18 @@ if exists("syntax_on")
 endif
 let g:colors_name = "twilight"
 
-hi Normal                    guifg=#F8F8F8 guibg=#000000 ctermfg=231 ctermbg=none
+hi Normal       guifg=#F8F8F8   guibg=#060a0f   ctermfg=231    ctermbg=none      gui=none      cterm=none
 hi Cursor                    guibg=#a7a7a7 ctermbg=226 
 hi CursorLine                guibg=#212628 ctermbg=235
-hi LineNr                    guifg=#888888 guibg=#DEDEDE ctermfg=102 ctermbg=253
+hi LineNr                    guifg=#444444   guibg=#121212   ctermfg=238    ctermbg=233       gui=none      cterm=none
 hi Visual                    guibg=#404040 ctermbg=237
 hi Directory                 guifg=#7587A6 gui=NONE cterm=NONE ctermfg=67
 hi SpecialKey                guifg=#4C4C4C ctermfg=239
 hi NonText                   guifg=#4C4C4C gui=NONE cterm=NONE ctermfg=239
 hi MatchParen                guifg=#FF4600 guibg=NONE ctermbg=67
-hi ErrorMsg                  guifg=#F8F8F8 guibg=#B22518 ctermfg=231 ctermbg=124
+hi ErrorMsg                  guifg=#B22518 guibg=NONE ctermfg=124 ctermbg=NONE
 hi WarningMsg                guifg=#B22518 ctermfg=124
-hi Search                    guifg=#FFFFFF guibg=#075D7F ctermfg=231 ctermbg=24
+hi Search                    guifg=bg        guibg=#ffd75f   ctermfg=233    ctermbg=221       gui=none      cterm=none
 hi MoreMsg                   guifg=#619518 ctermfg=2
 hi Question                  guifg=#359926 ctermfg=2
 hi WildMenu                  guibg=#E9C062 ctermbg=179
@@ -37,7 +37,7 @@ hi Title                     guifg=#FFFFFF ctermfg=231
 
 hi StatusLine                guifg=#303030 guibg=#babdb6 gui=NONE cterm=NONE ctermfg=236 ctermbg=250
 hi StatusLineNC              guifg=#babdb6 guibg=#303030 gui=NONE cterm=NONE ctermfg=250 ctermbg=236
-hi VertSplit                 guifg=#babdb6 guibg=#303030 gui=NONE cterm=NONE ctermfg=250 ctermbg=236
+hi VertSplit    guifg=#babdb6   guibg=#060a0f   ctermfg=250    ctermbg=none      gui=none      cterm=none
 
 " Popup Menu
 hi Pmenu                     guifg=#605958 guibg=#303030 gui=NONE cterm=NONE ctermfg=240 ctermbg=236

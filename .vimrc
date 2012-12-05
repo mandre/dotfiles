@@ -350,7 +350,7 @@ nnoremap <leader>v V`]
 nmap Y y$
 
 " Ack the word under the cursor
-nnoremap <leader>a :Ack <cword><CR>
+nnoremap <leader>a :Ack! <cword><CR>
 
 " Ruby refactoring
 " Toggle between ruby block styles

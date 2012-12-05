@@ -462,6 +462,10 @@ let g:NERDTreeHijackNetrw=0
 " Put tagbar on the left
 let g:tagbar_left=1
 
+" Ack
+let g:ackprg='ag --nogroup --nocolor --column'
+let g:ackhighlight=1
+
 " }}}
 " GUI {{{
 " ---------------------------------------------------------------------------

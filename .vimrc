@@ -52,6 +52,7 @@ Bundle 'tpope/vim-repeat'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
 Bundle 'tpope/vim-markdown'
+Bundle 'tpope/vim-sleuth'
 Bundle 'file-line'
 Bundle 'godlygeek/tabular'
 Bundle 'bufexplorer.zip'
@@ -197,10 +198,6 @@ if has("autocmd")
   " ruby files settings {{{
   augroup filetype_ruby
     autocmd!
-    " For all Ruby and eRuby, set indent to 2 spaces
-    autocmd FileType ruby setlocal ts=2 sw=2 expandtab
-    autocmd FileType eruby setlocal ts=2 sw=2 expandtab
-
     " Use # to create string interpolation with vim-surround
     autocmd FileType ruby let b:surround_35 = "#{\r}"
 
@@ -211,13 +208,6 @@ if has("autocmd")
       " Annoying plugins keep turning ballooneval on
       autocmd BufEnter *.rb setlocal noballooneval
     endif
-  augroup END
-  " }}}
-
-  " javascript files settings {{{
-  augroup filetype_js
-    autocmd!
-    autocmd FileType javascript setlocal ts=2 sw=2 expandtab
   augroup END
   " }}}
 

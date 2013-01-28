@@ -90,6 +90,8 @@ set undofile
 set autoread
 set sessionoptions="blank,buffers,curdir,folds,help,tabpages,winsize"
 set nomodeline          " disable mode lines (security measure)
+set smarttab
+set shiftround
 
 " Match and search
 set ignorecase		" Do case insensitive matching
@@ -146,6 +148,7 @@ set novisualbell
 set backspace=indent,eol,start
 " set laststatus=2
 set virtualedit+=block
+set display+=lastline
 
 " if has("gui_running")
 "   set cursorline

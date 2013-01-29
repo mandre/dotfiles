@@ -103,7 +103,7 @@ set showmatch		" Show matching brackets.
 if has("spell")
   " set spelllang=fr
   set spelllang=en_us
-  nnoremap <leader>s :set spell!<CR>
+  nnoremap <leader>ss :set spell!<CR>
 endif
 
 " Switch syntax highlighting on, when the terminal has colors
@@ -287,6 +287,11 @@ nnoremap <leader>ez :vsplit $HOME/.zshrc<cr>
 nnoremap <leader>et :vsplit $HOME/.tmux.conf<cr>
 nnoremap <leader>es :vsplit $HOME/.ssh/config<cr>
 
+" Toggle settings
+nnoremap <leader>sn :set number!<cr>
+nnoremap <leader>sr :set relativenumber!<cr>
+nnoremap <leader>sw :set wrap!<cr>
+
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
 nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
@@ -411,8 +416,6 @@ noremap <F3> :BufExplorer<CR>
 noremap <F4> :call ToggleNERDTreeAndTagbar()<CR>
 " <F5> Reload file
 noremap <F5> :e!<CR>
-" <F6> Toggle wrap/nowrap
-noremap <F6> :set wrap!<CR>
 " <F7> Toggle GUndo tree
 noremap <F7> :GundoToggle<CR>
 " <F8> Comment

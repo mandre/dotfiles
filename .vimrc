@@ -81,6 +81,7 @@ let g:mapleader = ","
 set encoding=utf-8
 set history=50		" keep 50 lines of command line history
 set hidden
+set confirm
 set nobackup
 set nowritebackup
 set noswapfile
@@ -339,9 +340,6 @@ cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
 " Use :w!! to save file when current user doesn't have permission
 cnoremap w!! %!sudo tee > /dev/null %
 
-" Shift + Enter adds an end
-inoremap <S-CR> <CR><CR>end<Esc>-cc
-
 " Stop highlight search
 nnoremap <space> :noh<CR>
 
@@ -504,6 +502,7 @@ endif
 " Misc {{{
 " ---------------------------------------------------------------------------
 
+set viminfo='1000,f1,<500,:100,/100,s10,h,%,n~/.vim/viminfo
 set backupdir=~/tmp,/tmp
 set undodir=~/.vim/.tmp,~/tmp,~/.tmp,/tmp
 let g:yankring_history_dir="~/.vim/.tmp"

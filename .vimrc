@@ -292,6 +292,7 @@ nnoremap <leader>es :vsplit $HOME/.ssh/config<cr>
 nnoremap <leader>sn :set number!<cr>
 nnoremap <leader>sr :set relativenumber!<cr>
 nnoremap <leader>sw :set wrap!<cr>
+nnoremap <leader>sl :set cursorline!<cr>
 
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel

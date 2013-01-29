@@ -18,10 +18,11 @@ if exists("syntax_on")
 endif
 let g:colors_name = "twilight"
 
-hi Normal       guifg=#F8F8F8   guibg=#060a0f   ctermfg=231    ctermbg=none      gui=none      cterm=none
-hi Cursor                    guibg=#a7a7a7 ctermbg=226 
-hi CursorLine                guibg=#212628 ctermbg=235
-hi LineNr                    guifg=#444444   guibg=#121212   ctermfg=238    ctermbg=233       gui=none      cterm=none
+hi Normal       guifg=#F8F8F8   guibg=#060A0F   ctermfg=231    ctermbg=NONE      gui=NONE      cterm=NONE
+hi Cursor                    guibg=#A7A7A7 ctermbg=226
+hi CursorLine                guibg=#212628 ctermbg=235 cterm=NONE
+hi LineNr                    guifg=#444444   guibg=#121212   ctermfg=238    ctermbg=233       gui=NONE      cterm=NONE
+hi CursorLineNr              guifg=#FFD75F ctermfg=221
 hi Visual                    guibg=#404040 ctermbg=237
 hi Directory                 guifg=#7587A6 gui=NONE cterm=NONE ctermfg=67
 hi SpecialKey                guifg=#4C4C4C ctermfg=239
@@ -29,19 +30,19 @@ hi NonText                   guifg=#4C4C4C gui=NONE cterm=NONE ctermfg=239
 hi MatchParen                guifg=#FF4600 guibg=NONE ctermbg=67
 hi ErrorMsg                  guifg=#B22518 guibg=NONE ctermfg=124 ctermbg=NONE
 hi WarningMsg                guifg=#B22518 ctermfg=124
-hi Search                    guifg=bg        guibg=#ffd75f   ctermfg=233    ctermbg=221       gui=none      cterm=none
+hi Search                    guifg=bg        guibg=#FFD75F   ctermfg=233    ctermbg=221       gui=NONE      cterm=NONE
 hi MoreMsg                   guifg=#619518 ctermfg=2
 hi Question                  guifg=#359926 ctermfg=2
 hi WildMenu                  guibg=#E9C062 ctermbg=179
 hi Title                     guifg=#FFFFFF ctermfg=231
 
-hi StatusLine                guifg=#303030 guibg=#babdb6 gui=NONE cterm=NONE ctermfg=236 ctermbg=250
-hi StatusLineNC              guifg=#babdb6 guibg=#303030 gui=NONE cterm=NONE ctermfg=250 ctermbg=236
-hi VertSplit    guifg=#babdb6   guibg=#060a0f   ctermfg=250    ctermbg=none      gui=none      cterm=none
+hi StatusLine                guifg=#303030 guibg=#BABDB6 gui=NONE cterm=NONE ctermfg=236 ctermbg=250
+hi StatusLineNC              guifg=#BABDB6 guibg=#303030 gui=NONE cterm=NONE ctermfg=250 ctermbg=236
+hi VertSplit    guifg=#BABDB6   guibg=#060A0F   ctermfg=250    ctermbg=NONE      gui=NONE      cterm=NONE
 
 " Popup Menu
 hi Pmenu                     guifg=#605958 guibg=#303030 gui=NONE cterm=NONE ctermfg=240 ctermbg=236
-hi PmenuSel                  guifg=#a09998 guibg=#404040 gui=NONE cterm=NONE ctermfg=247 ctermbg=238
+hi PmenuSel                  guifg=#A09998 guibg=#404040 gui=NONE cterm=NONE ctermfg=247 ctermbg=238
 
 " Folding
 hi Folded                    guifg=#99B1D8 guibg=#4C4C4C ctermfg=110 ctermbg=239
@@ -78,7 +79,7 @@ hi Error                     guifg=#F8F8F8 guibg=#562D56 ctermfg=231 ctermbg=238
 "rubyFunction
 hi link rubyModuleDeclaration Function
 hi link rubyClassDeclaration Function
-hi                           Function guifg=#875f00 gui=NONE cterm=none ctermfg=94
+hi                           Function guifg=#875F00 gui=NONE cterm=NONE ctermfg=94
 
 "rubyIdentifier
 "@var, @@var, $var, etc
@@ -116,10 +117,10 @@ hi String                    guifg=#87AF5F ctermfg=107
 hi Type                      guifg=#5F87AF gui=NONE cterm=NONE ctermfg=67
 
 " Diffs
-hi DiffAdd      guifg=fg        guibg=#405040   ctermfg=fg     ctermbg=22        gui=none      cterm=none
-hi DiffChange   guifg=fg        guibg=#605040   ctermfg=fg     ctermbg=58        gui=none      cterm=none
-hi DiffDelete   guifg=fg        guibg=#504040   ctermfg=fg     ctermbg=52        gui=none      cterm=none
-hi DiffText     guifg=#e0b050   guibg=#605040   ctermfg=220    ctermbg=58        gui=bold      cterm=bold
+hi DiffAdd      guifg=fg        guibg=#405040   ctermfg=fg     ctermbg=22        gui=NONE      cterm=NONE
+hi DiffChange   guifg=fg        guibg=#605040   ctermfg=fg     ctermbg=58        gui=NONE      cterm=NONE
+hi DiffDelete   guifg=fg        guibg=#504040   ctermfg=fg     ctermbg=52        gui=NONE      cterm=NONE
+hi DiffText     guifg=#E0B050   guibg=#605040   ctermfg=220    ctermbg=58        gui=bold      cterm=bold
 
 " HTML
 hi link xmlTag               HtmlTag
@@ -149,6 +150,6 @@ hi StorageClass              guifg=#F8F8F8 ctermfg=231
 hi sassMixing                guifg=#9B5C2E ctermfg=94
 hi sassClass                 guifg=#F9EE98 ctermfg=228
 
-hi diffAdded     guifg=#405040   ctermfg=22        gui=none      cterm=none
-hi diffChanged   guifg=#605040   ctermfg=58        gui=none      cterm=none
-hi diffRemoved   guifg=#504040   ctermfg=52        gui=none      cterm=none
+hi diffAdded     guifg=#405040   ctermfg=22        gui=NONE      cterm=NONE
+hi diffChanged   guifg=#605040   ctermfg=58        gui=NONE      cterm=NONE
+hi diffRemoved   guifg=#504040   ctermfg=52        gui=NONE      cterm=NONE

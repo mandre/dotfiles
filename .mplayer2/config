@@ -1,2 +1,6 @@
 # Write your default config options here!
 stop-xscreensaver=1
+
+[protocol.dvd]
+profile-desc="profile for dvd:// streams"
+dvd-device=/dev/sr0

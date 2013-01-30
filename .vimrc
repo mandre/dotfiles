@@ -150,16 +150,6 @@ set backspace=indent,eol,start
 set virtualedit+=block
 set display+=lastline
 
-" if has("gui_running")
-"   set cursorline
-"   " Highlight cursorline ONLY in the active window
-"   augroup cursor_line
-"     autocmd!
-"     autocmd WinEnter * setlocal cursorline
-"     autocmd WinLeave * setlocal nocursorline
-"   augroup END
-" endif
-
 if has("cscope")
     " use both cscope and ctag for 'ctrl-]', ':ta', and 'vim -t'
     set cscopetag
@@ -285,7 +275,20 @@ nnoremap <leader>es :vsplit $HOME/.ssh/config<cr>
 nnoremap <leader>sn :set number!<cr>
 nnoremap <leader>sr :set relativenumber!<cr>
 nnoremap <leader>sw :set wrap!<cr>
-nnoremap <leader>sl :set cursorline!<cr>
+nnoremap <silent> <leader>sl :call ToggleCursorline()<cr>
+
+function! ToggleCursorline()
+  let g:cursorline_active = !&cursorline
+  set cursorline!
+endfunction
+
+let g:cursorline_active = 0
+" Highlight cursorline ONLY in the active window
+augroup cursor_line
+  autocmd!
+  autocmd WinEnter * if g:cursorline_active | setlocal cursorline | endif
+  autocmd WinLeave * if g:cursorline_active | setlocal nocursorline | endif
+augroup END
 
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel

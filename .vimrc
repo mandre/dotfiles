@@ -66,6 +66,7 @@ Bundle 'sjl/gundo.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
 Bundle 'scrooloose/nerdtree'
+Bundle 'mandre/hardmode'
 
 " Command-T
 " Bundle 'git://git.wincent.com/command-t'
@@ -276,6 +277,7 @@ nnoremap <leader>sn :set number!<cr>
 nnoremap <leader>sr :set relativenumber!<cr>
 nnoremap <leader>sw :set wrap!<cr>
 nnoremap <silent> <leader>sl :call ToggleCursorline()<cr>
+nnoremap <leader>sh :call ToggleHardMode()<cr>
 
 function! ToggleCursorline()
   let g:cursorline_active = !&cursorline
@@ -517,9 +519,6 @@ set completeopt=menuone,preview
 
 " Highlight VCS conflict markers
 " match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
-" hi def link myTodo Todo
-" match myTodo "\<TBD\>"
-" syn match Todo "TBD" containedIn=ALL
 
 " Source a global configuration file if available
 if filereadable("/etc/vim/vimrc.local")

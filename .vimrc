@@ -66,7 +66,7 @@ Bundle 'sjl/gundo.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
 Bundle 'scrooloose/nerdtree'
-Bundle 'mandre/hardmode'
+Bundle 'wikitopian/hardmode'
 Bundle 'kien/ctrlp.vim'
 
 " Command-T

@@ -23,6 +23,7 @@ hi Cursor                    guibg=#A7A7A7 ctermbg=226
 hi CursorLine                guibg=#212628 ctermbg=235 cterm=NONE
 hi LineNr                    guifg=#444444   guibg=#121212   ctermfg=238    ctermbg=233       gui=NONE      cterm=NONE
 hi CursorLineNr              guifg=#FFD75F ctermfg=221
+hi SignColumn                guibg=#121212   ctermbg=233
 hi Visual                    guibg=#404040 ctermbg=237
 hi Directory                 guifg=#7587A6 gui=NONE cterm=NONE ctermfg=67
 hi SpecialKey                guifg=#4C4C4C ctermfg=239

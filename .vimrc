@@ -467,6 +467,10 @@ let g:tagbar_left=1
 let g:ackprg='ag --nogroup --nocolor --column'
 let g:ackhighlight=1
 
+" CtrlP
+let g:ctrlp_match_window_reversed = 0
+let g:ctrlp_max_history = 0
+
 " }}}
 " GUI {{{
 " ---------------------------------------------------------------------------

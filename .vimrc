@@ -507,9 +507,11 @@ endif
 " ---------------------------------------------------------------------------
 
 set viminfo='1000,f1,<500,:100,/100,s10,h,%,n~/.vim/viminfo
-set backupdir=~/tmp,/tmp
-set undodir=~/.vim/.tmp,~/tmp,~/.tmp,/tmp
-let g:yankring_history_dir="~/.vim/.tmp"
+set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
+set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
+let g:yankring_history_dir = "~/.vim/.tmp/yankring"
+let g:ctrlp_cache_dir = '~/.vim/.tmp/ctrlp'
+let g:netrw_home = '~/.vim/.tmp/netrw'
 let g:notes_directory = '~/.vim/notes'
 
 " latex specific stuff

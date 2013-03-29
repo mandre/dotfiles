@@ -68,6 +68,7 @@ Bundle 'xolox/vim-notes'
 Bundle 'scrooloose/nerdtree'
 Bundle 'wikitopian/hardmode'
 Bundle 'kien/ctrlp.vim'
+Bundle 'Lokaltog/vim-easymotion'
 
 " Command-T
 " Bundle 'git://git.wincent.com/command-t'
@@ -466,6 +467,9 @@ let g:tagbar_left=1
 " Ack
 let g:ackprg='ag --nogroup --nocolor --column'
 let g:ackhighlight=1
+
+" EasyMotion
+let g:EasyMotion_leader_key = '<Leader>'
 
 " CtrlP
 let g:ctrlp_match_window_reversed = 0

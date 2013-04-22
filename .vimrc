@@ -19,7 +19,7 @@ Bundle 'gmarik/vundle'
 Bundle 'matchit.zip'
 Bundle 'majutsushi/tagbar'
 Bundle 'AutoTag'
-Bundle 'tomtom/tcomment_vim'
+Bundle 'tpope/vim-commentary'
 Bundle 'scrooloose/syntastic'
 
 " Snippets
@@ -418,7 +418,8 @@ noremap <F5> :e!<CR>
 " <F7> Toggle GUndo tree
 noremap <F7> :GundoToggle<CR>
 " <F8> Comment
-noremap <F8> :TComment<CR>j
+nmap <F8> <Plug>CommentaryLine j
+xmap <F8> <Plug>Commentary
 " <F9> Remove all trailing spaces
 noremap <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
 " <F10> YankRing

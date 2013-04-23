@@ -438,10 +438,11 @@ let g:vundle_default_git_proto = 'git'
 " let g:rubycomplete_buffer_loading=1
 let ruby_space_errors=1
 
-" let g:syntastic_auto_loc_list=2
+let g:syntastic_auto_loc_list=2
 let g:syntastic_enable_signs=1
 let g:syntastic_error_symbol='✗'
 let g:syntastic_warning_symbol='⚠'
+let g:syntastic_disabled_filetypes = ['html']
 
 " SuperTab
 let g:SuperTabDefaultCompletionType="context"

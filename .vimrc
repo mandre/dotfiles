@@ -65,7 +65,6 @@ Bundle 'sjl/gundo.vim'
 " Bundle 'sjl/vitality.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
-Bundle 'scrooloose/nerdtree'
 Bundle 'wikitopian/hardmode'
 Bundle 'kien/ctrlp.vim'
 Bundle 'Lokaltog/vim-easymotion'
@@ -369,41 +368,6 @@ inoremap <c-x><c-]> <c-]>
 " Function Keys {{{
 " ---------------------------------------------------------------------------
 
-function! ToggleNERDTreeAndTagbar()
-  let w:jumpbacktohere = 1
-
-  " Detect which plugins are open
-  if exists('t:NERDTreeBufName')
-    let nerdtree_open = bufwinnr(t:NERDTreeBufName) != -1
-  else
-    let nerdtree_open = 0
-  endif
-  let tagbar_open = bufwinnr('__Tagbar__') != -1
-
-  " Perform the appropriate action
-  if nerdtree_open && tagbar_open
-    NERDTreeClose
-    TagbarClose
-  elseif nerdtree_open
-    TagbarOpen
-  elseif tagbar_open
-    NERDTree
-  else
-    NERDTree
-    TagbarOpen
-  endif
-
-  " Jump back to the original window
-  for window in range(1, winnr('$'))
-    execute window . 'wincmd ='
-    execute window . 'wincmd w'
-    if exists('w:jumpbacktohere')
-      unlet w:jumpbacktohere
-      break
-    endif
-  endfor
-endfunction
-
 " <F1> Escape
 inoremap <F1> <ESC>
 noremap <F1> <ESC>
@@ -411,8 +375,8 @@ noremap <F1> <ESC>
 noremap <F2> :Ex<CR>
 " <F3> Buffer explorer
 noremap <F3> :BufExplorer<CR>
-" <F4> NERDTree and Tagbar
-noremap <F4> :call ToggleNERDTreeAndTagbar()<CR>
+" <F4> Tagbar
+noremap <F4> :TagbarToggle<CR>
 " <F5> Reload file
 noremap <F5> :e!<CR>
 " <F7> Toggle GUndo tree
@@ -459,9 +423,6 @@ let g:indexed_search_shortmess=1
 
 " Stop yankring from complaining
 let g:yankring_manual_clipboard_check=0
-
-" NERDTree
-let g:NERDTreeHijackNetrw=0
 
 " Put tagbar on the left
 let g:tagbar_left=1

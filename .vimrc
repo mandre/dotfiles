@@ -65,7 +65,7 @@ Bundle 'sjl/gundo.vim'
 " Bundle 'sjl/vitality.vim'
 Bundle 'henrik/vim-indexed-search'
 Bundle 'xolox/vim-notes'
-Bundle 'wikitopian/hardmode'
+Bundle 'kbarrette/mediummode'
 Bundle 'kien/ctrlp.vim'
 Bundle 'Lokaltog/vim-easymotion'
 
@@ -278,7 +278,7 @@ nnoremap <leader>sn :set number!<cr>
 nnoremap <leader>sr :set relativenumber!<cr>
 nnoremap <leader>sw :set wrap!<cr>
 nnoremap <silent> <leader>sl :call ToggleCursorline()<cr>
-nnoremap <leader>sh :call ToggleHardMode()<cr>
+nnoremap <leader>sh :MediumModeToggle<cr>
 
 function! ToggleCursorline()
   let g:cursorline_active = !&cursorline
@@ -433,6 +433,9 @@ let g:ackhighlight=1
 
 " EasyMotion
 let g:EasyMotion_leader_key = '<Leader>'
+
+" Medium mode
+let g:mediummode_allowed_motions = 5
 
 " CtrlP
 let g:ctrlp_match_window_reversed = 0

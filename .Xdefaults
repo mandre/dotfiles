@@ -1,0 +1,40 @@
+URxvt.depth: 32
+URxvt.scrollBar: false
+URxvt.font: xft:monospace:size=10
+URxvt.letterSpace: -1
+
+URxvt.fading: 30
+
+URxvt.iconFile: /usr/share/icons/gnome-colors-common/scalable/apps/Terminal.svg
+
+! Tango color palette
+URxvt*background: [94]#000000
+URxvt*foreground: #eeeeec
+! foreground color for underline
+URxvt*colorUL: #8ae234
+! line color for underline
+URxvt*underlineColor: #92659a
+! black dark/light
+URxvt*color0: #000000
+URxvt.color8: #555753
+! red dark/light
+URxvt*color1: #cc0000
+URxvt*color9: #ef2929
+! green dark/light
+URxvt*color2: #4e9a06
+URxvt*color10: #8ae234
+! yellow dark/light
+URxvt.color3: #C4A000
+URxvt.color11: #FCE94F
+! blue dark/light
+URxvt*color4: #3465a4
+URxvt*color12: #729fcf
+! magenta dark/light
+URxvt.color5: #75507B
+URxvt.color13: #AD7FA8
+! cyan dark/light
+URxvt.color6: #06989A
+URxvt.color14: #34E2E2
+! white dark/light
+URxvt*color7: #d3d7cf
+URxvt*color15: #eeeeec

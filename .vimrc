@@ -64,6 +64,7 @@ Bundle 'sessionman.vim'
 Bundle 'sjl/gundo.vim'
 " Bundle 'sjl/vitality.vim'
 Bundle 'henrik/vim-indexed-search'
+Bundle 'xolox/vim-misc'
 Bundle 'xolox/vim-notes'
 Bundle 'kbarrette/mediummode'
 Bundle 'kien/ctrlp.vim'
@@ -482,7 +483,7 @@ set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
 let g:yankring_history_dir = "~/.vim/.tmp/yankring"
 let g:ctrlp_cache_dir = '~/.vim/.tmp/ctrlp'
 let g:netrw_home = '~/.vim/.tmp/netrw'
-let g:notes_directory = '~/.vim/notes'
+let g:notes_directories = ['~/.vim/notes']
 
 " latex specific stuff
 let g:Tex_CompileRule_dvi = 'latex --interaction=nonstopmode $*'

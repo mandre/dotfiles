@@ -26,7 +26,7 @@ export PAGER='less'
 #
 
 if [[ -z "$LANG" ]]; then
-  eval "$(locale)"
+  export LANG='en_US.UTF-8'
 fi
 
 #
@@ -66,11 +66,14 @@ fi
 # Temporary Files
 #
 
-if [[ -d "$TMPDIR" ]]; then
-  export TMPPREFIX="${TMPDIR%/}/zsh"
-  if [[ ! -d "$TMPPREFIX" ]]; then
-    mkdir -p "$TMPPREFIX"
-  fi
+if [[ ! -d "$TMPDIR" ]]; then
+  export TMPDIR="/tmp/$USER"
+  mkdir -p -m 700 "$TMPDIR"
+fi
+
+TMPPREFIX="${TMPDIR%/}/zsh"
+if [[ ! -d "$TMPPREFIX" ]]; then
+  mkdir -p "$TMPPREFIX"
 fi
 
 #

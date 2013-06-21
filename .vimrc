@@ -69,6 +69,7 @@ Bundle 'xolox/vim-notes'
 Bundle 'kbarrette/mediummode'
 Bundle 'kien/ctrlp.vim'
 Bundle 'Lokaltog/vim-easymotion'
+Bundle 'christoomey/vim-tmux-navigator'
 
 " Command-T
 " Bundle 'git://git.wincent.com/command-t'

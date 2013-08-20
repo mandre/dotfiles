@@ -287,7 +287,7 @@ function! ToggleCursorline()
   set cursorline!
 endfunction
 
-let g:cursorline_active = 0
+let g:cursorline_active = &cursorline
 " Highlight cursorline ONLY in the active window
 augroup cursor_line
   autocmd!

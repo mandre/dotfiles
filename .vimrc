@@ -71,6 +71,9 @@ Bundle 'kien/ctrlp.vim'
 Bundle 'Lokaltog/vim-easymotion'
 Bundle 'christoomey/vim-tmux-navigator'
 
+Bundle 'bling/vim-airline'
+let g:airline_theme='twilight'
+
 " Command-T
 " Bundle 'git://git.wincent.com/command-t'
 
@@ -146,13 +149,14 @@ set sidescrolloff=10
 set listchars+=precedes:❮,extends:❯
 set showbreak=↪
 set ruler
-set showmode
+set noshowmode
 set showcmd
 set novisualbell
 set backspace=indent,eol,start
-" set laststatus=2
+set laststatus=2
 set virtualedit+=block
 set display+=lastline
+set ttimeoutlen=20
 
 if has("cscope")
     " use both cscope and ctag for 'ctrl-]', ':ta', and 'vim -t'

@@ -416,7 +416,8 @@ let g:syntastic_disabled_filetypes = ['html']
 
 " SuperTab
 let g:SuperTabDefaultCompletionType="context"
-let g:SuperTabCrMapping=0
+let g:SuperTabContextDefaultCompletionType="<c-x><c-o>"
+" let g:SuperTabCrMapping=0
 
 " Bufexplorer
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.

@@ -70,6 +70,7 @@ Bundle 'kbarrette/mediummode'
 Bundle 'kien/ctrlp.vim'
 Bundle 'Lokaltog/vim-easymotion'
 Bundle 'christoomey/vim-tmux-navigator'
+Bundle 'airblade/vim-gitgutter'
 
 Bundle 'bling/vim-airline'
 let g:airline_theme='twilight'

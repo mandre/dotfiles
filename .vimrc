@@ -100,6 +100,10 @@ set nomodeline          " disable mode lines (security measure)
 set smarttab
 set shiftround
 
+set number
+set relativenumber
+set cursorline
+
 " Match and search
 set ignorecase		" Do case insensitive matching
 set smartcase

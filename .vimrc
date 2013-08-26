@@ -491,7 +491,7 @@ endif
 " Misc {{{
 " ---------------------------------------------------------------------------
 
-set viminfo='1000,f1,<500,:100,/100,s10,h,%,n~/.vim/viminfo
+set viminfo='1000,f1,<500,:100,/100,s10,h,n~/.vim/viminfo
 set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
 let g:yankring_history_dir = "~/.vim/.tmp/yankring"

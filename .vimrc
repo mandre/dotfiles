@@ -73,7 +73,6 @@ Bundle 'christoomey/vim-tmux-navigator'
 Bundle 'airblade/vim-gitgutter'
 
 Bundle 'bling/vim-airline'
-let g:airline_theme='twilight'
 
 " Command-T
 " Bundle 'git://git.wincent.com/command-t'
@@ -448,6 +447,10 @@ let g:mediummode_allowed_motions = 5
 " CtrlP
 let g:ctrlp_match_window_reversed = 0
 let g:ctrlp_max_history = 0
+
+" Airline
+let g:airline#extensions#tagbar#enabled=0
+let g:airline#extensions#hunks#enabled=0
 
 " }}}
 " GUI {{{

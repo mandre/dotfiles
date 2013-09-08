@@ -491,6 +491,15 @@ endif
 " Misc {{{
 " ---------------------------------------------------------------------------
 
+" Ensure the temp dirs exist
+if !isdirectory($HOME . "/.vim/.tmp")
+  call system("mkdir -p ~/.vim/.tmp/backup")
+  call system("mkdir -p ~/.vim/.tmp/undo")
+  call system("mkdir -p ~/.vim/.tmp/yankring")
+  call system("mkdir -p ~/.vim/.tmp/ctrlp")
+  call system("mkdir -p ~/.vim/.tmp/netrw")
+endif
+
 set viminfo='1000,f1,<500,:100,/100,s10,h,n~/.vim/viminfo
 set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp

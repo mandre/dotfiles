@@ -1,0 +1,11 @@
+[color]
+	ui = auto
+
+[color "diff"]
+	meta = yellow
+
+[diff]
+	renames = true
+
+[include]
+	path = .gitconfig.private

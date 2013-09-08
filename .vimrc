@@ -130,7 +130,7 @@ endif
 
 " Wildmenu completion {{{
 set wildmenu
-set wildmode=list:longest
+set wildmode=list:longest,list:full
 
 set wildignore+=.hg,.git,.svn                    " Version control
 set wildignore+=*.aux,*.out,*.toc                " LaTeX intermediate files

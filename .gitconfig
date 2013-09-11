@@ -5,10 +5,14 @@
 	meta = yellow
 
 [diff]
-	renames = true
+	renames = copies
+	mnemonicprefix = true
 
 [push]
 	default = simple
+
+[rerere]
+	enabled = true
 
 [include]
 	path = .gitconfig.private

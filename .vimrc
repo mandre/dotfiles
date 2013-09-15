@@ -53,6 +53,7 @@ Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
 Bundle 'tpope/vim-markdown'
 Bundle 'tpope/vim-sleuth'
+Bundle 'tpope/vim-eunuch'
 Bundle 'file-line'
 Bundle 'godlygeek/tabular'
 Bundle 'bufexplorer.zip'
@@ -341,9 +342,6 @@ inoremap jk <esc>
 
 " Expand current file path
 cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
-
-" Use :w!! to save file when current user doesn't have permission
-cnoremap w!! %!sudo tee > /dev/null %
 
 " Stop highlight search
 nnoremap <space> :noh<CR>

@@ -69,16 +69,11 @@ Bundle 'xolox/vim-notes'
 Bundle 'kbarrette/mediummode'
 Bundle 'kien/ctrlp.vim'
 Bundle 'Lokaltog/vim-easymotion'
+Bundle 'rhysd/clever-f.vim'
 Bundle 'christoomey/vim-tmux-navigator'
 Bundle 'airblade/vim-gitgutter'
 
 Bundle 'bling/vim-airline'
-
-" Command-T
-" Bundle 'git://git.wincent.com/command-t'
-
-" (HT|X)ml tool
-" Bundle 'ragtag.vim'
 
 " }}}
 " General {{{
@@ -444,6 +439,9 @@ let g:ackhighlight=1
 
 " EasyMotion
 let g:EasyMotion_leader_key = '<Leader>'
+
+" Clever-f
+let g:clever_f_show_prompt=1
 
 " Medium mode
 let g:mediummode_allowed_motions = 5

@@ -367,6 +367,9 @@ nnoremap <leader>rc :RConvertPostConditional<CR>
 " Easy completion of method name in insert mode
 inoremap <c-x><c-]> <c-]>
 
+" Use . for visual selection
+vnoremap . :norm.<CR>
+
 " }}}
 " Function Keys {{{
 " ---------------------------------------------------------------------------

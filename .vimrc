@@ -256,7 +256,7 @@ else
   set autoindent		" always set autoindenting on
 endif " has("autocmd")
 
-set formatoptions+=n1r
+set formatoptions+=n1rj
 
 " }}}
 " Status Line {{{

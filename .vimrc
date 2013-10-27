@@ -42,7 +42,7 @@ Bundle 'nelstrom/vim-textobj-rubyblock'
 Bundle 'mandre/vim-ruby-block-conv'
 
 " JS
-Bundle 'nono/vim-handlebars'
+Bundle 'mustache/vim-mode'
 
 " Utility
 Bundle 'YankRing.vim'
@@ -396,7 +396,7 @@ inoremap <silent> <F10> <ESC>:YRShow<cr>
 noremap <F12> :make<CR>
 
 " }}}
-" Plugins {{{
+" Plugins Config {{{
 " ---------------------------------------------------------------------------
 
 let g:vundle_default_git_proto = 'git'
@@ -451,6 +451,9 @@ let g:ctrlp_max_history = 0
 " Airline
 let g:airline#extensions#tagbar#enabled=0
 let g:airline#extensions#hunks#enabled=0
+
+" Mustache
+let g:mustache_abbreviations = 1
 
 " }}}
 " GUI {{{

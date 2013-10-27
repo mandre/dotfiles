@@ -425,8 +425,11 @@ let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
 " Ruby refactoring
 let g:ruby_refactoring_map_keys=0
 
+" Disable color
+let g:indexed_search_colors=0
 " Show shorter messages for indexed search
 let g:indexed_search_shortmess=1
+let g:indexed_search_keep_cursor_on_initial_result=1
 
 " Stop yankring from complaining
 let g:yankring_manual_clipboard_check=0

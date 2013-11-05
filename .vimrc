@@ -56,7 +56,7 @@ Bundle 'tpope/vim-sleuth'
 Bundle 'tpope/vim-eunuch'
 Bundle 'file-line'
 Bundle 'godlygeek/tabular'
-Bundle 'bufexplorer.zip'
+Bundle 'jlanzarotta/bufexplorer'
 Bundle 'netrw.vim'
 Bundle 'ervandew/supertab'
 Bundle 'ZoomWin'
@@ -421,6 +421,8 @@ let g:SuperTabContextDefaultCompletionType="<c-x><c-o>"
 
 " Bufexplorer
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
+let g:bufExplorerFindActive=0
+let g:bufExplorerDisableDefaultKeyMapping=1
 
 " Ruby refactoring
 let g:ruby_refactoring_map_keys=0

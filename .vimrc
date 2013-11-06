@@ -18,7 +18,6 @@ Bundle 'gmarik/vundle'
 " Programming
 Bundle 'matchit.zip'
 Bundle 'majutsushi/tagbar'
-Bundle 'AutoTag'
 Bundle 'tpope/vim-commentary'
 Bundle 'scrooloose/syntastic'
 

@@ -71,7 +71,7 @@ Bundle 'kien/ctrlp.vim'
 Bundle 'Lokaltog/vim-easymotion'
 Bundle 'rhysd/clever-f.vim'
 Bundle 'christoomey/vim-tmux-navigator'
-Bundle 'airblade/vim-gitgutter'
+" Bundle 'airblade/vim-gitgutter'
 
 Bundle 'bling/vim-airline'
 
@@ -449,6 +449,7 @@ let g:EasyMotion_leader_key = '<Leader>'
 let g:clever_f_show_prompt=1
 
 " Medium mode
+let g:mediummode_enabled = 0
 let g:mediummode_allowed_motions = 5
 
 " CtrlP

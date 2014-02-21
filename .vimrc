@@ -344,7 +344,11 @@ inoremap jk <esc>
 cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
 
 " Stop highlight search
-nnoremap <space> :noh<CR>
+nnoremap <CR> :noh<CR>
+
+nmap <SPACE> <Plug>(easymotion-s2)
+map <Leader>j <Plug>(easymotion-j)
+map <Leader>k <Plug>(easymotion-k)
 
 " Don't use Ex mode, use Q for formatting
 noremap Q gq
@@ -444,7 +448,8 @@ let g:ackprg='ag --nogroup --nocolor --column'
 let g:ackhighlight=1
 
 " EasyMotion
-let g:EasyMotion_leader_key = '<Leader>'
+let g:EasyMotion_smartcase = 1
+let g:EasyMotion_use_smartsign_jp = 1
 
 " Clever-f
 let g:clever_f_show_prompt=1

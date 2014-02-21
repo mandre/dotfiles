@@ -1,0 +1,66 @@
+#!/bin/zsh
+
+SESSION="turbine-local"
+SRC_DIR="$HOME/dev/turbine"
+TMP_DIR="$SRC_DIR/tmp"
+
+# Provisioning VM UUID, get it from:
+#   $ VBoxManage list vms
+PROV_UUID="9953468b-83e1-4058-aeaf-aa6d2bff0569"
+
+# if the session is already running, just attach to it.
+tmux has-session -t $SESSION 2>/dev/null
+if [ $? -eq 0 ]; then
+	echo "Session $SESSION already exists. Attaching."
+	sleep 1
+	tmux attach -t $SESSION
+	exit 0;
+fi
+
+mkdir -p "$TMP_DIR/var/run"
+
+# Start provisioning VM
+# if [[ ! "`VBoxManage showvminfo $PROV_UUID | grep State`" =~ "running" ]]; then
+# 	`VBoxManage startvm $PROV_UUID`	
+# fi
+
+# Install needed bundles first
+cd "$SRC_DIR/opt/turbine"
+bundle install
+
+tmux new-session -d -s $SESSION
+tmux set-option -g status-left-length 15
+
+# Redis
+tmux new-window -t $SESSION:1 -k -n redis
+tmux setw       -t $SESSION:1 monitor-activity off
+tmux send-keys  -t $SESSION:1 "cd $TMP_DIR" C-m
+tmux send-keys  -t $SESSION:1 'redis-server' C-m
+
+# turbine services
+tmux new-window -t $SESSION:2 -n turbinit
+tmux send-keys  -t $SESSION:2 "cd $SRC_DIR/usr/local" C-m
+# Start everything but provisioner
+tmux send-keys  -t $SESSION:2 "bin/turbinit -c $SRC_DIR/etc/turbine.init -p $TMP_DIR/var/run -l - nats red security ipmi ip switch webui rrd rrd_chart monitor vmware run" C-m
+# tmux send-keys  -t $SESSION:2 "bin/turbinit -c $SRC_DIR/etc/turbine.init -p $TMP_DIR/var/run -l - nats red vmware run" C-m
+
+# Provisioner
+tmux new-window -t $SESSION:3 -n pry
+tmux send-keys  -t $SESSION:3 "sleep 3" C-m
+tmux send-keys  -t $SESSION:3 "bundle exec pry-remote-em" C-m
+# Give the machine enough time to boot
+# tmux send-keys  -t $SESSION:3 "sleep 15" C-m
+# # NOTE Setup authorized_keys on provisioner host before using this script
+# tmux send-keys  -t $SESSION:3 "ssh provisioner" C-m
+# # We should definitly fix this
+# # tmux send-keys  -t $SESSION:3 "sudo /etc/init.d/chef-server restart" C-m
+
+# Redit
+tmux new-window -t $SESSION:4 -n redit
+tmux send-keys  -t $SESSION:4 "sleep 3" C-m
+tmux send-keys  -t $SESSION:4 "bundle exec turbine redit -r turbine/provision/job" C-m
+
+tmux new-window -t $SESSION:5
+
+tmux select-window -t $SESSION:1
+tmux attach-session -t $SESSION

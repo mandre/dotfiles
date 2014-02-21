@@ -1,0 +1,70 @@
+#!/bin/bash
+
+SRC_PATH="$HOME/dev/pod"
+GEMFILE_PATH="$SRC_PATH/work/pod-local"
+SERVICE_CFG="$HOME/.pod/martin_services.yml"
+# SERVICE_CFG="$HOME/.pod/martin_services_lb.yml"
+
+# If the session is already running, just attach to it.
+SESSION="pod-local"
+tmux has-session -t $SESSION 2>/dev/null
+if [ $? -eq 0 ]; then
+	echo "Session $SESSION already exists. Attaching."
+	sleep 1
+	tmux attach -t $SESSION
+	exit 0;
+fi
+
+function new_service_win {
+	IDX=$((IDX+1))
+	tmux new-window -t $SESSION:$IDX -n $1
+	tmux send-keys  -t $SESSION:$IDX "cd apps/pod-$1" C-m
+	tmux send-keys  -t $SESSION:$IDX "bundle install --gemfile $GEMFILE_PATH/Gemfile.$1" C-m
+	tmux send-keys  -t $SESSION:$IDX "export BUNDLE_GEMFILE=$GEMFILE_PATH/Gemfile.$1" C-m
+	if [ $1 = "actions" ]; then
+		tmux send-keys  -t $SESSION:$IDX "be ./pod-actions_service -f $SERVICE_CFG" C-m
+		IDX=$((IDX+1))
+		tmux new-window -t $SESSION:$IDX -n "actions-fe"
+		tmux send-keys  -t $SESSION:$IDX "cd apps/pod-$1" C-m
+		tmux send-keys  -t $SESSION:$IDX "export BUNDLE_GEMFILE=$GEMFILE_PATH/Gemfile.$1" C-m
+		tmux send-keys  -t $SESSION:$IDX "be ./pod-actions_fe_service -f $SERVICE_CFG" C-m
+	else
+		tmux send-keys  -t $SESSION:$IDX "be ./$1_service -f $SERVICE_CFG" C-m
+	fi
+}
+
+cd $SRC_PATH
+
+tmux new-session -d -s $SESSION
+tmux set-option -g status-left-length 15
+
+# Redis
+tmux new-window -t $SESSION:1 -k -n redis
+tmux setw       -t $SESSION:1 monitor-activity off
+tmux send-keys  -t $SESSION:1 'cd work' C-m
+tmux send-keys  -t $SESSION:1 'redis-server' C-m
+
+# Redmine
+tmux new-window -t $SESSION:2 -n redmine
+tmux setw       -t $SESSION:2 monitor-activity off
+tmux send-keys  -t $SESSION:2 'cd ~/dev/test/redmine-1.4.0' C-m
+tmux send-keys  -t $SESSION:2 'ruby script/server webrick -e production' C-m
+
+IDX=2
+
+# Put here all the services you want to start
+# new_service_win cidr
+new_service_win switch
+new_service_win cfg
+# new_service_win storage
+# new_service_win clonezilla
+# new_service_win podzilla
+# # new_service_win pantene-simple
+# # new_service_win vsp
+# new_service_win ipmi
+# new_service_win loadbalancer
+# new_service_win firewall
+# new_service_win actions
+
+tmux select-window -t $SESSION:1
+tmux attach-session -t $SESSION

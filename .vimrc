@@ -392,7 +392,7 @@ noremap <F5> :e!<CR>
 " <F7> Toggle GUndo tree
 noremap <F7> :GundoToggle<CR>
 " <F8> Comment
-nmap <F8> <Plug>CommentaryLine j
+nmap <F8> <Plug>CommentaryLine<ESC>j
 xmap <F8> <Plug>Commentary
 " <F9> Remove all trailing spaces
 noremap <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>

@@ -346,7 +346,7 @@ cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
 " Stop highlight search
 nnoremap <CR> :noh<CR>
 
-nmap <SPACE> <Plug>(easymotion-s2)
+map <SPACE> <Plug>(easymotion-s2)
 map <Leader>j <Plug>(easymotion-j)
 map <Leader>k <Plug>(easymotion-k)
 

@@ -1,0 +1,47 @@
+[main]
+Edit = f4; i
+Delete = f8; d
+Quit = f10; q
+CdQuick = alt-c; c
+HotList = ctrl-backslash; ctrl-p
+
+[panel]
+Search = ctrl-s; alt-s; f
+Down = down; j
+Up = up; k
+Left = left; h
+Right = right; l
+PageUp = pgup; ctrl-u
+PageDown = pgdn; ctrl-d
+
+Top = alt-lt; home; a1; g
+Bottom = alt-gt; end; c1; G
+
+Mark = insert; v
+History = alt-shift-h; u
+
+[dialog]
+Up = left; up; h; k
+Down = right; down; l; j
+Cancel = f10; esc; q
+
+[listbox]
+Down = down; j
+Up = up; k
+Left = left; h
+Right = right; l
+PageUp = pgup; ctrl-u
+PageDown = pgdn; ctrl-d
+
+[tree]
+Up = up; k
+Down = down; j
+PageUp = pgup; ctrl-u
+PageDown = pgdn; ctrl-d
+
+[help]
+Up = up; k
+Down = down; j
+
+[input]
+Complete = alt-tab

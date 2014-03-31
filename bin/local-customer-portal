@@ -1,0 +1,60 @@
+#!/bin/zsh
+
+SESSION="customer-portal-local"
+SRC_DIR="$HOME/dev/customer-portal/"
+
+# if the session is already running, just attach to it.
+tmux has-session -t $SESSION 2>/dev/null
+if [ $? -eq 0 ]; then
+	echo "Session $SESSION already exists. Attaching."
+	sleep 1
+	tmux attach -t $SESSION
+	exit 0;
+fi
+
+cd $SRC_DIR
+
+# Make sure dev VM is up
+vagrant up portal_box
+
+tmux new-session -d -s $SESSION
+tmux set-option -g status-left-length 15
+
+# top left
+tmux new-window -t $SESSION:1 -k -n vagrant
+tmux setw       -t $SESSION:1 monitor-activity off
+tmux send-keys  -t $SESSION:1.1 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.1 'cd /vagrant/portal/opt/kvh-portal/sarlacc' C-m
+tmux send-keys  -t $SESSION:1.1 'bundle install --path vendor/bundle' C-m
+tmux send-keys  -t $SESSION:1.1 'bundle exec rake db:migrate' C-m
+tmux send-keys  -t $SESSION:1.1 'bundle exec rails s -p 4000' C-m
+
+# top right
+tmux split-window -h -t $SESSION:1.1
+tmux send-keys  -t $SESSION:1.2 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.2 'cd /vagrant/rackdb/opt/rackdb' C-m
+tmux send-keys  -t $SESSION:1.2 'bundle install --path vendor/bundle' C-m
+tmux send-keys  -t $SESSION:1.2 'bundle exec rake db:migrate' C-m
+tmux send-keys  -t $SESSION:1.2 'bundle exec rails s -p 3000' C-m
+
+# bottom left
+tmux split-window -v -t $SESSION:1.1
+tmux send-keys  -t $SESSION:1.3 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.3 'cd /vagrant/corp-sso/opt/auth-provider' C-m
+tmux send-keys  -t $SESSION:1.3 'bundle install --path vendor/bundle' C-m
+tmux send-keys  -t $SESSION:1.3 'RAILS_ENV=portalbox bundle exec rake db:migrate' C-m
+tmux send-keys  -t $SESSION:1.3 'RAILS_ENV=portalbox bundle exec rails s -p 3001' C-m
+
+# bottom right
+tmux split-window -v -t $SESSION:1.2
+tmux send-keys  -t $SESSION:1.4 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.4 'cd /vagrant/pricedb/opt/pricedb' C-m
+tmux send-keys  -t $SESSION:1.4 'bundle install --path vendor/bundle' C-m
+tmux send-keys  -t $SESSION:1.4 'bundle exec rake db:create db:setup' C-m
+tmux send-keys  -t $SESSION:1.4 'RAILS_ENV=portalbox bundle exec rails s -p 5000' C-m
+
+tmux new-window -t $SESSION:2 -n vim
+tmux send-keys  -t $SESSION:2 'vim' C-m
+
+tmux select-window -t $SESSION:1
+tmux attach-session -t $SESSION

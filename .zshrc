@@ -17,6 +17,10 @@ pod() { cd ~/dev/pod/modules/pod/$1; }
 _pod() { _files -W ~/dev/pod/modules/pod -/; }
 compdef _pod pod
 
+portal() { cd ~/dev/customer-portal/$1; }
+_portal() { _files -W ~/dev/customer-portal -/; }
+compdef _portal portal
+
 # Speed up git completion for huge repositories
 __git_files () {
 	_wanted files expl 'local files' _files

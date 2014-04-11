@@ -352,6 +352,9 @@ map <SPACE> <Plug>(easymotion-s2)
 map <Leader>j <Plug>(easymotion-j)
 map <Leader>k <Plug>(easymotion-k)
 
+vmap v <Plug>(expand_region_expand)
+vmap <C-v> <Plug>(expand_region_shrink)
+
 " Don't use Ex mode, use Q for formatting
 noremap Q gq
 

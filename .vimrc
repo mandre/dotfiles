@@ -539,6 +539,17 @@ set completeopt=menuone,preview
 " Highlight VCS conflict markers
 " match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
 
+" vp doesn't replace paste buffer
+function! RestoreRegister()
+  let @" = s:restore_reg
+  return ''
+endfunction
+function! s:Repl()
+  let s:restore_reg = @"
+  return "p@=RestoreRegister()\<cr>"
+endfunction
+vmap <silent> <expr> p <sid>Repl()
+
 " Source a global configuration file if available
 if filereadable("/etc/vim/vimrc.local")
   source /etc/vim/vimrc.local

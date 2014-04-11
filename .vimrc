@@ -287,6 +287,7 @@ nnoremap <leader>sr :set relativenumber!<cr>
 nnoremap <leader>sw :set wrap!<cr>
 nnoremap <silent> <leader>sl :call ToggleCursorline()<cr>
 nnoremap <leader>sh :MediumModeToggle<cr>
+nnoremap <leader>sp :set paste!<CR>
 
 function! ToggleCursorline()
   let g:cursorline_active = !&cursorline

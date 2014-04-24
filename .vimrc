@@ -64,7 +64,9 @@ Plugin 'mileszs/ack.vim'
 Plugin 'sessionman.vim'
 Plugin 'sjl/gundo.vim'
 Plugin 'sjl/splice.vim'
-" Plugin 'sjl/vitality.vim'
+if has('macunix') && !has("gui_running")
+Plugin 'sjl/vitality.vim'
+endif
 Plugin 'henrik/vim-indexed-search'
 Plugin 'xolox/vim-misc'
 Plugin 'xolox/vim-notes'

@@ -3,7 +3,6 @@
 
 set nocompatible               " be iMproved
 
-filetype on
 filetype off
 set runtimepath+=~/.vim/bundle/vundle/
 

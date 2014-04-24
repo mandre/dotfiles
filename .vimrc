@@ -4,15 +4,15 @@
 set nocompatible               " be iMproved
 
 filetype off
-set runtimepath+=~/.vim/bundle/vundle/
-
-call vundle#rc()
+set runtimepath+=~/.vim/bundle/Vundle.vim/
 
 " }}}
 " Plugins {{{
 " ---------------------------------------------------------------------------
 
-Plugin 'gmarik/vundle'
+call vundle#begin()
+
+Plugin 'gmarik/Vundle.vim'
 
 " Programming
 Plugin 'matchit.zip'
@@ -76,6 +76,8 @@ Plugin 'christoomey/vim-tmux-navigator'
 " Plugin 'airblade/vim-gitgutter'
 Plugin 'terryma/vim-expand-region'
 Plugin 'bling/vim-airline'
+
+call vundle#end()
 
 " }}}
 " General {{{

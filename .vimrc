@@ -245,9 +245,6 @@ if has("autocmd")
       \   exe "normal g`\"" |
       \ endif
 
-    "Change to current buffer directory
-    "autocmd BufEnter * execute ":lcd " . expand("%:p:h")
-
     " Resize splits when the window is resized
     autocmd VimResized * exe "normal! \<c-w>="
 

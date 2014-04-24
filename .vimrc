@@ -388,7 +388,7 @@ vnoremap . :norm.<CR>
 inoremap <F1> <ESC>
 noremap <F1> <ESC>
 " <F2> File explorer
-noremap <F2> :Ex<CR>
+noremap <F2> :Explore<CR>
 " <F3> Buffer explorer
 noremap <F3> :BufExplorer<CR>
 " <F4> Tagbar

@@ -254,6 +254,17 @@ if has("autocmd")
     autocmd bufwritepost .vimrc source %
   augroup END
   " }}}
+
+  " Netrw mappings {{{
+  augroup netrw_mappings
+    autocmd!
+    autocmd filetype netrw call Netrw_mappings()
+  augroup END
+  function! Netrw_mappings()
+    map <buffer> h -
+    map <buffer> l <CR>
+  endfunction
+  " }}}
 else
   set autoindent		" always set autoindenting on
 endif " has("autocmd")

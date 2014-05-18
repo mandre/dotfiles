@@ -28,7 +28,7 @@ set hlfind
 nmap -builtin ,<space> <esc>:noh<CR>
 
 " Smarter 'd' key
-nmap -builtin d :tabclose<CR>
+nmap d <C-w>
 
 colorscheme vimium
 

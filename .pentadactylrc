@@ -24,8 +24,12 @@ set urlseparator=', '
 
 nmap -builtin <bs> <nop>
 
+set defsearch=duckduckgo
+
 set hlfind
 nmap -builtin ,<space> <esc>:noh<CR>
+
+silent bma -tags searchengine -title 'Google Translate' http://translate.google.com/#auto|fr|%s -k 'Google Translate'
 
 " Smarter 'd' key
 nmap -builtin d :tabclose<CR>
@@ -36,8 +40,10 @@ colorscheme vimium
 set passkeys+=github.com:<Return>
 autocmd LocationChange 'elas\.tc\/console/' :normal! <C-z>
 
-" Uncomment to use MacVim on OSX
-"set editor='/Applications/MacVim.app/Contents/MacOS/Vim -g -f +<line> +"sil! call cursor(0, <column>)" <file>'
+if config.OS.isMacOSX
+set editor='/Applications/MacVim.app/Contents/MacOS/Vim -g -f +<line> +"sil! call cursor(0, <column>)" <file>'
+end
+
 
 " URL based filetype detection in external editor
 " http://ingo-karkat.de/blog/2012/05/22/Pentadactyl%20set%20filetype%20in%20external%20Vim%20editor%20based%20on%20URL.html
@@ -67,5 +73,16 @@ function editExternallyFiletype() {
         return "mediawiki";
 }
 EOF
+
+nmap r :smartReload<CR>
+
+" smart reload
+command! smartReload
+  \:javascript <<EOF
+  \if (buffer.URL.spec.indexOf('#') >= 0)
+  \ dactyl.execute("reload");
+  \else
+  \ dactyl.open(buffer.URL.spec);
+  \EOF
 
 " vim: set ft=pentadactyl:

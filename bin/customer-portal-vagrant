@@ -1,0 +1,62 @@
+#!/bin/zsh
+
+SESSION="customer-portal-local"
+SRC_DIR="$HOME/dev/customer-portal/"
+
+cd $SRC_DIR
+
+PORTAL_DEV_MEM=2048
+
+# Make sure dev VM is up
+vagrant up portal_box
+
+tmux setw       -t $SESSION:1 monitor-activity off
+
+# top left
+tmux send-keys  -t $SESSION:1.1 'printf "\033]2;portal\033\\"' C-m
+tmux send-keys  -t $SESSION:1.1 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.1 'sudo ln -s /vagrant/vendor/bundle/vm /portal_bundles' C-m
+tmux send-keys  -t $SESSION:1.1 'cd /vagrant/portal/opt/kvh-portal/sarlacc' C-m
+tmux send-keys  -t $SESSION:1.1 'bundle install --path /portal_bundles' C-m
+tmux send-keys  -t $SESSION:1.1 'bundle exec rake db:migrate' C-m
+tmux send-keys  -t $SESSION:1.1 'bundle exec rails s -p 4000' C-m
+
+# top right
+tmux split-window -h -t $SESSION:1.1
+tmux send-keys  -t $SESSION:1.2 'printf "\033]2;rackdb\033\\"' C-m
+tmux send-keys  -t $SESSION:1.2 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.2 'cd /vagrant/rackdb/opt/rackdb' C-m
+tmux send-keys  -t $SESSION:1.2 'bundle install --path /portal_bundles' C-m
+tmux send-keys  -t $SESSION:1.2 'bundle exec rake db:migrate' C-m
+tmux send-keys  -t $SESSION:1.1 'sudo apt-get install -y libcurl4-openssl-dev libpcre3-dev' C-m
+# XXX Make it non blocking
+tmux send-keys  -t $SESSION:1.2 'ssh -fN -L 2500:10.32.64.42:25 martin@192.168.52.107' C-m
+tmux send-keys  -t $SESSION:1.2 'bundle exec passenger start -p 3000' C-m
+
+# bottom left
+tmux split-window -v -t $SESSION:1.1
+tmux send-keys  -t $SESSION:1.3 'printf "\033]2;corp-sso\033\\"' C-m
+tmux send-keys  -t $SESSION:1.3 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.3 'cd /vagrant/corp-sso/opt/auth-provider' C-m
+tmux send-keys  -t $SESSION:1.3 'bundle install --path /portal_bundles' C-m
+tmux send-keys  -t $SESSION:1.3 'RAILS_ENV=portalbox bundle exec rake db:migrate' C-m
+tmux send-keys  -t $SESSION:1.3 'RAILS_ENV=portalbox bundle exec rails s -p 3001' C-m
+
+# bottom right
+tmux split-window -v -t $SESSION:1.2
+tmux send-keys  -t $SESSION:1.4 'printf "\033]2;pricedb\033\\"' C-m
+tmux send-keys  -t $SESSION:1.4 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.4 'cd /vagrant/pricedb/opt/pricedb' C-m
+tmux send-keys  -t $SESSION:1.4 'bundle install --path /portal_bundles' C-m
+tmux send-keys  -t $SESSION:1.4 'bundle exec rake db:setup' C-m
+tmux send-keys  -t $SESSION:1.4 'bundle exec rake db:import:network_price' C-m
+tmux send-keys  -t $SESSION:1.4 'bundle exec rake seeds:dummy_prices:generate' C-m
+tmux send-keys  -t $SESSION:1.4 'bundle exec rails s -p 5000' C-m
+
+# bottom right right
+tmux split-window -v -t $SESSION:1.4
+tmux send-keys  -t $SESSION:1.5 'printf "\033]2;facturas\033\\"' C-m
+tmux send-keys  -t $SESSION:1.5 'vagrant ssh portal_box' C-m
+tmux send-keys  -t $SESSION:1.5 'cd /vagrant/facturas/opt/facturas' C-m
+tmux send-keys  -t $SESSION:1.5 'bundle install --path /portal_bundles' C-m
+tmux send-keys  -t $SESSION:1.5 'bundle exec thin --ssl --ssl-key-file cert/server.key --ssl-cert-file cert/server.crt -R config.ru -p 9292 -e development start' C-m

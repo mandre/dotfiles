@@ -83,7 +83,6 @@ fi
 
 if [[ "$OSTYPE" == darwin* ]]; then
   # Alias
-  alias vim='/Applications/MacVim.app/Contents/MacOS/Vim'
   alias gvim='/Applications/MacVim.app/Contents/MacOS/Vim -g'
   alias gvimdiff='/Applications/MacVim.app/Contents/MacOS/Vim -g -d'
   alias tmux='tmux -2 -f ~/.tmux-osx.conf'
@@ -94,5 +93,5 @@ if [[ "$OSTYPE" == darwin* ]]; then
   )
   export LD_LIBRARY_PATH=/opt/local/lib
 
-  # eval "$(rbenv init -)"
+  eval "$(rbenv init -)"
 fi

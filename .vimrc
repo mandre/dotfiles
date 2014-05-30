@@ -21,30 +21,24 @@ Plugin 'tpope/vim-commentary'
 Plugin 'scrooloose/syntastic'
 
 " Snippets
-" Plugin 'MarcWeber/ultisnips'
-Plugin 'MarcWeber/vim-addon-mw-utils'
-Plugin 'tomtom/tlib_vim'
-Plugin 'garbas/vim-snipmate'
+Plugin 'SirVer/ultisnips'
 Plugin 'honza/vim-snippets'
 
 " Git
 Plugin 'tpope/vim-fugitive'
+" Plugin 'airblade/vim-gitgutter'
 
 " Ruby
 Plugin 'vim-ruby/vim-ruby'
 Plugin 'tpope/vim-rails'
 " Plugin 'tpope/vim-bundler'
-Plugin 'ecomba/vim-ruby-refactoring'
-Plugin 'kana/vim-textobj-user'
-Plugin 'argtextobj.vim'
-Plugin 'nelstrom/vim-textobj-rubyblock'
-Plugin 'mandre/vim-ruby-block-conv'
 
 " JS
 Plugin 'mustache/vim-mode'
 
 " Utility
 " Plugin 'YankRing.vim'
+Plugin 'wellle/targets.vim'
 Plugin 'LargeFile'
 Plugin 'tpope/vim-endwise'
 Plugin 'tpope/vim-repeat'
@@ -75,8 +69,8 @@ Plugin 'kien/ctrlp.vim'
 Plugin 'Lokaltog/vim-easymotion'
 Plugin 'rhysd/clever-f.vim'
 Plugin 'christoomey/vim-tmux-navigator'
-" Plugin 'airblade/vim-gitgutter'
 Plugin 'terryma/vim-expand-region'
+Plugin 'AndrewRadev/splitjoin.vim'
 Plugin 'bling/vim-airline'
 
 call vundle#end()
@@ -379,12 +373,6 @@ nmap Y y$
 " Ack the word under the cursor
 nnoremap <leader>a :Ack! <cword><CR>
 
-" Ruby refactoring
-" Toggle between ruby block styles
-nnoremap <leader>rb :B<CR>
-" Toggle between post/pre conditional statements
-nnoremap <leader>rc :RConvertPostConditional<CR>
-
 " Easy completion of method name in insert mode
 inoremap <c-x><c-]> <c-]>
 
@@ -440,13 +428,19 @@ let g:SuperTabDefaultCompletionType="context"
 " let g:SuperTabContextDefaultCompletionType="<c-x><c-o>"
 " let g:SuperTabCrMapping=0
 
+" UltiSnips
+let g:UltiSnipsExpandTrigger="<tab>"
+let g:UltiSnipsJumpForwardTrigger="<tab>"
+let g:UltiSnipsJumpBackwardTrigger="<s-tab>"
+let g:UltiSnipsEditSplit="vertical"
+
+" SplitJoin
+let g:splitjoin_align=1
+
 " Bufexplorer
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
 let g:bufExplorerFindActive=0
 let g:bufExplorerDisableDefaultKeyMapping=1
-
-" Ruby refactoring
-let g:ruby_refactoring_map_keys=0
 
 " Disable color
 let g:indexed_search_colors=0
@@ -462,6 +456,7 @@ let g:tagbar_left=1
 
 " Ack
 let g:ackprg='ag --nogroup --nocolor --column'
+let g:ack_wildignore = 0
 let g:ackhighlight=1
 
 " EasyMotion
@@ -470,6 +465,7 @@ let g:EasyMotion_use_smartsign_jp = 1
 
 " Clever-f
 let g:clever_f_show_prompt=1
+let g:clever_f_mark_cursor=1
 
 " Medium mode
 let g:mediummode_enabled = 0

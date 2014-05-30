@@ -515,7 +515,7 @@ if has("gui_running")
   endif
 else
   set clipboard=unnamed
-  set ttymouse=xterm2
+  set ttymouse=sgr
   set mouse=a
   set t_Co=256
 endif

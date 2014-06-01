@@ -32,7 +32,7 @@ nmap -builtin ,<space> <esc>:noh<CR>
 silent bma -tags searchengine -title 'Google Translate' http://translate.google.com/#auto|fr|%s -k 'Google Translate'
 
 " Smarter 'd' key
-nmap -builtin d :tabclose<CR>
+nmap d <C-w>
 
 colorscheme vimium
 

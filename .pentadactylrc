@@ -32,7 +32,11 @@ nmap -builtin ,<space> <esc>:noh<CR>
 silent bma -tags searchengine -title 'Google Translate' http://translate.google.com/#auto|fr|%s -k 'Google Translate'
 
 " Smarter 'd' key
+if config.OS.isMacOSX
+nmap d <M-w>
+else
 nmap d <C-w>
+end
 
 colorscheme vimium
 

@@ -9,7 +9,7 @@
 	mnemonicprefix = true
 
 [push]
-	default = simple
+	default = current
 
 [rerere]
 	enabled = true

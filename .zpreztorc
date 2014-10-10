@@ -36,6 +36,7 @@ zstyle ':prezto:load' pmodule \
   'archive' \
   'git' \
   'ruby' \
+  'python' \
   'macports'
 
 #

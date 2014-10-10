@@ -33,6 +33,9 @@ Plugin 'vim-ruby/vim-ruby'
 Plugin 'tpope/vim-rails'
 " Plugin 'tpope/vim-bundler'
 
+" Python
+Plugin 'klen/python-mode'
+
 " JS
 Plugin 'mustache/vim-mode'
 
@@ -264,6 +267,7 @@ else
 endif " has("autocmd")
 
 set formatoptions+=n1rj
+set expandtab
 
 " }}}
 " Status Line {{{
@@ -416,6 +420,10 @@ let g:vundle_default_git_proto = 'git'
 " Ruby
 " let g:rubycomplete_buffer_loading=1
 let ruby_space_errors=1
+
+" Python
+let g:pymode_options_colorcolumn=0
+let g:pymode_folding=0
 
 let g:syntastic_auto_loc_list=2
 let g:syntastic_enable_signs=1

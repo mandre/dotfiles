@@ -39,7 +39,7 @@ hi Title                     guifg=#FFFFFF ctermfg=231
 
 hi StatusLine                guifg=#303030 guibg=#BABDB6 gui=NONE cterm=NONE ctermfg=236 ctermbg=250
 hi StatusLineNC              guifg=#BABDB6 guibg=#303030 gui=NONE cterm=NONE ctermfg=250 ctermbg=236
-hi VertSplit    guifg=#BABDB6   guibg=#060A0F   ctermfg=250    ctermbg=NONE      gui=NONE      cterm=NONE
+hi VertSplit    guifg=#BABDB6   guibg=#060A0F   ctermfg=237    ctermbg=NONE      gui=NONE      cterm=NONE
 
 " Popup Menu
 hi Pmenu                     guifg=#605958 guibg=#303030 gui=NONE cterm=NONE ctermfg=240 ctermbg=236

@@ -31,10 +31,12 @@ hi -a CompTitleSep       -a background: #C38A22;
 " Hints {{{
 hi -a Hint               text-transform: uppercase; font-family : "Helvetica Neue", "Helvetica", "Arial", "Sans"; font-weight: bold; font-size: 11px; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); color: #302505; padding: 1px 3px 0px 3px; background: -moz-linear-gradient(top, #FFF785, #FFC542); border: 1px #C38A22 solid; -moz-border-radius: 3px; -moz-box-shadow: 0 3px 7px 0px rgba(0,0,0,0.3);
 hi -a HintElem           background-color: inherit !important
-hi -a HintActive	      background-color: inherit !important
+hi -a HintActive         background-color: inherit !important
 hi -a HintImage          opacity: .5 !important;
 " }}}
 " Messages {{{
 hi -a ErrorMsg           background: #a00 !important; color: #fff !important; font: 11px "Menlo" !important; padding: 2px 4px !important;
 hi -a WarningMsg         background: #a00 !important; color: #fff !important; font: 11px "Menlo" !important; padding: 2px 4px !important;
 " }}}
+
+hi -a Find               background: #d3a625

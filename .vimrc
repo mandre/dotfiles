@@ -16,11 +16,11 @@ call plug#begin('~/.vim/plugged')
 Plug 'matchit.zip'
 Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
 Plug 'tpope/vim-commentary',    { 'on': ['<Plug>Commentary', '<Plug>CommentaryLine'] }
-Plug 'scrooloose/syntastic'
+Plug 'scrooloose/syntastic',    { 'on': [] }
 
 " Snippets
-Plug 'SirVer/ultisnips'
-Plug 'honza/vim-snippets'
+Plug 'SirVer/ultisnips',        { 'on': [] }
+Plug 'honza/vim-snippets',      { 'on': [] }
 
 " Git
 Plug 'tpope/vim-fugitive'
@@ -41,19 +41,19 @@ Plug 'mustache/vim-mode',       { 'for': 'javascript' }
 " Plug 'wellle/targets.vim'
 Plug 'LargeFile'
 Plug 'file-line'
-Plug 'tpope/vim-endwise'
-Plug 'tpope/vim-repeat'
+Plug 'ervandew/supertab',       { 'on': [] }
+Plug 'tpope/vim-endwise',       { 'on': [] }
+Plug 'tpope/vim-repeat',        { 'on': [] }
+Plug 'tpope/vim-sleuth',        { 'on': [] }
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-markdown',      { 'for': 'markdown' }
-Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
 Plug 'jlanzarotta/bufexplorer', { 'on': 'BufExplorer' }
 Plug 'eiginn/netrw',            { 'on': 'Explore' }
 Plug 'tpope/vim-vinegar',       { 'on': 'Explore' }
-Plug 'ervandew/supertab'
 Plug 'ZoomWin'
 Plug 'mileszs/ack.vim'
 Plug 'sjl/gundo.vim',           { 'on': 'GundoToggle' }
@@ -177,6 +177,15 @@ if has("autocmd")
   " 'cindent' is on in C files, etc.
   " Also load indent files, to automatically do language-dependent indenting.
   filetype plugin indent on
+
+  " Insert mode plugins {{{
+  augroup insert_mode_plugins
+    autocmd!
+    autocmd InsertEnter * call plug#load('ultisnips',
+          \ 'vim-snippets', 'vim-endwise', 'vim-repeat',
+          \ 'vim-sleuth', 'supertab', 'syntastic')
+  augroup END
+  " }}}
 
   " Vimscript file settings {{{
   augroup filetype_vim

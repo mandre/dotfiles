@@ -10,73 +10,70 @@ set runtimepath+=~/.vim/bundle/Vundle.vim/
 " Plugins {{{
 " ---------------------------------------------------------------------------
 
-call vundle#begin()
-
-Plugin 'gmarik/Vundle.vim'
+call plug#begin('~/.vim/plugged')
 
 " Programming
-Plugin 'matchit.zip'
-Plugin 'majutsushi/tagbar'
-Plugin 'tpope/vim-commentary'
-Plugin 'scrooloose/syntastic'
+Plug 'matchit.zip'
+Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
+Plug 'tpope/vim-commentary',    { 'on': ['<Plug>Commentary', '<Plug>CommentaryLine'] }
+Plug 'scrooloose/syntastic'
 
 " Snippets
-Plugin 'SirVer/ultisnips'
-Plugin 'honza/vim-snippets'
+Plug 'SirVer/ultisnips'
+Plug 'honza/vim-snippets'
 
 " Git
-Plugin 'tpope/vim-fugitive'
-" Plugin 'airblade/vim-gitgutter'
+Plug 'tpope/vim-fugitive'
+" Plug 'airblade/vim-gitgutter'
 
 " Ruby
-Plugin 'vim-ruby/vim-ruby'
-Plugin 'tpope/vim-rails'
-" Plugin 'tpope/vim-bundler'
+Plug 'vim-ruby/vim-ruby',       { 'for': 'ruby' }
+Plug 'tpope/vim-rails',         { 'for': 'ruby' }
 
 " Python
-Plugin 'klen/python-mode'
+Plug 'klen/python-mode',        { 'for': 'python' }
 
 " JS
-Plugin 'mustache/vim-mode'
+Plug 'mustache/vim-mode',       { 'for': 'javascript' }
 
 " Utility
-" Plugin 'YankRing.vim'
-Plugin 'wellle/targets.vim'
-Plugin 'LargeFile'
-Plugin 'tpope/vim-endwise'
-Plugin 'tpope/vim-repeat'
-Plugin 'tpope/vim-surround'
-Plugin 'tpope/vim-unimpaired'
-Plugin 'tpope/vim-markdown'
-Plugin 'tpope/vim-sleuth'
-Plugin 'tpope/vim-eunuch'
-Plugin 'tpope/vim-obsession'
-Plugin 'file-line'
-Plugin 'godlygeek/tabular'
-Plugin 'jlanzarotta/bufexplorer'
-Plugin 'eiginn/netrw'
-Plugin 'tpope/vim-vinegar'
-Plugin 'ervandew/supertab'
-Plugin 'ZoomWin'
-Plugin 'mileszs/ack.vim'
-Plugin 'sjl/gundo.vim'
-Plugin 'sjl/splice.vim'
+" Plug 'YankRing.vim'
+" Plug 'wellle/targets.vim'
+Plug 'LargeFile'
+Plug 'file-line'
+Plug 'tpope/vim-endwise'
+Plug 'tpope/vim-repeat'
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-unimpaired'
+Plug 'tpope/vim-markdown',      { 'for': 'markdown' }
+Plug 'tpope/vim-sleuth'
+Plug 'tpope/vim-eunuch'
+Plug 'tpope/vim-obsession'
+Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
+Plug 'jlanzarotta/bufexplorer', { 'on': 'BufExplorer' }
+Plug 'eiginn/netrw',            { 'on': 'Explore' }
+Plug 'tpope/vim-vinegar',       { 'on': 'Explore' }
+Plug 'ervandew/supertab'
+Plug 'ZoomWin'
+Plug 'mileszs/ack.vim'
+Plug 'sjl/gundo.vim',           { 'on': 'GundoToggle' }
+" Plug 'sjl/splice.vim'
 if has('macunix') && !has("gui_running")
-Plugin 'sjl/vitality.vim'
+Plug 'sjl/vitality.vim'
 endif
-Plugin 'henrik/vim-indexed-search'
-Plugin 'xolox/vim-misc'
-Plugin 'xolox/vim-notes'
-Plugin 'thcipriani/mediummode'
-Plugin 'kien/ctrlp.vim'
-Plugin 'Lokaltog/vim-easymotion'
-Plugin 'rhysd/clever-f.vim'
-Plugin 'christoomey/vim-tmux-navigator'
-Plugin 'terryma/vim-expand-region'
-Plugin 'AndrewRadev/splitjoin.vim'
-Plugin 'bling/vim-airline'
+Plug 'henrik/vim-indexed-search'
+Plug 'xolox/vim-misc',          { 'on': 'Note' }
+Plug 'xolox/vim-notes',         { 'on': 'Note' }
+Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
+Plug 'kien/ctrlp.vim'
+Plug 'Lokaltog/vim-easymotion', { 'on': ['<Plug>(easymotion-s2)', '<Plug>(easymotion-j)', '<Plug>(easymotion-k)'] }
+Plug 'rhysd/clever-f.vim'
+Plug 'christoomey/vim-tmux-navigator'
+Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
+Plug 'AndrewRadev/splitjoin.vim'
+Plug 'bling/vim-airline'
 
-call vundle#end()
+call plug#end()
 
 " }}}
 " General {{{
@@ -406,8 +403,8 @@ xmap <F8> <Plug>Commentary
 " <F9> Remove all trailing spaces
 noremap <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
 " <F10> YankRing
-nnoremap <silent> <F10> :YRShow<cr>
-inoremap <silent> <F10> <ESC>:YRShow<cr>
+" nnoremap <silent> <F10> :YRShow<cr>
+" inoremap <silent> <F10> <ESC>:YRShow<cr>
 " <F12> Compile using makefile
 noremap <F12> :make<CR>
 

@@ -16,7 +16,7 @@ call plug#begin('~/.vim/plugged')
 Plug 'matchit.zip'
 Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
 Plug 'tpope/vim-commentary',    { 'on': ['<Plug>Commentary', '<Plug>CommentaryLine'] }
-Plug 'scrooloose/syntastic',    { 'on': [] }
+Plug 'scrooloose/syntastic' ",    { 'on': [] }
 
 " Snippets
 Plug 'SirVer/ultisnips',        { 'on': [] }
@@ -183,7 +183,7 @@ if has("autocmd")
     autocmd!
     autocmd InsertEnter * call plug#load('ultisnips',
           \ 'vim-snippets', 'vim-endwise', 'vim-repeat',
-          \ 'vim-sleuth', 'supertab', 'syntastic')
+          \ 'vim-sleuth', 'supertab')
   augroup END
   " }}}
 

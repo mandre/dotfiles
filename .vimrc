@@ -64,7 +64,7 @@ endif
 Plug 'henrik/vim-indexed-search'
 Plug 'xolox/vim-misc',          { 'on': 'Note' }
 Plug 'xolox/vim-notes',         { 'on': 'Note' }
-Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
+Plug 'thcipriani/mediummode' ",   { 'on': 'MediumModeToggle' }
 Plug 'kien/ctrlp.vim'
 Plug 'Lokaltog/vim-easymotion', { 'on': ['<Plug>(easymotion-s2)', '<Plug>(easymotion-j)', '<Plug>(easymotion-k)'] }
 Plug 'rhysd/clever-f.vim'
@@ -482,7 +482,7 @@ let g:clever_f_show_prompt=1
 let g:clever_f_mark_cursor=1
 
 " Medium mode
-let g:mediummode_enabled = 0
+" let g:mediummode_enabled = 0
 let g:mediummode_allowed_motions = 5
 
 " CtrlP

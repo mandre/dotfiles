@@ -72,6 +72,7 @@ Plug 'thcipriani/mediummode' ",   { 'on': 'MediumModeToggle' }
 Plug 'kien/ctrlp.vim'
 Plug 'Lokaltog/vim-easymotion', { 'on': ['<Plug>(easymotion-s2)', '<Plug>(easymotion-j)', '<Plug>(easymotion-k)'] }
 Plug 'rhysd/clever-f.vim'
+Plug 'tmux-plugins/vim-tmux'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'

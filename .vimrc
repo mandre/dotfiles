@@ -186,9 +186,9 @@ if has("autocmd")
   " Insert mode plugins {{{
   augroup insert_mode_plugins
     autocmd!
-    autocmd InsertEnter * call plug#load('ultisnips',
-          \ 'vim-snippets', 'vim-endwise', 'vim-repeat',
-          \ 'vim-sleuth', 'supertab')
+    autocmd InsertEnter * call plug#load('supertab',
+          \ 'ultisnips', 'vim-snippets', 'vim-endwise',
+          \ 'vim-repeat', 'vim-sleuth')
   augroup END
   " }}}
 

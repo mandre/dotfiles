@@ -18,7 +18,7 @@ if exists("syntax_on")
 endif
 let g:colors_name = "twilight"
 
-hi Normal       guifg=#F8F8F8   guibg=#060A0F   ctermfg=231    ctermbg=NONE      gui=NONE      cterm=NONE
+hi Normal       guifg=#F8F8F8   guibg=#060A0F   ctermfg=250    ctermbg=NONE      gui=NONE      cterm=NONE
 hi Cursor                    guibg=#A7A7A7 ctermbg=226
 hi CursorLine                guibg=#212628 ctermbg=235 cterm=NONE
 hi LineNr                    guifg=#444444   guibg=#121212   ctermfg=238    ctermbg=233       gui=NONE      cterm=NONE
@@ -118,10 +118,10 @@ hi String                    guifg=#87AF5F ctermfg=107
 hi Type                      guifg=#5F87AF gui=NONE cterm=NONE ctermfg=67
 
 " Diffs
-hi DiffAdd      guifg=fg        guibg=#405040   ctermfg=fg     ctermbg=22        gui=NONE      cterm=NONE
-hi DiffChange   guifg=fg        guibg=#605040   ctermfg=fg     ctermbg=58        gui=NONE      cterm=NONE
-hi DiffDelete   guifg=fg        guibg=#504040   ctermfg=fg     ctermbg=52        gui=NONE      cterm=NONE
-hi DiffText     guifg=#E0B050   guibg=#605040   ctermfg=220    ctermbg=58        gui=bold      cterm=bold
+hi DiffAdd      guifg=#d7ffaf        guibg=#5F875F   ctermfg=193     ctermbg=65        gui=NONE      cterm=NONE
+hi DiffChange   guifg=#d7d7ff        guibg=#5F5F87   ctermfg=189     ctermbg=60        gui=NONE      cterm=NONE
+hi DiffDelete   guifg=fg        guibg=#cc6666   ctermfg=fg     ctermbg=167        gui=NONE      cterm=NONE
+hi DiffText     guifg=fg   guibg=#81a2be   ctermfg=fg    ctermbg=110        gui=bold      cterm=bold
 
 " HTML
 hi link xmlTag               HtmlTag
@@ -151,6 +151,14 @@ hi StorageClass              guifg=#F8F8F8 ctermfg=231
 hi sassMixing                guifg=#9B5C2E ctermfg=94
 hi sassClass                 guifg=#F9EE98 ctermfg=228
 
-hi diffAdded     guifg=#405040   ctermfg=22        gui=NONE      cterm=NONE
-hi diffChanged   guifg=#605040   ctermfg=58        gui=NONE      cterm=NONE
-hi diffRemoved   guifg=#504040   ctermfg=52        gui=NONE      cterm=NONE
+hi diffAdded     guifg=#87AF5F   ctermfg=2        gui=NONE      cterm=NONE
+hi diffRemoved   guifg=#cc6666   ctermfg=1        gui=NONE      cterm=NONE
+hi diffLine   guifg=#99B1D8   ctermfg=110        gui=NONE      cterm=NONE
+hi diffFile   guifg=#CDA869   ctermfg=179        gui=NONE      cterm=NONE
+
+hi link gitcommitHeader Normal
+hi link gitcommitSelectedType  diffAdded
+hi link gitcommitSelectedFile  diffAdded
+hi link gitcommitDiscardedType diffRemoved
+hi link gitcommitDiscardedFile diffRemoved
+hi link gitcommitUntrackedFile diffRemoved

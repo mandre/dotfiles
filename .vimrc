@@ -194,7 +194,6 @@ if has("autocmd")
   " Vimscript file settings {{{
   augroup filetype_vim
     autocmd!
-    autocmd FileType vim setlocal foldmethod=marker
     " Use the :help command for 'K' in .vim files
     autocmd FileType vim set keywordprg=":help"
   augroup END

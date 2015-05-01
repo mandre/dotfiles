@@ -55,7 +55,6 @@ Plug 'tpope/vim-markdown',      { 'for': 'markdown' }
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
-Plug 'jlanzarotta/bufexplorer', { 'on': 'BufExplorer' }
 Plug 'eiginn/netrw',            { 'on': 'Explore' }
 Plug 'tpope/vim-vinegar',       { 'on': 'Explore' }
 Plug 'ZoomWin'
@@ -404,7 +403,7 @@ noremap <F1> <ESC>
 " <F2> File explorer
 noremap <F2> :Explore<CR>
 " <F3> Buffer explorer
-noremap <F3> :BufExplorer<CR>
+noremap <F3> :CtrlPBuffer<CR>
 " <F4> Tagbar
 noremap <F4> :TagbarToggle<CR>
 " <F5> Reload file

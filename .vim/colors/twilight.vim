@@ -1,7 +1,7 @@
 " Vim color scheme
 "
 " Name:        twilight.vim
-" Maintainer:  Jonathan Rudenberg <jonathan@titanous.com> 
+" Maintainer:  Jonathan Rudenberg <jonathan@titanous.com>
 " License:     MIT
 "
 " A GUI only vim theme based on the Twilight TextMate theme.
@@ -35,7 +35,7 @@ hi Search                    guifg=bg        guibg=#FFD75F   ctermfg=233    cter
 hi MoreMsg                   guifg=#619518 ctermfg=2
 hi Question                  guifg=#359926 ctermfg=2
 hi WildMenu                  guibg=#E9C062 ctermbg=179
-hi Title                     guifg=#FFFFFF ctermfg=231
+hi Title                     guifg=#F8F8F8 ctermfg=231
 
 hi StatusLine                guifg=#303030 guibg=#BABDB6 gui=NONE cterm=NONE ctermfg=236 ctermbg=250
 hi StatusLineNC              guifg=#BABDB6 guibg=#303030 gui=NONE cterm=NONE ctermfg=250 ctermbg=236

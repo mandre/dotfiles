@@ -1,6 +1,7 @@
 image/*; /usr/bin/eog '%s'; test=test -n "$DISPLAY"
-video/*; /usr/bin/mplayer2 '%s'; test=test -n "$DISPLAY"
-audio/*; /usr/bin/mplayer2 '%s'; needsterminal
+video/*; /usr/bin/mpv '%s'; test=test -n "$DISPLAY"
+audio/*; /usr/bin/mpv '%s'; needsterminal
 application/pdf; /usr/bin/evince '%s'; test=test -n "$DISPLAY"
 application/ps; /usr/bin/evince '%s'; test=test -n "$DISPLAY"
 application/x-dvi; /usr/bin/evince '%s'; description=TeX DVI; test=test -n "$DISPLAY"; nametemplate=%s.dvi
+application/x-ica; /opt/Citrix/ICAClient/wfica.sh %s; x-mozilla-flags=plugin:Citrix ICA

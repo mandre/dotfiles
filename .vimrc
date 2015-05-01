@@ -320,6 +320,15 @@ augroup cursor_line
   autocmd WinLeave * if g:cursorline_active | setlocal nocursorline | endif
 augroup END
 
+" Easy copy/paste from system clipboard
+vmap <Leader>y "+y
+vmap <Leader>d "+d
+nmap <Leader>p "+p
+nmap <Leader>P "+P
+vmap <Leader>p "+p
+vmap <Leader>P "+P
+
+
 " Surround with quotes
 nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
 nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel

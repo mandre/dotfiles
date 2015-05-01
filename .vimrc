@@ -497,8 +497,12 @@ let g:EasyMotion_smartcase = 1
 let g:EasyMotion_use_smartsign_jp = 1
 
 " Clever-f
+let g:clever_f_smart_case=1
+let g:clever_f_timeout_ms=10000
 let g:clever_f_show_prompt=1
 let g:clever_f_mark_cursor=1
+let g:clever_f_chars_match_any_signs=';:'
+let g:clever_f_fix_key_direction=1
 
 " Medium mode
 " let g:mediummode_enabled = 0

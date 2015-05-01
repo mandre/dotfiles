@@ -522,6 +522,9 @@ let g:airline#extensions#hunks#enabled=0
 " Mustache
 let g:mustache_abbreviations = 1
 
+" Markdown
+let g:markdown_fenced_languages = ['css', 'erb=eruby', 'javascript', 'js=javascript', 'json=javascript', 'ruby', 'sass', 'xml', 'html']
+
 " }}}
 " GUI {{{
 " ---------------------------------------------------------------------------

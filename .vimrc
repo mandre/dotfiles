@@ -393,6 +393,21 @@ inoremap <c-x><c-]> <c-]>
 " Use . for visual selection
 vnoremap . :norm.<CR>
 
+function! s:try(cmd, default)
+  if exists(':' . a:cmd) && !v:count
+    let tick = b:changedtick
+    execute a:cmd
+    if tick == b:changedtick
+      execute join(['normal!', a:default])
+    endif
+  else
+    execute join(['normal! ', v:count, a:default], '')
+  endif
+endfunction
+
+nnoremap <silent> J :<C-u>call <SID>try('SplitjoinJoin',  'J')<CR>
+nnoremap <silent> S :<C-u>call <SID>try('SplitjoinSplit', "r\015")<CR>
+
 " }}}
 " Function Keys {{{
 " ---------------------------------------------------------------------------

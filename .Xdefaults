@@ -1,13 +1,13 @@
 URxvt.depth: 32
 URxvt.scrollBar: false
+URxvt.scrollTtyOutput: true
+URxvt.scrollWithBuffer: false
 URxvt.font: xft:monospace:size=10
 URxvt.letterSpace: -1
 
 URxvt.fading: 30
 
 URxvt.perl-ext-common: default,matcher
-URxvt.url-launcher: firefox
-URxvt.matcher.button: 1
 URxvt.colorUL: #4682B4
 
 URxvt.iconFile: /usr/share/icons/gnome-colors-common/scalable/apps/Terminal.svg
@@ -15,6 +15,9 @@ URxvt.iconFile: /usr/share/icons/gnome-colors-common/scalable/apps/Terminal.svg
 ! Tango color palette
 URxvt*background: [94]#000000
 URxvt*foreground: #eeeeec
+URxvt.foreground: #eeeeec
+! foreground color for underline
+URxvt*colorUL: #8ae234
 ! black dark/light
 URxvt*color0: #000000
 URxvt.color8: #555753

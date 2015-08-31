@@ -18,13 +18,15 @@ call plug#begin('~/.vim/plugged')
 
 " Programming
 Plug 'matchit.zip'
-Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
+if v:version >= 703
+  Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
+endif
 Plug 'tpope/vim-commentary',    { 'on': ['<Plug>Commentary', '<Plug>CommentaryLine'] }
 Plug 'scrooloose/syntastic' ",    { 'on': [] }
 
 " Snippets
-Plug 'SirVer/ultisnips',        { 'on': [] }
-Plug 'honza/vim-snippets',      { 'on': [] }
+Plug 'SirVer/ultisnips' ",        { 'on': [] }
+Plug 'honza/vim-snippets' ",      { 'on': [] }
 
 " Git
 Plug 'tpope/vim-fugitive'
@@ -45,21 +47,23 @@ Plug 'mustache/vim-mode',       { 'for': 'javascript' }
 " Plug 'wellle/targets.vim'
 Plug 'LargeFile'
 Plug 'file-line'
-Plug 'ervandew/supertab',       { 'on': [] }
-Plug 'tpope/vim-endwise',       { 'on': [] }
-Plug 'tpope/vim-repeat',        { 'on': [] }
-Plug 'tpope/vim-sleuth',        { 'on': [] }
+Plug 'ConradIrwin/vim-bracketed-paste'
+Plug 'ervandew/supertab' ",       { 'on': [] }
+Plug 'tpope/vim-endwise'
+Plug 'tpope/vim-repeat'
+Plug 'tpope/vim-sleuth' ",        { 'on': [] }
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-markdown',      { 'for': 'markdown' }
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
-Plug 'eiginn/netrw',            { 'on': 'Explore' }
-Plug 'tpope/vim-vinegar',       { 'on': 'Explore' }
+Plug 'eiginn/netrw' ",            { 'on': 'Explore' }
+Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'ZoomWin'
 Plug 'mileszs/ack.vim'
 Plug 'sjl/gundo.vim',           { 'on': 'GundoToggle' }
+" Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 " Plug 'sjl/splice.vim'
 if has('macunix') && !has("gui_running")
 Plug 'sjl/vitality.vim'
@@ -67,7 +71,7 @@ endif
 Plug 'henrik/vim-indexed-search'
 Plug 'xolox/vim-misc',          { 'on': 'Note' }
 Plug 'xolox/vim-notes',         { 'on': 'Note' }
-Plug 'thcipriani/mediummode' ",   { 'on': 'MediumModeToggle' }
+Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'kien/ctrlp.vim'
 Plug 'Lokaltog/vim-easymotion', { 'on': ['<Plug>(easymotion-s2)', '<Plug>(easymotion-j)', '<Plug>(easymotion-k)'] }
 Plug 'rhysd/clever-f.vim'
@@ -183,17 +187,19 @@ if has("autocmd")
   filetype plugin indent on
 
   " Insert mode plugins {{{
-  augroup insert_mode_plugins
-    autocmd!
-    autocmd InsertEnter * call plug#load('supertab',
-          \ 'ultisnips', 'vim-snippets', 'vim-endwise',
-          \ 'vim-repeat', 'vim-sleuth')
-  augroup END
+  " augroup insert_mode_plugins
+  "   autocmd!
+  "   autocmd InsertEnter * call plug#load('supertab',
+  "         \ 'ultisnips', 'vim-snippets', 'vim-endwise',
+  "         \ 'vim-repeat', 'vim-sleuth')
+  "        " \ 'vim-sleuth', 'supertab', 'syntastic')
+  " augroup END
   " }}}
 
   " Vimscript file settings {{{
   augroup filetype_vim
     autocmd!
+    " autocmd FileType vim setlocal foldmethod=marker
     " Use the :help command for 'K' in .vim files
     autocmd FileType vim set keywordprg=":help"
   augroup END
@@ -513,7 +519,7 @@ let g:clever_f_chars_match_any_signs=';:'
 let g:clever_f_fix_key_direction=1
 
 " Medium mode
-" let g:mediummode_enabled = 0
+let g:mediummode_enabled = 0
 let g:mediummode_allowed_motions = 5
 
 " CtrlP

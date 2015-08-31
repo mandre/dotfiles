@@ -121,7 +121,19 @@ hi Type                      guifg=#5F87AF gui=NONE cterm=NONE ctermfg=67
 hi DiffAdd      guifg=#d7ffaf        guibg=#5F875F   ctermfg=193     ctermbg=65        gui=NONE      cterm=NONE
 hi DiffChange   guifg=#d7d7ff        guibg=#5F5F87   ctermfg=189     ctermbg=60        gui=NONE      cterm=NONE
 hi DiffDelete   guifg=fg        guibg=#cc6666   ctermfg=fg     ctermbg=167        gui=NONE      cterm=NONE
-hi DiffText     guifg=fg   guibg=#81a2be   ctermfg=fg    ctermbg=110        gui=bold      cterm=bold
+hi DiffText     guifg=fg   guibg=#81a2be   ctermfg=189    ctermbg=110        gui=NONE      cterm=NONE
+
+hi diffAdded     guifg=#87AF5F   ctermfg=2        gui=NONE      cterm=NONE
+hi diffRemoved   guifg=#cc6666   ctermfg=1        gui=NONE      cterm=NONE
+hi diffLine   guifg=#99B1D8   ctermfg=110        gui=NONE      cterm=NONE
+hi diffFile   guifg=#CDA869   ctermfg=179        gui=NONE      cterm=NONE
+
+hi link gitcommitHeader Normal
+hi link gitcommitSelectedType  diffAdded
+hi link gitcommitSelectedFile  diffAdded
+hi link gitcommitDiscardedType diffRemoved
+hi link gitcommitDiscardedFile diffRemoved
+hi link gitcommitUntrackedFile diffRemoved
 
 " HTML
 hi link xmlTag               HtmlTag
@@ -150,15 +162,3 @@ hi link cssFunctionName      Type
 hi StorageClass              guifg=#F8F8F8 ctermfg=231
 hi sassMixing                guifg=#9B5C2E ctermfg=94
 hi sassClass                 guifg=#F9EE98 ctermfg=228
-
-hi diffAdded     guifg=#87AF5F   ctermfg=2        gui=NONE      cterm=NONE
-hi diffRemoved   guifg=#cc6666   ctermfg=1        gui=NONE      cterm=NONE
-hi diffLine   guifg=#99B1D8   ctermfg=110        gui=NONE      cterm=NONE
-hi diffFile   guifg=#CDA869   ctermfg=179        gui=NONE      cterm=NONE
-
-hi link gitcommitHeader Normal
-hi link gitcommitSelectedType  diffAdded
-hi link gitcommitSelectedFile  diffAdded
-hi link gitcommitDiscardedType diffRemoved
-hi link gitcommitDiscardedFile diffRemoved
-hi link gitcommitUntrackedFile diffRemoved

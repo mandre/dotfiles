@@ -48,6 +48,8 @@ if config.OS.isMacOSX
 set editor='/Applications/MacVim.app/Contents/MacOS/Vim -g -f +<line> +"sil! call cursor(0, <column>)" <file>'
 end
 
+autocmd Fullscreen .* :set guioptions+=s
+
 
 " URL based filetype detection in external editor
 " http://ingo-karkat.de/blog/2012/05/22/Pentadactyl%20set%20filetype%20in%20external%20Vim%20editor%20based%20on%20URL.html

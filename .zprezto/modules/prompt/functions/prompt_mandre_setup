@@ -6,7 +6,10 @@
 #
 
 function prompt_mandre_precmd () {
-  vcs_info
+  # Get Git repository information.
+  if (( $+functions[git-info] )); then
+    git-info
+  fi
 }
 
 function prompt_mandre_setup() {
@@ -15,7 +18,6 @@ function prompt_mandre_setup() {
   prompt_opts=(cr percent subst)
 
   autoload -Uz add-zsh-hook
-  autoload -Uz vcs_info
 
   add-zsh-hook precmd prompt_mandre_precmd
 
@@ -23,15 +25,17 @@ function prompt_mandre_setup() {
   zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{red}♺%f'
   zstyle ':prezto:module:editor:info:keymap:alternate' format ' %B%F{red}❮%f%b%F{red}❮❮%f'
 
-  zstyle ':vcs_info:*' enable bzr git hg svn
-  zstyle ':vcs_info:*' check-for-changes true # Can be slow on big repos.
-  zstyle ':vcs_info:*' stagedstr '+'
-  zstyle ':vcs_info:*' unstagedstr '*'
-  zstyle ':vcs_info:*' formats ' %F{yellow}‹%b%c%u›%f'
-  zstyle ':vcs_info:*' actionformats " %F{yellow}‹%b%c%u|%a›%f"
-  zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%r'
+  # Set git-info parameters.
+  zstyle ':prezto:module:git:info' verbose 'no'
+  zstyle ':prezto:module:git:info:action' format ' +%s'
+  zstyle ':prezto:module:git:info:branch' format '%b'
+  # zstyle ':prezto:module:git:info:commit' format ' %F{white}%.7c%f'
+  zstyle ':prezto:module:git:info:indexed' format '+'
+  zstyle ':prezto:module:git:info:unindexed' format '*'
+  zstyle ':prezto:module:git:info:keys' format 'rprompt' ' %F{yellow}‹%b%s%i%I›%f'
 
-  PROMPT='${SSH_TTY:+"%n@%m %B%F{blue}::%f%b "}%F{green}%2~%f${vcs_info_msg_0_} %(!.%B%F{red}#%f%b.%B%F{blue}»%f%b) '
+  PROMPT='${SSH_TTY:+"%n@%m %B%F{blue}::%f%b "}%F{green}%2~%f${git_info[rprompt]} %(!.%B%F{red}#%f%b.%B%F{blue}»%f%b) '
+  # PROMPT='${SSH_TTY:+"%n@%m %B%F{blue}::%f%b "}%F{green}%2~%f %(!.%B%F{red}#%f%b.%B%F{blue}»%f%b) '
   RPROMPT='${editor_info[keymap]}${editor_info[overwrite]}%(?:: %F{red}%? %B↵%b%f)${VIM:+" %B%F{green}V%f%b"}${MC_SID:+" %B%F{blue}☪%f%b"}'
   SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
 }

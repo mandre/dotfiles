@@ -13,13 +13,11 @@ fi
 # Customize to your needs...
 
 # Custom commands
-pod() { cd ~/dev/pod/modules/pod/$1; }
-_pod() { _files -W ~/dev/pod/modules/pod -/; }
-compdef _pod pod
+openstack() { cd ~/dev/openstack/$1; }
+_openstack() { _files -W ~/dev/openstack -/; }
+compdef _openstack openstack
 
-portal() { cd ~/dev/customer-portal/$1; }
-_portal() { _files -W ~/dev/customer-portal -/; }
-compdef _portal portal
+kolla() { cd ~/dev/openstack/kolla; }
 
 # Speed up git completion for huge repositories
 __git_files () {

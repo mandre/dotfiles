@@ -5,7 +5,7 @@
 read -p 'email: ' email
 
 if grep -q "Red Hat Enterprise Linux" /etc/redhat-release; then
-	read -p 'RH subscription password: ' rh_password
+	read -s -p 'RH subscription password: ' rh_password
 	subscription-manager register --username="${email}" --password="${rh_password}"
 	subscription-manager list --available
 	read -p 'RH pool: ' rh_pool
@@ -33,18 +33,18 @@ EOS
 
 git clone https://github.com/mandre/dotfiles.git
 
-git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-ln -s ~/dotfiles/.zlogin ~/
-ln -s ~/dotfiles/.zpreztorc ~/
-ln -s ~/dotfiles/.zprofile ~/
-ln -s ~/dotfiles/.zshenv ~/
-ln -s ~/dotfiles/.zshrc ~/
+git clone --recursive https://github.com/sorin-ionescu/prezto.git "~/.zprezto"
+ln -sf ~/dotfiles/.zlogin ~/
+ln -sf ~/dotfiles/.zpreztorc ~/
+ln -sf ~/dotfiles/.zprofile ~/
+ln -sf ~/dotfiles/.zshenv ~/
+ln -sf ~/dotfiles/.zshrc ~/
 chsh -s /bin/zsh
 
-ln -s ~/dotfiles/bin ~/
+ln -sf ~/dotfiles/bin ~/
 
-ln -s ~/dotfiles/.git_template/ ~/
-ln -s ~/dotfiles/.gitconfig ~/
+ln -sf ~/dotfiles/.git_template/ ~/
+ln -sf ~/dotfiles/.gitconfig ~/
 cat > ~/.gitconfig.private <<EOS
 [user]
         name = Martin André
@@ -53,17 +53,19 @@ EOS
 
 
 # TODO do something for tmux < 1.9
-ln -s ~/dotfiles/.tmux.conf ~/
+ln -sf ~/dotfiles/.tmux.conf ~/
 # TODO Add tmux plugins
 
-ln -s ~/dotfiles/.vimrc ~/
-# TODO run vim to pull plugins
-# TODO add airline theme
+ln -sf ~/dotfiles/.vimrc ~/
+mkdir ~/.vim
+ln -sf ~/dotfiles/.vim/colors/ ~/.vim/
+vim +PlugInstall +qall
+ln -sf ~/dotfiles/.vim/vim-airline/twilight.vim ~/.vim/plugged/vim-airline/autoload/airline/themes/
 
 mkdir -p ~/.config/mc
-ln -s ~/dotfiles/.config/mc/ini ~/.config/mc/
-ln -s ~/dotfiles/.config/mc/mc.keymap ~/.config/mc/
+ln -sf ~/dotfiles/.config/mc/ini ~/.config/mc/
+ln -sf ~/dotfiles/.config/mc/mc.keymap ~/.config/mc/
 mkdir -p ~/.local/share/mc
-ln -s ~/dotfiles/.local/share/mc/skins/ ~/.local/share/mc/
+ln -sf ~/dotfiles/.local/share/mc/skins/ ~/.local/share/mc/
 
 EOF

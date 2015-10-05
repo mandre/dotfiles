@@ -50,7 +50,7 @@ cat > ~/.gitconfig.private <<EOS
 EOS
 
 if tmux -V == "tmux 1.8"; then
-	ln -sf ~/dotfiles/.tmux-1.8.conf ~/
+	ln -sf ~/dotfiles/.tmux-1.8.conf ~/.tmux.conf
 else
 	ln -sf ~/dotfiles/.tmux.conf ~/
 	git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm

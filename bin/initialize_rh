@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# TODO create user and swith to it
+
+read -p 'email: ' email
+
+if grep -q "Red Hat Entrerprise Linux" /etc/redhat-release; then
+	read -p 'RH subscription password: ' rh_password
+	subscription-manager register --username="${email}" --password="${rh_password}"
+	subscription-manager list --available
+	read -p 'RH pool: ' rh_pool
+	subscription-manager attach --pool="${rh_pool}"
+fi
+
+yum install \
+	zsh \
+	git \
+	vim \
+	tmux \
+	mc
+
+adduser martin
+passwd martin
+su - martin
+
+cat > ~/.ssh/authorized_keys <<EOS
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA1qB1X9H9wDTT5J88nfeXtHBPAaRyIqe2rnF7bgqc4wpXpdSoxOX18K/45tT9sYOHU/63DfmQdpqUPso3Ql3uBzzW78np4Qa6HlGTynpOSqn7J3UwFdMD0/5EocqsEYfdQsjHCYT2arGvBWT2b4huxq9ke2WqXKUVEbZHpgSrR9dGQrM8xL1vmF5wcVTS6f5W0vq/x7YlJiIKtWUplV302DVFeLAXiDA+f6cVcd4q3NI07Py00sOU3YI3jYpPWxTMTj2R5k1bn+CbXqi5RfV/L+JLXq4XCAT7b/mHkSsXZC7Kn6s92oY930U5dSaYSZWVz54Q9wwOZYmdAoOKsGwwiQ== ${email}
+EOS
+
+git clone https://github.com/mandre/dotfiles.git
+
+git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+ln -s ~/dotfiles/.zlogin ~/
+ln -s ~/dotfiles/.zpreztorc ~/
+ln -s ~/dotfiles/.zprofile ~/
+ln -s ~/dotfiles/.zshenv ~/
+ln -s ~/dotfiles/.zshrc ~/
+chsh -s /bin/zsh
+
+ln -s ~/dotfiles/bin ~/
+
+ln -s ~/dotfiles/.git_template/ ~/
+ln -s ~/dotfiles/.gitconfig ~/
+cat > ~/.gitconfig.private <<EOS
+[user]
+        name = Martin André
+        email = ${email}
+EOS
+
+
+# TODO do something for tmux < 1.9
+ln -s ~/dotfiles/tmux.conf ~/
+# TODO Add tmux plugins
+
+ln -s ~/dotfiles/.vimrc ~/
+# TODO run vim to pull plugins
+# TODO add airline theme
+
+mkdir -p ~/.config/mc
+ln -s ~/dotfiles/.config/mc/ini ~/.config/mc/
+ln -s ~/dotfiles/.config/mc/mc.keymap ~/.config/mc/
+mkdir -p ~/.local/share/mc
+ln -s ~/dotfiles/.local/share/mc/skins/ ~/.local/share/mc/

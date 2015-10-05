@@ -75,14 +75,13 @@ editor_line_state=0
 editor_simple_statusbar=0
 editor_check_new_line=0
 nice_rotating_dash=1
-horizontal_split=0
 mcview_remember_file_position=0
 auto_fill_mkdir_name=1
 reverse_files_only=1
 copymove_persistent_attr=1
 select_flags=6
 editor_backup_extension=~
-skin=nicedark
+skin=nicedark-martin
 keymap=mc.keymap
 
 auto_save_setup_panels=1
@@ -96,9 +95,13 @@ editor_group_undo=0
 mcview_eof=
 ignore_ftp_chattr_errors=true
 
+editor_drop_selection_on_copy=1
+editor_cursor_after_inserted_block=0
+editor_ask_filename_before_edit=0
+editor_filesize_threshold=64M
+editor_stop_format_chars=-+*\\,.;:&>
+
 [Layout]
-equal_split=1
-first_panel_size=40
 message_visible=0
 keybar_visible=1
 xterm_title=1
@@ -109,6 +112,12 @@ show_mini_info=1
 permission_mode=0
 filetype_mode=1
 free_space=1
+
+horizontal_split=0
+vertical_equal=1
+left_panel_size=106
+horizontal_equal=1
+top_panel_size=40
 
 [Misc]
 ftp_proxy_host=gate
@@ -122,6 +131,8 @@ autodetect_codeset=
 clipboard_store=
 clipboard_paste=
 
+spell_language=en
+
 [Colors]
 base_color=
 xterm=
@@ -130,6 +141,10 @@ color_terminals=
 xterm-256color=
 
 linux=
+
+screen-256color=
+
+rxvt-unicode-256color=
 
 [HotlistConfig]
 expanded_view_of_groups=0
@@ -154,6 +169,8 @@ torben_fj_mode=false
 quick_search_mode=2
 
 simple_swap=false
+
+select_flags=6
 
 [Panelize]
 Find *.orig after patching=find . -name \\*.orig -print

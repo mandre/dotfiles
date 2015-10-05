@@ -42,6 +42,9 @@ Plug 'klen/python-mode',        { 'for': 'python' }
 " JS
 Plug 'mustache/vim-mode',       { 'for': 'javascript' }
 
+" Ansible
+Plug 'pearofducks/ansible-vim'
+
 " Utility
 " Plug 'YankRing.vim'
 " Plug 'wellle/targets.vim'

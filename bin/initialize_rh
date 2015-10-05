@@ -19,8 +19,10 @@ yum install \
 	tmux \
 	mc
 
-adduser martin
-passwd martin
+if ! id -u martin; then
+	adduser martin
+	passwd martin
+fi
 
 su - martin << EOF
 

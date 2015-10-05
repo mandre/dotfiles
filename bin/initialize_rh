@@ -19,6 +19,7 @@ yum install \
 
 if ! id -u martin; then
 	adduser martin
+	usermod -G wheel martin
 	passwd martin
 fi
 

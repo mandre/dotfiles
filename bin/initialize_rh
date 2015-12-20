@@ -23,12 +23,17 @@ if ! id -u martin; then
 	passwd martin
 fi
 
+SSH_KEY="AAAAB3NzaC1yc2EAAAABIwAAAQEA1qB1X9H9wDTT5J88nfeXtHBPAaRyIqe2rnF7bgqc4wpXpdSoxOX18K/45tT9sYOHU/63DfmQdpqUPso3Ql3uBzzW78np4Qa6HlGTynpOSqn7J3UwFdMD0/5EocqsEYfdQsjHCYT2arGvBWT2b4huxq9ke2WqXKUVEbZHpgSrR9dGQrM8xL1vmF5wcVTS6f5W0vq/x7YlJiIKtWUplV302DVFeLAXiDA+f6cVcd4q3NI07Py00sOU3YI3jYpPWxTMTj2R5k1bn+CbXqi5RfV/L+JLXq4XCAT7b/mHkSsXZC7Kn6s92oY930U5dSaYSZWVz54Q9wwOZYmdAoOKsGwwiQ=="
+
 su - martin << EOF
 
-mkdir ~/.ssh
-cat > ~/.ssh/authorized_keys <<EOS
-ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA1qB1X9H9wDTT5J88nfeXtHBPAaRyIqe2rnF7bgqc4wpXpdSoxOX18K/45tT9sYOHU/63DfmQdpqUPso3Ql3uBzzW78np4Qa6HlGTynpOSqn7J3UwFdMD0/5EocqsEYfdQsjHCYT2arGvBWT2b4huxq9ke2WqXKUVEbZHpgSrR9dGQrM8xL1vmF5wcVTS6f5W0vq/x7YlJiIKtWUplV302DVFeLAXiDA+f6cVcd4q3NI07Py00sOU3YI3jYpPWxTMTj2R5k1bn+CbXqi5RfV/L+JLXq4XCAT7b/mHkSsXZC7Kn6s92oY930U5dSaYSZWVz54Q9wwOZYmdAoOKsGwwiQ== ${email}
-EOS
+mkdir -p ~/.ssh
+
+if ! grep -q ${SSH_KEY}; then
+	cat >> ~/.ssh/authorized_keys <<EOS
+	ssh-rsa ${SSH_KEY} ${email}
+	EOS
+fi
 
 git clone https://github.com/mandre/dotfiles.git
 

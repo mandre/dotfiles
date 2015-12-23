@@ -83,7 +83,7 @@ cat > ~/.gitconfig.private <<EOS
         email = ${email}
 EOS
 
-if tmux -V == "tmux 1.8"; then
+if [[ \$(tmux -V) == "tmux 1.8" ]]; then
 	ln -sf ~/dotfiles/.tmux-1.8.conf ~/.tmux.conf
 else
 	ln -sf ~/dotfiles/.tmux.conf ~/

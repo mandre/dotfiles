@@ -4,10 +4,10 @@ set -e
 
 PROJECT=$1
 if [ -z $PROJECT ]; then
-    PROJECT='validations'
+    # PROJECT='validations'
+    PROJECT='containers'
 fi
 
-sudo yum install -y epel-release
 sudo pip install -U pip
 
 if [ $PROJECT == 'validations' ]; then
@@ -17,35 +17,52 @@ enable_validations = true\
     sed -i '3i\
 enable_ui = true\
 ' undercloud.conf
-    sudo pip install ./instack-undercloud/
-    sudo pip install ./tripleo-validations/
-    sudo pip install ./tripleo-common/
-
-    # The patch merges in tripleo-common
-    # TODO(mandre) needs to be added to RPM
-    sudo cp /usr/share/tripleo-common/sudoers /etc/sudoers.d/tripleo-common 2>/dev/null || true
+    # sudo pip install -U --no-deps ./instack-undercloud/
+    # sudo pip install -U --no-deps ./tripleo-validations/
+    sudo pip install -U --no-deps ./tripleo-common/
 
     # Until tripleo-common rpm is updated
-    sudo curl https://raw.githubusercontent.com/openstack/mistral/87aeb0ac5afb9765ed81fe48264f14f35ea9dedc/mistral/engine/rpc.py -o /usr/lib/python2.7/site-packages/mistral/engine/rpc.py
+    #sudo curl https://raw.githubusercontent.com/openstack/mistral/87aeb0ac5afb9765ed81fe48264f14f35ea9dedc/mistral/engine/rpc.py -o /usr/lib/python2.7/site-packages/mistral/engine/rpc.py
 
 elif [ $PROJECT == 'containers' ]; then
-    sudo pip install ./tripleo-heat-templates/
     sudo yum install -y docker
+    sudo systemctl enable docker
     sudo systemctl start docker
+    sudo systemctl enable docker-registry
+    sudo systemctl start docker-registry
     sudo pip install docker-py
+
+    # Install kolla in case we need to rebuild images
+    # git clone https://github.com/openstack/kolla.git
+    # cd kolla
+    # git checkout stable/mitaka
+    # virtualenv ~/kolla-venv
+    # source ~/kolla-venv/bin/activate
+    # pip install -U pip
+    # pip install -r requirements.txt
 fi
 
-
 ./undercloud-install.sh
-./undercloud-post-install.sh
+./overcloud-prep-images.sh
+./overcloud-prep-flavors.sh
+./overcloud-prep-network.sh
+./overcloud-custom-tht-script.sh
 
 if [ $PROJECT == 'containers' ]; then
     source ~/stackrc
+
+    # Upload atomic-host image to glance
     wget http://cloud.centos.org/centos/7/atomic/images/CentOS-Atomic-Host-7-GenericCloud.qcow2.gz
     gunzip CentOS-Atomic-Host-7-GenericCloud.qcow2.gz
-    glance image-create --name atomic-image --file CentOS-Atomic-Host-7-GenericCloud.qcow2 --disk-format qcow2 --container-format bare
-    # wget https://download.fedoraproject.org/pub/alt/atomic/stable/CloudImages/x86_64/images/Fedora-Atomic-24-20160712.0.x86_64.qcow2
-    # glance image-create --name atomic-image --file Fedora-Atomic-24-20160712.0.x86_64.qcow2 --disk-format qcow2 --container-format bare
+    openstack image create --file CentOS-Atomic-Host-7-GenericCloud.qcow2 --disk-format qcow2 --container-format bare atomic-image
+
+    # Deploy latest artifacts
+    # ./pull_puppet_modules.sh
+    # tripleo-common/scripts/upload-puppet-modules --directory ~/puppet-modules/
+
+    # Populate docker registry
+    sudo python /home/stack/tripleo-common/upload_shit.py
+    sudo /home/stack/tripleo-common/rebuild-heat-agents.sh
 fi
 
 if [ $PROJECT == 'validations' ]; then
@@ -55,5 +72,7 @@ if [ $PROJECT == 'validations' ]; then
 elif [ $PROJECT == 'containers' ]; then
     echo "skipping overcloud install"
     # source stackrc
-    # openstack overcloud deploy --templates /home/stack/tripleo-heat-templates/ -e /home/stack/tripleo-heat-templates/environments/docker.yaml -e /home/stack/tripleo-heat-templates/environments/docker-network.yaml
+    # openstack stack delete --yes --wait overcloud
+    # mistral environment delete overcloud
+    # openstack overcloud deploy --templates /home/stack/tripleo-heat-templates/ -e /home/stack/tripleo-heat-templates/environments/docker.yaml -e /home/stack/tripleo-heat-templates/environments/docker-network.yaml --libvirt-type qemu
 fi

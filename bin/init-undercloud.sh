@@ -48,8 +48,12 @@ fi
 ./overcloud-prep-network.sh
 ./overcloud-custom-tht-script.sh
 
+source ~/stackrc
+# Configure nameserver for the overcloud
+SUBNET_UUID=$(neutron subnet-list -c id -f value)
+neutron subnet-update ${SUBNET_UUID} --dns-nameserver 192.168.122.1
+
 if [ $PROJECT == 'containers' ]; then
-    source ~/stackrc
 
     # Upload atomic-host image to glance
     wget http://cloud.centos.org/centos/7/atomic/images/CentOS-Atomic-Host-7-GenericCloud.qcow2.gz

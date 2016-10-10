@@ -51,7 +51,7 @@ fi
 source ~/stackrc
 # Configure nameserver for the overcloud
 SUBNET_UUID=$(neutron subnet-list -c id -f value)
-neutron subnet-update ${SUBNET_UUID} --dns-nameserver 192.168.122.1
+neutron subnet-update ${SUBNET_UUID} --dns-nameserver 192.168.23.1
 
 if [ $PROJECT == 'containers' ]; then
 
@@ -67,6 +67,8 @@ if [ $PROJECT == 'containers' ]; then
     # Populate docker registry
     sudo python /home/stack/tripleo-common/upload_shit.py
     sudo /home/stack/tripleo-common/rebuild-heat-agents.sh
+    sudo docker tag localhost:8787/tripleoupstream/centos-binary-data:liberty localhost:8787/tripleoupstream/centos-binary-data:mitaka
+    sudo docker push localhost:8787/tripleoupstream/centos-binary-data:mitaka
 fi
 
 if [ $PROJECT == 'validations' ]; then

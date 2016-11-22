@@ -34,12 +34,12 @@ elif [ $PROJECT == 'containers' ]; then
     # Install kolla in case we need to rebuild images
     git clone https://github.com/openstack/kolla.git
     cd kolla
-    git checkout stable/mitaka
+    git checkout stable/newton
     virtualenv ~/kolla-venv
     source ~/kolla-venv/bin/activate
     pip install -U pip
     pip install -r requirements.txt
-    time ./tools/build.py --base centos --type binary --namespace tripleoupstream --registry localhost:8787 --tag mitaka --push \
+    time ./tools/build.py --base centos --type binary --namespace tripleoupstream --registry localhost:8787 --tag newton --push \
 	neutron-openvswitch-agent \
 	nova-compute \
 	nova-libvirt \

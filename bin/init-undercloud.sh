@@ -23,12 +23,18 @@ enable_ui = true\
 
 elif [ $PROJECT == 'containers' ]; then
     sudo yum install -y docker
+    sudo groupadd docker
+    sudo gpasswd -a ${USER} docker
+    newgrp docker
     sudo systemctl enable docker
     sudo systemctl start docker
     sudo sed -i 's/5000/8787/' /etc/sysconfig/docker-registry
     sudo systemctl enable docker-registry
     sudo systemctl start docker-registry
     sudo pip install docker-py
+
+    # NOTE(flaper87): This should not longer be needed
+    # since we're creating the docker group
     sudo chmod 0666 /run/docker.sock
 
     # Install kolla in case we need to rebuild images
@@ -41,6 +47,7 @@ elif [ $PROJECT == 'containers' ]; then
     pip install -r requirements.txt
     time ./tools/build.py --base centos --type binary --namespace tripleoupstream --registry localhost:8787 --tag newton --push \
 	neutron-openvswitch-agent \
+	glance-api \
 	nova-compute \
 	nova-libvirt \
 	openvswitch-db-server \

@@ -142,6 +142,15 @@ parameter_defaults:
 EOF
 }
 
+ensure_latest_heat_hooks() {
+  sudo yum install libguestfs-tools
+  mkdir hooks
+  cp heat-agents/heat-config-docker-cmd/install.d/hook-docker-cmd.py hooks/docker-cmd
+  cp heat-agents/heat-config-json-file/install.d/hook-json-file.py hooks/json-file
+  virt-copy-in -a overcloud-full.qcow2 hooks /usr/libexec/heat-config/hooks
+  openstack overcloud image upload --update-existing
+}
+
 deploy_overcloud_normal() {
     ./overcloud-deploy.sh
     ./overcloud-deploy-post.sh
@@ -165,6 +174,7 @@ source ~/stackrc
 configure_overcloud_dns
 deploy_latest_puppet_modules
 setup_network_isolation
+ensure_latest_heat_hooks
 #deploy_overcloud_containers
 
 # Finally, make new group effective

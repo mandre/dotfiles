@@ -60,27 +60,46 @@ allow_non_root_docker() {
     if ! getent group docker >/dev/null; then
 	sudo groupadd docker
 	sudo gpasswd -a ${USER} docker
-	newgrp docker
 	sudo systemctl restart docker
+	sudo chmod 0666 /run/docker.sock
     fi
 }
 
+customize_kolla() {
+    cat >/home/stack/kolla-template-overrides.j2 <<-EOF
+{% extends parent_template %}
+{% set base_centos_binary_packages_append = ['puppet'] %}
+EOF
+}
+
 build_kolla_images() {
+    sudo yum install -y python-virtualenv gcc
     # Install kolla in case we need to rebuild images
-    git clone https://github.com/openstack/kolla.git
+    if [ ! -d kolla ]; then
+      git clone https://github.com/openstack/kolla.git
+    fi
     cd kolla
-    git checkout stable/newton
+    git checkout master
+    git pull origin master
     virtualenv ~/kolla-venv
     source ~/kolla-venv/bin/activate
     pip install -U pip
     pip install -r requirements.txt
-    time ./tools/build.py --base centos --type binary --namespace tripleoupstream --registry localhost:8787 --tag newton --push \
-	neutron-openvswitch-agent \
-	glance-api \
-	nova-compute \
-	nova-libvirt \
-	openvswitch-db-server \
-	openvswitch-vswitchd
+    customize_kolla
+    time ./tools/build.py \
+      --base centos \
+      --type binary \
+      --namespace tripleoupstream \
+      --registry 192.168.24.1:8787 \
+      --tag latest \
+      --push \
+      --template-override /home/stack/kolla-template-overrides.j2 \
+      glance-api \
+      heat \
+      keystone \
+      neutron-openvswitch-agent \
+      nova-compute \
+      nova-libvirt
     cd
     deactivate
 }
@@ -118,8 +137,8 @@ deploy_latest_puppet_modules() {
 setup_network_isolation() {
     cat >/home/stack/custom.yaml <<-EOF
 parameter_defaults:
-  EC2MetadataIp: 192.0.2.1
-  ControlPlaneDefaultRoute: 192.0.2.1
+  EC2MetadataIp: 192.168.24.1
+  ControlPlaneDefaultRoute: 192.168.24.1
 EOF
 }
 
@@ -142,7 +161,11 @@ allow_non_root_docker
 populate_docker_registry
 
 source ~/stackrc
-pull_atomic_host
+#pull_atomic_host
 configure_overcloud_dns
 deploy_latest_puppet_modules
+setup_network_isolation
 #deploy_overcloud_containers
+
+# Finally, make new group effective
+newgrp docker

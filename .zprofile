@@ -65,17 +65,6 @@ if (( $#commands[(i)lesspipe(|.sh)] )); then
 fi
 
 #
-# Temporary Files
-#
-
-if [[ ! -d "$TMPDIR" ]]; then
-  export TMPDIR="/tmp/$LOGNAME"
-  mkdir -p -m 700 "$TMPDIR"
-fi
-
-TMPPREFIX="${TMPDIR%/}/zsh"
-
-#
 # MacOSX specific
 #
 

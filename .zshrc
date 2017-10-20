@@ -13,9 +13,9 @@ fi
 # Customize to your needs...
 
 # Custom commands
-openstack() { cd ~/dev/openstack/$1; }
-_openstack() { _files -W ~/dev/openstack -/; }
-compdef _openstack openstack
+# openstack() { cd ~/dev/openstack/$1; }
+# _openstack() { _files -W ~/dev/openstack -/; }
+# compdef _openstack openstack
 
 kolla() { cd ~/dev/openstack/kolla; }
 
@@ -28,3 +28,5 @@ bindkey '^R' history-incremental-search-backward
 bindkey '^S' history-incremental-search-forward
 bindkey '^P' history-search-backward
 bindkey '^N' history-search-forward
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

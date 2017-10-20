@@ -30,6 +30,7 @@ Plug 'honza/vim-snippets' ",      { 'on': [] }
 
 " Git
 Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-rhubarb'
 " Plug 'airblade/vim-gitgutter'
 
 " Ruby
@@ -47,7 +48,7 @@ Plug 'pearofducks/ansible-vim'
 
 " Utility
 " Plug 'vim-scripts/YankRing.vim'
-" Plug 'wellle/targets.vim'
+Plug 'wellle/targets.vim'
 Plug 'vim-scripts/LargeFile'
 Plug 'vim-scripts/file-line'
 Plug 'ConradIrwin/vim-bracketed-paste'
@@ -61,7 +62,7 @@ Plug 'tpope/vim-markdown',      { 'for': 'markdown' }
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
-Plug 'eiginn/netrw' ",            { 'on': 'Explore' }
+Plug 'eiginn/netrw'
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
@@ -472,6 +473,10 @@ let ruby_space_errors=1
 " Python
 let g:pymode_options_colorcolumn=0
 let g:pymode_folding=0
+let g:pymode_doc=0
+" let g:pymode_lint=0
+let g:pymode_lint_cwindow=0
+let g:pymode_rope_complete_on_dot=0
 
 let g:ale_lint_on_text_changed='never'
 let g:ale_sign_error='✗'
@@ -542,6 +547,8 @@ let g:ctrlp_use_caching = 0
 " Airline
 let g:airline#extensions#tagbar#enabled=0
 let g:airline#extensions#hunks#enabled=0
+let g:airline#extensions#ale#enabled=1
+let g:airline_theme='twilight'
 
 " Mustache
 let g:mustache_abbreviations = 1

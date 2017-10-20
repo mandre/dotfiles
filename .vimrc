@@ -17,7 +17,7 @@ endif
 call plug#begin('~/.vim/plugged')
 
 " Programming
-Plug 'matchit.zip'
+Plug 'vim-scripts/matchit.zip'
 if v:version >= 703
   Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
 endif
@@ -46,10 +46,10 @@ Plug 'mustache/vim-mode',       { 'for': 'javascript' }
 Plug 'pearofducks/ansible-vim'
 
 " Utility
-" Plug 'YankRing.vim'
+" Plug 'vim-scripts/YankRing.vim'
 " Plug 'wellle/targets.vim'
-Plug 'LargeFile'
-Plug 'file-line'
+Plug 'vim-scripts/LargeFile'
+Plug 'vim-scripts/file-line'
 Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'ervandew/supertab' ",       { 'on': [] }
 Plug 'tpope/vim-endwise'
@@ -63,7 +63,7 @@ Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
 Plug 'eiginn/netrw' ",            { 'on': 'Explore' }
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
-Plug 'ZoomWin'
+Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
 Plug 'sjl/gundo.vim',           { 'on': 'GundoToggle' }
 " Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }

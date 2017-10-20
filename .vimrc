@@ -75,7 +75,8 @@ Plug 'henrik/vim-indexed-search'
 Plug 'xolox/vim-misc',          { 'on': 'Note' }
 Plug 'xolox/vim-notes',         { 'on': 'Note' }
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
-Plug 'kien/ctrlp.vim'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
 Plug 'Lokaltog/vim-easymotion', { 'on': ['<Plug>(easymotion-s2)', '<Plug>(easymotion-j)', '<Plug>(easymotion-k)'] }
 Plug 'rhysd/clever-f.vim'
 Plug 'tmux-plugins/vim-tmux'
@@ -403,6 +404,9 @@ nnoremap <leader>v V`]
 " Quick yanking to the end of the line
 nmap Y y$
 
+" Just because I'm used to it
+nnoremap <c-p> :Files<CR>
+
 " Ack the word under the cursor
 nnoremap <leader>a :Ack! <cword><CR>
 
@@ -437,7 +441,7 @@ noremap <F1> <ESC>
 " <F2> File explorer
 noremap <F2> :Explore<CR>
 " <F3> Buffer explorer
-noremap <F3> :CtrlPBuffer<CR>
+noremap <F3> :Buffers<CR>
 " <F4> Tagbar
 noremap <F4> :TagbarToggle<CR>
 " <F5> Reload file

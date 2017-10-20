@@ -22,7 +22,7 @@ if v:version >= 703
   Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
 endif
 Plug 'tpope/vim-commentary',    { 'on': ['<Plug>Commentary', '<Plug>CommentaryLine'] }
-Plug 'scrooloose/syntastic' ",    { 'on': [] }
+Plug 'w0rp/ale'
 
 " Snippets
 Plug 'SirVer/ultisnips' ",        { 'on': [] }
@@ -295,7 +295,6 @@ set expandtab
 " ---------------------------------------------------------------------------
 
 set statusline=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
 set statusline+=%{fugitive#statusline()}
 set statusline+=\ %<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
@@ -470,11 +469,12 @@ let ruby_space_errors=1
 let g:pymode_options_colorcolumn=0
 let g:pymode_folding=0
 
-let g:syntastic_auto_loc_list=2
-let g:syntastic_enable_signs=1
-let g:syntastic_error_symbol='✗'
-let g:syntastic_warning_symbol='⚠'
-let g:syntastic_disabled_filetypes = ['html']
+let g:ale_lint_on_text_changed='never'
+let g:ale_sign_error='✗'
+let g:ale_sign_warning='⚠'
+let g:ale_echo_msg_error_str='E'
+let g:ale_echo_msg_warning_str='W'
+let g:ale_echo_msg_format='[%linter%] %s [%severity%]'
 
 " SuperTab
 let g:SuperTabDefaultCompletionType="context"

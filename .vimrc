@@ -119,6 +119,9 @@ set showmatch		" Show matching brackets.
 " Use sane regexes.
 " nnoremap / /\v
 " vnoremap / /\v
+if has("nvim")
+    set inccommand=nosplit
+endif
 
 " Spell
 if has("spell")
@@ -568,7 +571,9 @@ if has("gui_running")
   endif
 else
   set clipboard=unnamed
-  set ttymouse=sgr
+  if !has('nvim')
+    set ttymouse=sgr
+  endif
   set mouse=a
   set t_Co=256
 endif
@@ -586,7 +591,11 @@ if !isdirectory($HOME . "/.vim/.tmp")
   call system("mkdir -p ~/.vim/.tmp/netrw")
 endif
 
-set viminfo='1000,f1,<500,:100,/100,s10,h,n~/.vim/viminfo
+if has('nvim')
+  set viminfo='1000,f1,<500,:100,/100,s10,h
+else
+  set viminfo='1000,f1,<500,:100,/100,s10,h,n~/.vim/viminfo
+endif
 set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
 let g:yankring_history_dir = "~/.vim/.tmp/yankring"

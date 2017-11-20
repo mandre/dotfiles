@@ -5,9 +5,12 @@ function prompt_for_missing_commit {
     branch=$2
     current_branch=$3
     git log --oneline -n1 $commit
-    read -p "Commit $commit in $branch is missing from $current_branch. Inspect? [Yn] " answer
-    if ! [[ "${answer,,}" =~ ^(n|no)$ ]]; then
+    read -p "Commit $commit in $branch is missing from $current_branch. Inspect? [Yns] " answer
+    if ! [[ "${answer,,}" =~ ^(n|no|s)$ ]]; then
         git show $commit
+    fi
+    if [[ "${answer,,}" =~ ^(s)$ ]]; then
+        SKIP_BRANCH=1
     fi
 }
 
@@ -17,9 +20,12 @@ function prompt_for_commit_diff {
     local_branch=$3
     current_branch=$4
     git log --oneline -n1 $commit
-    read -p "Commit $local_commit in $local_branch and $merged_commit in $current_branch differ. Inspect? [Yn] " answer
-    if ! [[ "${answer,,}" =~ ^(n|no)$ ]]; then
+    read -p "Commit $local_commit in $local_branch and $merged_commit in $current_branch differ. Inspect? [Yns] " answer
+    if ! [[ "${answer,,}" =~ ^(n|no|s)$ ]]; then
         interdiff <(git show $local_commit) <(git show $merged_commit) | colordiff
+    fi
+    if [[ "${answer,,}" =~ ^(s)$ ]]; then
+        SKIP_BRANCH=1
     fi
 }
 
@@ -32,7 +38,11 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
     echo
     echo "Checking branch $branch"
     branch_differs=0
+    SKIP_BRANCH=0
     for commit in $(git log --no-merges --pretty=format:"%h" ${current_branch}..${branch}); do
+        if [ $SKIP_BRANCH -eq 1 ]; then
+            continue
+        fi
         change_id=$(git log -n1 --pretty=format:%b $commit | awk '/Change-Id:/ {print $0}')
         if [ -z "$change_id" ]; then
             branch_differs=1
@@ -58,7 +68,7 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
         if [[ "${answer,,}" =~ ^(y|yes)$ ]]; then
             git branch -D $branch
         fi
-    else
+    elif [ $SKIP_BRANCH -eq 0 ]; then
         read -p "$branch differs from $current_branch. Delete anyway? [yN] " answer
         if [[ "${answer,,}" =~ ^(y|yes)$ ]]; then
             git branch -D $branch

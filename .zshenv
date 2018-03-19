@@ -10,3 +10,4 @@ if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; t
   source "${ZDOTDIR:-$HOME}/.zprofile"
 fi
 export GOPATH=$HOME/go
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python

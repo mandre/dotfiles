@@ -72,7 +72,7 @@ Plug 'sjl/gundo.vim',           { 'on': 'GundoToggle' }
 if has('macunix') && !has("gui_running")
 Plug 'sjl/vitality.vim'
 endif
-Plug 'henrik/vim-indexed-search'
+Plug 'google/vim-searchindex'
 Plug 'xolox/vim-misc',          { 'on': 'Note' }
 Plug 'xolox/vim-notes',         { 'on': 'Note' }
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
@@ -503,12 +503,6 @@ let g:splitjoin_align=1
 let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
 let g:bufExplorerFindActive=0
 let g:bufExplorerDisableDefaultKeyMapping=1
-
-" Disable color
-let g:indexed_search_colors=0
-" Show shorter messages for indexed search
-let g:indexed_search_shortmess=1
-let g:indexed_search_keep_cursor_on_initial_result=1
 
 " Stop yankring from complaining
 let g:yankring_manual_clipboard_check=0

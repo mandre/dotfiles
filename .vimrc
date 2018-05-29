@@ -255,6 +255,13 @@ if has("autocmd")
   augroup END
   " }}}
 
+  " persistent undo {{{
+  augroup undo
+    autocmd!
+    autocmd BufWritePre /tmp/* setlocal noundofile
+  augroup END
+  " }}}
+
   " Utilities {{{
   augroup utilities
     autocmd!

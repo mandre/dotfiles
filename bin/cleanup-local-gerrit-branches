@@ -5,7 +5,8 @@ function prompt_for_missing_commit {
     branch=$2
     current_branch=$3
     git log --oneline -n1 $commit
-    read -p "Commit $commit in $branch is missing from $current_branch. Inspect? [Yns] " answer
+    echo -e -n "\e[33mCommit $commit in $branch is missing from $current_branch.\e[0m "
+    read -p "Inspect? [Yns] " answer
     if ! [[ "${answer,,}" =~ ^(n|no|s)$ ]]; then
         git show $commit
     fi
@@ -20,7 +21,8 @@ function prompt_for_commit_diff {
     local_branch=$3
     current_branch=$4
     git log --oneline -n1 $commit
-    read -p "Commit $local_commit in $local_branch and $merged_commit in $current_branch differ. Inspect? [Yns] " answer
+    echo -e -n "\e[33mCommit $local_commit in $local_branch and $merged_commit in $current_branch differ.\e[0m "
+    read -p "Inspect? [Yns] " answer
     if ! [[ "${answer,,}" =~ ^(n|no|s)$ ]]; then
         interdiff <(git show $local_commit) <(git show $merged_commit) | colordiff
     fi
@@ -64,12 +66,14 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
         fi
     done
     if [ $branch_differs -eq 0 ]; then
-        read -p "$branch fully merged. Delete? [yN] " answer
+        echo -e -n "\e[32m$branch fully merged.\e[0m "
+        read -p "Delete? [yN] " answer
         if [[ "${answer,,}" =~ ^(y|yes)$ ]]; then
             git branch -D $branch
         fi
     elif [ $SKIP_BRANCH -eq 0 ]; then
-        read -p "$branch differs from $current_branch. Delete anyway? [yN] " answer
+        echo -e -n "\e[31m$branch differs from $current_branch.\e[0m "
+        read -p "Delete anyway? [yN] " answer
         if [[ "${answer,,}" =~ ^(y|yes)$ ]]; then
             git branch -D $branch
         fi

@@ -59,5 +59,10 @@ quickmark r https://review.openstack.org/#/dashboard/self
 set followpagepatterns.next ^(next|newer|prochain|suivant)\b|→|»|>>
 set followpagepatterns.prev ^(prev(ious)?|older|précédent)\b|←|«|<<
 
+set modeindicator false
+" gnome-terminal is client/server and the command returns immediately, need to
+" use another terminal
+set editorcmd urxvt256c -e vim
+
 " This will have to do until someone writes us a nice syntax file :)
 " vim: set filetype=vim:

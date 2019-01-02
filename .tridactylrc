@@ -1,0 +1,63 @@
+" Move this to $XDG_CONFIG_DIR/tridactyl/tridactylrc (that's
+" ~/.config/tridactyl/tridactylrc to mere mortals) or ~/.tridactylrc and
+" install the native messenger (:installnative in Tridactyl). Run :source to
+" get it in the browser, or just restart.
+
+" NB: If you want "vim-like" behaviour where removing a line from
+" here makes the setting disappear, uncomment the line below.
+
+sanitise tridactyllocal tridactylsync
+
+"
+" Binds
+"
+
+" Comment toggler for Reddit and Hacker News
+bind ;c hint -c [class*="expand"],[class="togg"]
+
+" GitHub pull request checkout command to clipboard (only works if you're a collaborator or above)
+bind yp composite js document.getElementById("clone-help-step-1").textContent.replace("git checkout -b", "git checkout -B").replace("git pull ", "git fetch ") + "git reset --hard " + document.getElementById("clone-help-step-1").textContent.split(" ")[3].replace("-","/") | yank
+
+" Git{Hub,Lab} git clone via SSH yank
+bind yg composite js "git clone " + document.location.href.replace(/https?:\/\//,"git@").replace("/",":").replace(/$/,".git") | clipboard yank
+
+" Make gu take you back to subreddit from comments
+bindurl reddit.com gu urlparent 4
+
+" Allow Ctrl-a to select all in the commandline
+unbind --mode=ex <C-a>
+
+" Allow Ctrl-f to start a search
+unbind <C-f>
+
+"
+" Misc settings
+"
+
+" set editorcmd to suckless terminal, or use the defaults on other platforms
+js tri.browserBg.runtime.getPlatformInfo().then(os=>{const editorcmd = os.os=="linux" ? "st vim" : "auto"; tri.config.set("editorcmd", editorcmd)})
+
+
+" Sane hinting mode
+set hintfiltermode vimperator-reflow
+set hintnames numeric
+
+" Make Tridactyl work on more sites at the expense of some security
+" set csp clobber
+" fixamo_quiet
+
+" Quickmarks
+quickmark r https://review.openstack.org/#/dashboard/self
+
+"
+" URL redirects
+"
+
+" Mosquito nets won't make themselves
+" autocmd DocStart www.amazon.com js tri.excmds.urlmodify("-t", "www", "smile")
+
+set followpagepatterns.next ^(next|newer|prochain|suivant)\b|→|»|>>
+set followpagepatterns.prev ^(prev(ious)?|older|précédent)\b|←|«|<<
+
+" This will have to do until someone writes us a nice syntax file :)
+" vim: set filetype=vim:

@@ -43,6 +43,9 @@ Plug 'klen/python-mode',        { 'for': 'python' }
 " JS
 Plug 'mustache/vim-mode',       { 'for': 'javascript' }
 
+" Typescript
+Plug 'leafgarland/typescript-vim'
+
 " Ansible
 Plug 'pearofducks/ansible-vim'
 

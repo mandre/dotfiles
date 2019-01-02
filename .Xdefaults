@@ -2,8 +2,8 @@ URxvt.depth: 32
 URxvt.scrollBar: false
 URxvt.scrollTtyOutput: true
 URxvt.scrollWithBuffer: false
-URxvt.font: xft:monospace:size=10
-URxvt.letterSpace: -1
+URxvt.font: xft:monospace:size=12
+#URxvt.letterSpace: -1
 
 /* URxvt.preeditType: OnTheSpot,Root,None */
 

@@ -121,7 +121,7 @@ hi Type                      guifg=#5F87AF gui=NONE cterm=NONE ctermfg=67
 hi DiffAdd      guifg=#d7ffaf        guibg=#5F875F   ctermfg=193     ctermbg=65        gui=NONE      cterm=NONE
 hi DiffChange   guifg=#d7d7ff        guibg=#5F5F87   ctermfg=189     ctermbg=60        gui=NONE      cterm=NONE
 hi DiffDelete   guifg=fg        guibg=#cc6666   ctermfg=fg     ctermbg=167        gui=NONE      cterm=NONE
-hi DiffText     guifg=fg   guibg=#81a2be   ctermfg=189    ctermbg=110        gui=NONE      cterm=NONE
+hi DiffText     guifg=fg   guibg=#81a2be   ctermfg=0    ctermbg=110        gui=NONE      cterm=NONE
 
 hi diffAdded     guifg=#87AF5F   ctermfg=2        gui=NONE      cterm=NONE
 hi diffRemoved   guifg=#cc6666   ctermfg=1        gui=NONE      cterm=NONE

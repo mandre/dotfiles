@@ -71,7 +71,7 @@ Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
 Plug 'sjl/gundo.vim',           { 'on': 'GundoToggle' }
 " Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
-" Plug 'sjl/splice.vim'
+Plug 'whiteinge/diffconflicts'
 if has('macunix') && !has("gui_running")
 Plug 'sjl/vitality.vim'
 endif

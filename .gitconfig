@@ -25,5 +25,15 @@
 	show = diff-highlight | less
 	diff = diff-highlight | less
 
+[merge]
+	tool = diffconflicts
+
+[mergetool "diffconflicts"]
+	cmd = vim -c DiffConflicts \"$MERGED\" \"$BASE\" \"$LOCAL\" \"$REMOTE\"
+	trustExitCode = true
+
+[mergetool]
+	keepBackup = false
+
 [include]
 	path = .gitconfig.private

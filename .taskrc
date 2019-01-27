@@ -1,0 +1,51 @@
+# [Created by task 2.5.0.beta2 10/14/2015 10:49:57]
+# Taskwarrior program configuration file.
+# For more documentation, see http://taskwarrior.org or try 'man task', 'man task-color',
+# 'man task-sync' or 'man taskrc'
+
+# Here is an example of entries that use the default, override and blank values
+#   variable=foo   -- By specifying a value, this overrides the default
+#   variable=      -- By specifying no value, this means no default
+#   #variable=foo  -- By commenting out the line, or deleting it, this uses the default
+
+# Use the command 'task show' to see all defaults and overrides
+
+# Files
+data.location=~/.task
+
+# Color theme (uncomment one to use)
+#include /usr/share/task/light-16.theme
+#include /usr/share/task/light-256.theme
+#include /usr/share/task/dark-16.theme
+#include /usr/share/task/dark-256.theme
+#include /usr/share/task/dark-red-256.theme
+#include /usr/share/task/dark-green-256.theme
+#include /usr/share/task/dark-blue-256.theme
+#include /usr/share/task/dark-violets-256.theme
+#include /usr/share/task/dark-yellow-green.theme
+#include /usr/share/task/dark-gray-256.theme
+#include /usr/share/task/dark-gray-blue-256.theme
+#include /usr/share/task/solarized-dark-256.theme
+#include /usr/share/task/solarized-light-256.theme
+#include /usr/share/task/no-color.theme
+
+color.alternate =
+color.tagged = blue
+color.active = black on yellow
+color.uda.priority.L = white
+color.uda.priority.H = bold red
+color.error = bold black on red
+
+color.history.add = black on red
+color.history.delete = black on yellow
+color.history.done = black on green
+
+include ~/.taskrc-private
+
+uda.priority.values = H,M,,L
+urgency.uda.priority.L.coefficient=0
+urgency.uda.priority..coefficient=1.8
+urgency.user.tag.bz.coefficient=0
+urgency.user.tag.ready.coefficient=-3
+
+reserved.lines=2

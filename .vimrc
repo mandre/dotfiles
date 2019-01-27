@@ -142,6 +142,23 @@ if &t_Co > 2 || has("gui_running")
   set hlsearch
 endif
 
+if has("nvim")
+  " Make escape work in the Neovim terminal
+  tnoremap <Esc> <C-\><C-n>
+
+  " Make navigation into and out of Neovim terminal splits nicer
+  tnoremap <C-h> <C-\><C-N><C-w>h
+  tnoremap <C-j> <C-\><C-N><C-w>j
+  tnoremap <C-k> <C-\><C-N><C-w>k
+  tnoremap <C-l> <C-\><C-N><C-w>l
+
+  " Relative numbers when in normal mode
+  autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
+
+  " Start terminal in insert mode
+  autocmd BufEnter term://* startinsert
+endif
+
 " Wildmenu completion {{{
 set wildmenu
 set wildmode=list:longest,list:full

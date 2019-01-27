@@ -38,7 +38,7 @@ Plug 'vim-ruby/vim-ruby',       { 'for': 'ruby' }
 Plug 'tpope/vim-rails',         { 'for': 'ruby' }
 
 " Python
-Plug 'klen/python-mode',        { 'for': 'python' }
+Plug 'python-mode/python-mode', { 'branch': 'develop', 'for': 'python' }
 
 " JS
 Plug 'mustache/vim-mode',       { 'for': 'javascript' }

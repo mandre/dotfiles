@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Weechat
+Icon=/home/martin/.local/share/icons/weechat.png
+Exec=weechat-wrapper %F
+NoDisplay=false
+Categories=Network;IRCClient;
+StartupNotify=false
+Terminal=false
+MimeType=x-scheme-handler/irc;x-scheme-handler/ircs;
+X-GNOME-SingleWindow=false

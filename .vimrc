@@ -65,7 +65,7 @@ Plug 'tpope/vim-markdown',      { 'for': 'markdown' }
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
-Plug 'eiginn/netrw',            { 'commit': '203722ffa552f6074f294431e4b6205e62c5764f' }
+Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'

@@ -12,6 +12,15 @@ sanitise tridactyllocal tridactylsync
 " Binds
 "
 
+bind J tprev
+bind K tnext
+
+bind / fillcmdline find
+bind ? fillcmdline find -?
+bind n findnext 1
+bind N findnext -1
+bind ,<Space> nohlsearch
+
 " Comment toggler for Reddit and Hacker News
 bind ;c hint -c [class*="expand"],[class="togg"]
 
@@ -23,6 +32,10 @@ bind yg composite js "git clone " + document.location.href.replace(/https?:\/\//
 
 " Make gu take you back to subreddit from comments
 bindurl reddit.com gu urlparent 4
+
+" Only hint search results on Google
+bindurl www.google.com f hint -Jc .rc > .r > a
+bindurl www.google.com F composite hint -Jpipe .rc>.r>a href | tabopen | buffer #
 
 " Allow Ctrl-a to select all in the commandline
 unbind --mode=ex <C-a>

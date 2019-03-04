@@ -14,8 +14,8 @@
 [rerere]
 	enabled = true
 
-[init]
-	templatedir = ~/.git_template
+; [init]
+; 	templatedir = ~/.git_template
 
 [alias]
 	ctags = !.git/hooks/ctags

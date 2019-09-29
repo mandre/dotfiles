@@ -49,6 +49,12 @@ Plug 'leafgarland/typescript-vim'
 " Ansible
 Plug 'pearofducks/ansible-vim'
 
+" Go
+Plug 'fatih/vim-go'
+
+" Terraform
+Plug 'hashivim/vim-terraform'
+
 " Utility
 " Plug 'vim-scripts/YankRing.vim'
 Plug 'wellle/targets.vim'

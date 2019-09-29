@@ -62,6 +62,8 @@ set hintnames numeric
 " Quickmarks
 quickmark r https://review.openstack.org/#/dashboard/self
 
+seturl https://redhat.service-now.com/help noiframe true
+
 "
 " URL redirects
 "

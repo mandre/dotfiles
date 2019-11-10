@@ -34,26 +34,10 @@ Plug 'tpope/vim-rhubarb'
 " Plug 'airblade/vim-gitgutter'
 
 " Ruby
-Plug 'vim-ruby/vim-ruby',       { 'for': 'ruby' }
 Plug 'tpope/vim-rails',         { 'for': 'ruby' }
 
-" Python
-Plug 'python-mode/python-mode', { 'branch': 'develop', 'for': 'python' }
-
-" JS
-Plug 'mustache/vim-mode',       { 'for': 'javascript' }
-
-" Typescript
-Plug 'leafgarland/typescript-vim'
-
-" Ansible
-Plug 'pearofducks/ansible-vim'
-
-" Go
-Plug 'fatih/vim-go'
-
-" Terraform
-Plug 'hashivim/vim-terraform'
+" Additional language files
+Plug 'sheerun/vim-polyglot'
 
 " Utility
 " Plug 'vim-scripts/YankRing.vim'
@@ -67,7 +51,6 @@ Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-sleuth' ",        { 'on': [] }
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
-Plug 'tpope/vim-markdown',      { 'for': 'markdown' }
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
@@ -89,7 +72,6 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'Lokaltog/vim-easymotion', { 'on': ['<Plug>(easymotion-s2)', '<Plug>(easymotion-j)', '<Plug>(easymotion-k)'] }
 Plug 'rhysd/clever-f.vim'
-Plug 'tmux-plugins/vim-tmux'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'
@@ -503,14 +485,6 @@ let g:vundle_default_git_proto = 'git'
 " let g:rubycomplete_buffer_loading=1
 let ruby_space_errors=1
 
-" Python
-let g:pymode_options_colorcolumn=0
-let g:pymode_folding=0
-let g:pymode_doc=0
-" let g:pymode_lint=0
-let g:pymode_lint_cwindow=0
-let g:pymode_rope_complete_on_dot=0
-
 let g:ale_lint_on_text_changed='never'
 let g:ale_sign_error='✗'
 let g:ale_sign_warning='⚠'
@@ -579,9 +553,6 @@ let g:airline_theme='twilight'
 
 " Mustache
 let g:mustache_abbreviations = 1
-
-" Markdown
-let g:markdown_fenced_languages = ['css', 'erb=eruby', 'javascript', 'js=javascript', 'json=javascript', 'ruby', 'sass', 'xml', 'html']
 
 " }}}
 " GUI {{{

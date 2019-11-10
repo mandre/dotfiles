@@ -58,8 +58,7 @@ Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
-Plug 'sjl/gundo.vim',           { 'on': 'GundoToggle' }
-" Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
+Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
 if has('macunix') && !has("gui_running")
 Plug 'sjl/vitality.vim'
@@ -462,8 +461,8 @@ noremap <F3> :Buffers<CR>
 noremap <F4> :TagbarToggle<CR>
 " <F5> Reload file
 noremap <F5> :e!<CR>
-" <F7> Toggle GUndo tree
-noremap <F7> :GundoToggle<CR>
+" <F7> Toggle Undo tree
+noremap <F7> :UndotreeToggle<CR>
 " <F8> Comment
 nmap <F8> <Plug>CommentaryLine<ESC>j
 xmap <F8> <Plug>Commentary
@@ -541,6 +540,9 @@ let g:airline_theme='twilight'
 
 " Mustache
 let g:mustache_abbreviations = 1
+
+" Undotree
+let g:undotree_WindowLayout = 2
 
 " }}}
 " GUI {{{

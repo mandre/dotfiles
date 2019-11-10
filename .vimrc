@@ -506,11 +506,6 @@ let g:UltiSnipsEditSplit="vertical"
 " SplitJoin
 let g:splitjoin_align=1
 
-" Bufexplorer
-let g:bufExplorerSortBy='fullpath'   " Sort by full file path name.
-let g:bufExplorerFindActive=0
-let g:bufExplorerDisableDefaultKeyMapping=1
-
 " Stop yankring from complaining
 let g:yankring_manual_clipboard_check=0
 
@@ -537,13 +532,6 @@ let g:clever_f_fix_key_direction=1
 " Medium mode
 let g:mediummode_enabled = 0
 let g:mediummode_allowed_motions = 5
-
-" CtrlP
-let g:ctrlp_match_window_reversed = 0
-let g:ctrlp_max_history = 0
-let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files . -co --exclude-standard', 'find %s -type f']
-let g:ctrlp_use_caching = 0
-
 
 " Airline
 let g:airline#extensions#tagbar#enabled=0
@@ -608,12 +596,8 @@ endif
 set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
 let g:yankring_history_dir = "~/.vim/.tmp/yankring"
-let g:ctrlp_cache_dir = '~/.vim/.tmp/ctrlp'
 let g:netrw_home = '~/.vim/.tmp/netrw'
 let g:notes_directories = ['~/.vim/notes']
-
-" latex specific stuff
-let g:Tex_CompileRule_dvi = 'latex --interaction=nonstopmode $*'
 
 set completeopt=menuone,preview
 " Make Vim completion popup menu work just like in an IDE

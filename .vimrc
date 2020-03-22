@@ -396,6 +396,7 @@ nmap <Down> ]m
 
 " Map ESC
 inoremap jk <esc>
+inoremap kj <esc>
 " inoremap <esc> <nop>
 
 " Expand current file path

@@ -31,6 +31,7 @@ Plug 'honza/vim-snippets' ",      { 'on': [] }
 " Git
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-rhubarb'
+Plug 'rhysd/git-messenger.vim'
 " Plug 'airblade/vim-gitgutter'
 
 " Ruby

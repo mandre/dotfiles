@@ -33,15 +33,25 @@ bind yg composite js "git clone " + document.location.href.replace(/https?:\/\//
 " Make gu take you back to subreddit from comments
 bindurl reddit.com gu urlparent 4
 
-" Only hint search results on Google
+" Only hint search results on Google and DDG
 bindurl www.google.com f hint -Jc .rc > .r > a
-bindurl www.google.com F composite hint -Jpipe .rc>.r>a href | tabopen | buffer #
+bindurl www.google.com F hint -Jbc .rc>.r>a
+
+bindurl ^https://duckduckgo.com f hint -Jc [class=result__a]
+bindurl ^https://duckduckgo.com F hint -Jbc [class=result__a]
 
 " Allow Ctrl-a to select all in the commandline
 unbind --mode=ex <C-a>
 
 " Allow Ctrl-f to start a search
 unbind <C-f>
+
+" Handy multiwindow/multitasking binds
+bind gd tabdetach
+bind gD composite tabduplicate | tabdetach
+
+" Make yy use canonical / short links on the 5 websites that support them
+bind yy clipboard yankshort
 
 "
 " Misc settings
@@ -54,10 +64,6 @@ js tri.browserBg.runtime.getPlatformInfo().then(os=>{const editorcmd = os.os=="l
 " Sane hinting mode
 set hintfiltermode vimperator-reflow
 set hintnames numeric
-
-" Make Tridactyl work on more sites at the expense of some security
-" set csp clobber
-" fixamo_quiet
 
 " Quickmarks
 quickmark r https://review.openstack.org/#/dashboard/self
@@ -73,6 +79,10 @@ seturl https://redhat.service-now.com/help noiframe true
 
 set followpagepatterns.next ^(next|newer|prochain|suivant)\b|→|»|>>
 set followpagepatterns.prev ^(prev(ious)?|older|précédent)\b|←|«|<<
+
+set smoothscroll true
+
+colourscheme twilight
 
 set modeindicator false
 " gnome-terminal is client/server and the command returns immediately, need to

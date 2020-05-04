@@ -1,0 +1,2 @@
+JIRA_USERNAME=mandre
+JIRA_PASSWORD="$(pass rh/customer-portal/maandre@redhat.com)"

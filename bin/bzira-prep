@@ -4,9 +4,6 @@ SRC_PATH="$HOME/dev/openshift/bzira"
 
 if ! tmux list-windows | grep bzira; then
 	tmux new-window -n bzira -c $SRC_PATH
-	tmux send-keys  -t bzira 'export JIRA_USERNAME=mandre' C-m
-	tmux send-keys  -t bzira 'export JIRA_PASSWORD=$(pass rh/customer-portal/maandre@redhat.com)' C-m
-	tmux send-keys  -t bzira './bzira -h' C-m
 else
 	tmux select-window -t bzira
 fi

@@ -17,9 +17,9 @@ SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
 # Customize to your needs...
 
 # Custom commands
-# openstack() { cd ~/dev/openstack/$1; }
-# _openstack() { _files -W ~/dev/openstack -/; }
-# compdef _openstack openstack
+openshift() { cd ~/go/src/github.com/openshift/$1; }
+_openshift() { _files -W ~/go/src/github.com/openshift -/; }
+compdef _openshift openshift
 
 kolla() { cd ~/dev/openstack/kolla; }
 

@@ -2,7 +2,7 @@
 # Here you define a comma separated list of targets.  Each of them must have a
 # section below determining their properties, how to query them, etc.  The name
 # is just a symbol, and doesn't have any functional importance.
-targets = bugzilla
+targets = bugzilla, jira
 
 # If unspecified, the default taskwarrior config will be used.
 #taskrc = /path/to/.taskrc
@@ -115,17 +115,19 @@ only_on_new_tasks = True
 ## have a trailing slash. In this case we fetch comments and
 ## cases from jira assigned to 'ralph' where the status is not closed or
 ## resolved.
-#[jira_project]
-#service = jira
-#jira.base_uri = https://jira.example.org
-#jira.username = ralph
-#jira.password = OMG_LULZ
+[jira]
+service = jira
+jira.base_uri = https://issues.redhat.com
+jira.username = mandre
+jira.password = @oracle:use_keyring
+jira.description_template = [{{jiraid}}] {{jirasummary}}
+jira.add_tags = jira
+# jira.import_sprints_as_tags = True
 #jira.query = assignee = ralph and status != closed and status != resolved
 ## Set this to your jira major version. We currently support only jira version
 ## 4 and 5(the default). You can find your particular version in the footer at
 ## the dashboard.
 #jira.version = 5
-#jira.add_tags = enterprisey,work
 
 ## Here's an example of a phabricator target
 #[my_phabricator]

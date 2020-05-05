@@ -12,3 +12,4 @@ fi
 export GOPATH=$HOME/go
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
 alias vim='/bin/nvim'
+alias docker=podman

@@ -1,9 +1,0 @@
-#!/bin/bash
-
-SRC_PATH="$HOME/dev/openshift/bzira"
-
-if ! tmux list-windows | grep bzira; then
-	tmux new-window -n bzira -c $SRC_PATH
-else
-	tmux select-window -t bzira
-fi

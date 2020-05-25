@@ -25,6 +25,9 @@ compdef _openshift openshift
 
 kolla() { cd ~/dev/openstack/kolla; }
 
+_hackon() { _files -W ${XDG_DATA_HOME:-${HOME}/.local/share}/hackon -/; }
+compdef _hackon hackon
+
 # Speed up git completion for huge repositories
 __git_files () {
 	_wanted files expl 'local files' _files

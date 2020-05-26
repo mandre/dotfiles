@@ -322,7 +322,7 @@ set statusline+=\ %<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
 " ---------------------------------------------------------------------------
 
 " Shortcuts to often edited files
-nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+nnoremap <leader>ev :vsplit $HOME/.vimrc<cr>
 nnoremap <leader>ez :vsplit $HOME/.zshrc<cr>
 nnoremap <leader>et :vsplit $HOME/.tmux.conf<cr>
 nnoremap <leader>es :vsplit $HOME/.ssh/config<cr>

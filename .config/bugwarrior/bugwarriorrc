@@ -121,6 +121,7 @@ jira.base_uri = https://issues.redhat.com
 jira.username = mandre
 jira.password = @oracle:use_keyring
 jira.description_template = [{{jiraid}}] {{jirasummary}}
+jira.project_template = Work.Issues
 jira.add_tags = jira
 # jira.import_sprints_as_tags = True
 #jira.query = assignee = ralph and status != closed and status != resolved
@@ -179,6 +180,6 @@ bugzilla.password = @oracle:use_keyring
 bugzilla.ignore_cc = True
 bugzilla.description_template = [BZ#{{bugzillabugid}}] {{bugzillasummary}}
 bugzilla.open_statuses = NEW,ASSIGNED,ON_DEV,REOPENED,FAILS_QA
-# bugzilla.project_template = Work.BZ
+bugzilla.project_template = Work.Issues
 bugzilla.add_tags = bz
 #bugzilla.advanced = yes

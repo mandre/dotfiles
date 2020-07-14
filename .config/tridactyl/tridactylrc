@@ -66,7 +66,8 @@ set hintfiltermode vimperator-reflow
 set hintnames numeric
 
 " Quickmarks
-quickmark r https://review.openstack.org/#/dashboard/self
+" Use go/gn/gw to open in current tab / new tab / new win
+quickmark r https://review.opendev.org/#/dashboard/self
 quickmark p https://github.com/pulls
 
 seturl https://redhat.service-now.com/help noiframe true

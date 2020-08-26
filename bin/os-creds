@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+import os
+import subprocess
+import sys
+import yaml
+
+clouds_to_env = {
+    "application_credential_id": "OS_APPLICATION_CREDENTIAL_ID",
+    "auth_url": "OS_AUTH_URL",
+    "identity_api_version": "OS_IDENTITY_API_VERSION",
+    "interface": "OS_INTERFACE",
+    "password": "OS_PASSWORD",
+    "project_id": "OS_PROJECT_ID",
+    "project_name": "OS_PROJECT_NAME",
+    "region_name": "OS_REGION_NAME",
+    "user_domain_name": "OS_USER_DOMAIN_NAME",
+    "username": "OS_USERNAME",
+    # "": "OS_APPLICATION_CREDENTIAL_NAME",
+    # "": "OS_APPLICATION_CREDENTIAL_SECRET",
+    # "": "OS_AUTH_TOKEN",
+    # "": "OS_DEFAULT_DOMAIN",
+    # "": "OS_DOMAIN_ID",
+    # "": "OS_DOMAIN_NAME",
+    # "": "OS_PROJECT_DOMAIN_ID",
+    # "": "OS_PROJECT_DOMAIN_NAME",
+    # "": "OS_TENANT_ID",
+    # "": "OS_TENANT_NAME",
+    # "": "OS_TOKEN",
+    # "": "OS_USER_DOMAIN_ID",
+    # "": "OS_USER_ID",
+}
+
+
+def parse_key(clouds_key, clouds_value):
+    if clouds_key == 'auth':
+        for k in clouds_value:
+            parse_key(k, clouds_value[k])
+    else:
+        if not clouds_to_env.get(clouds_key):
+            print("Unknown key %s" % clouds_key)
+            exit()
+        else:
+            os.putenv(clouds_to_env[clouds_key], str(clouds_value))
+
+
+# TODO Also respect OS_CLIENT_CONFIG_FILE
+def find_clouds_yaml(filename):
+    if os.path.exists(filename):
+        return filename
+    file_path = os.path.join(os.environ.get('HOME'), '.config', 'openstack', filename)
+    if os.path.exists(file_path):
+        return file_path
+    file_path = os.path.join('/etc', 'openstack', filename)
+    if os.path.exists(file_path):
+        return file_path
+
+    print("Could not find %s" % filename)
+    exit()
+
+
+if len(sys.argv) < 2:
+    print("You need to pass a command. For instance: %s nova list" % sys.argv[0])
+    exit()
+
+cloud = os.environ.get('OS_CLOUD')
+if not cloud:
+    print("OS_CLOUD isn't set. Export your cloud environment with OS_CLOUD.")
+    exit()
+
+# TODO Also load secure.yaml
+with open(find_clouds_yaml('clouds.yaml')) as f:
+    data = yaml.safe_load(f)
+    if not data.get('clouds', []).get(cloud):
+        print("Cloud %s doesn't exist in clouds.yaml" % cloud)
+        exit()
+    for k in data['clouds'][cloud]:
+        parse_key(k, data['clouds'][cloud][k])
+
+# Call everything that was passed on the command line
+subprocess.check_call(sys.argv[1:])

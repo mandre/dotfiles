@@ -1,11 +1,19 @@
 #!/bin/bash
 
 HACKON_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/hackon"
-TARGET_DIR=$(readlink $HACKON_DIR/$1)
+TARGET_DIR=$(readlink "${HACKON_DIR}"/"$1")
 
-if ! tmux list-windows | grep $1; then
-	tmux new-window -n $1 -c "${TARGET_DIR}"
-	# tmux split-window -h -b -c "${TARGET_DIR}"
+if tmux list-windows -F "#W" | grep -q "$1"; then
+	# If the window already exist, switch to it
+	tmux select-window -t "$1"
 else
-	tmux select-window -t $1
+	if tmux list-windows -F "#{window_active} - #W" | grep -q "1 - zsh"; then
+		# If the current window is a plain zsh one, use it
+		tmux rename-window "$1"
+		tmux send-keys "cd ${TARGET_DIR}" C-m
+	else
+		# Otherwise create a new window
+		tmux new-window -n "$1" -c "${TARGET_DIR}"
+		# tmux split-window -h -b -c "${TARGET_DIR}"
+	fi
 fi

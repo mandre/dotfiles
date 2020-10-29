@@ -57,7 +57,7 @@ hi Special                   guifg=#E9C062 ctermfg=179
 hi rubyRegexpEscape          guifg=#CF7D34 ctermfg=173
 
 "rubyComment
-hi Comment                   guifg=#5F5A60 gui=italic ctermfg=240
+hi Comment                   guifg=#5F5A60 gui=italic ctermfg=240  cterm=italic gui=italic
 hi Todo                      guifg=#E3D796 guibg=NONE gui=bold cterm=bold ctermfg=186 ctermbg=NONE
 
 "rubyPseudoVariable

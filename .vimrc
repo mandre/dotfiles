@@ -65,8 +65,6 @@ if has('macunix') && !has("gui_running")
 Plug 'sjl/vitality.vim'
 endif
 Plug 'google/vim-searchindex'
-Plug 'xolox/vim-misc',          { 'on': 'Note' }
-Plug 'xolox/vim-notes',         { 'on': 'Note' }
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
@@ -642,7 +640,6 @@ set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
 let g:yankring_history_dir = "~/.vim/.tmp/yankring"
 let g:netrw_home = '~/.vim/.tmp/netrw'
-let g:notes_directories = ['~/.vim/notes']
 
 set completeopt=menuone,preview
 " Make Vim completion popup menu work just like in an IDE

@@ -11,6 +11,9 @@
 [push]
 	default = current
 
+[pull]
+	rebase = true
+
 [rerere]
 	enabled = true
 

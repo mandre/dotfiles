@@ -103,22 +103,24 @@ editor_stop_format_chars=-+*\\,.;:&>
 
 editor_state_full_filename=false
 
+safe_overwrite=false
+
 [Layout]
-message_visible=0
-keybar_visible=1
-xterm_title=1
+message_visible=false
+keybar_visible=true
+xterm_title=true
 output_lines=0
-command_prompt=1
-menubar_visible=1
+command_prompt=true
+menubar_visible=true
 show_mini_info=1
 permission_mode=0
 filetype_mode=1
-free_space=1
+free_space=true
 
-horizontal_split=0
-vertical_equal=1
+horizontal_split=false
+vertical_equal=true
 left_panel_size=106
-horizontal_equal=1
+horizontal_equal=true
 top_panel_size=40
 
 [Misc]

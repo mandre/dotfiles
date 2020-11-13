@@ -49,3 +49,5 @@ urgency.user.tag.bz.coefficient=0
 urgency.user.tag.ready.coefficient=-3
 
 reserved.lines=2
+
+search.case.sensitive=no

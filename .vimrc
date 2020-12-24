@@ -55,7 +55,7 @@ Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
-Plug 'eiginn/netrw',
+Plug 'mandre/netrw', { 'branch': '171e' }
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
@@ -610,7 +610,6 @@ if has("gui_running")
     set fuoptions=maxvert,maxhorz
   endif
 else
-  set clipboard=unnamed
   if !has('nvim')
     set ttymouse=sgr
   endif
@@ -640,6 +639,8 @@ set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
 let g:yankring_history_dir = "~/.vim/.tmp/yankring"
 let g:netrw_home = '~/.vim/.tmp/netrw'
+
+let g:netrw_clipboard = 0
 
 set completeopt=menuone,preview
 " Make Vim completion popup menu work just like in an IDE

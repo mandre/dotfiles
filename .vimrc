@@ -55,7 +55,7 @@ Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
-Plug 'mandre/netrw', { 'branch': '171e' }
+Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'

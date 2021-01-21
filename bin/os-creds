@@ -78,4 +78,8 @@ with open(find_clouds_yaml('clouds.yaml')) as f:
         parse_key(k, data['clouds'][cloud][k])
 
 # Call everything that was passed on the command line
-subprocess.check_call(sys.argv[1:])
+try:
+    subprocess.check_call(sys.argv[1:])
+except subprocess.CalledProcessError as e:
+    print(e.output)
+    exit(e.returncode)

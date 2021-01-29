@@ -5,43 +5,16 @@ import subprocess
 import sys
 import yaml
 
-clouds_to_env = {
-    "application_credential_id": "OS_APPLICATION_CREDENTIAL_ID",
-    "auth_url": "OS_AUTH_URL",
-    "identity_api_version": "OS_IDENTITY_API_VERSION",
-    "interface": "OS_INTERFACE",
-    "password": "OS_PASSWORD",
-    "project_id": "OS_PROJECT_ID",
-    "project_name": "OS_PROJECT_NAME",
-    "region_name": "OS_REGION_NAME",
-    "user_domain_name": "OS_USER_DOMAIN_NAME",
-    "username": "OS_USERNAME",
-    # "": "OS_APPLICATION_CREDENTIAL_NAME",
-    # "": "OS_APPLICATION_CREDENTIAL_SECRET",
-    # "": "OS_AUTH_TOKEN",
-    # "": "OS_DEFAULT_DOMAIN",
-    # "": "OS_DOMAIN_ID",
-    # "": "OS_DOMAIN_NAME",
-    # "": "OS_PROJECT_DOMAIN_ID",
-    # "": "OS_PROJECT_DOMAIN_NAME",
-    # "": "OS_TENANT_ID",
-    # "": "OS_TENANT_NAME",
-    # "": "OS_TOKEN",
-    # "": "OS_USER_DOMAIN_ID",
-    # "": "OS_USER_ID",
-}
 
-
+# https://docs.openstack.org/openstacksdk/latest/user/config/configuration.html
+# The keys are all of the keys you’d expect from OS_* - except lower case and
+# without the OS prefix. So, region name is set with region_name.
 def parse_key(clouds_key, clouds_value):
     if clouds_key == 'auth':
         for k in clouds_value:
             parse_key(k, clouds_value[k])
-    else:
-        if not clouds_to_env.get(clouds_key):
-            print("Unknown key %s" % clouds_key)
-            exit()
-        else:
-            os.putenv(clouds_to_env[clouds_key], str(clouds_value))
+    elif not clouds_key == 'regions':
+        os.putenv('OS_' + clouds_key.upper(), str(clouds_value))
 
 
 # TODO Also respect OS_CLIENT_CONFIG_FILE

@@ -17,7 +17,6 @@ def parse_key(clouds_key, clouds_value):
         os.putenv('OS_' + clouds_key.upper(), str(clouds_value))
 
 
-# TODO Also respect OS_CLIENT_CONFIG_FILE
 def find_clouds_yaml(filename):
     if os.path.exists(filename):
         return filename
@@ -42,7 +41,8 @@ if not cloud:
     exit()
 
 # TODO Also load secure.yaml
-with open(find_clouds_yaml('clouds.yaml')) as f:
+config_file = os.environ.get('OS_CLIENT_CONFIG_FILE', find_clouds_yaml('clouds.yaml'))
+with open(config_file) as f:
     data = yaml.safe_load(f)
     if not data.get('clouds', []).get(cloud):
         print("Cloud %s doesn't exist in clouds.yaml" % cloud)

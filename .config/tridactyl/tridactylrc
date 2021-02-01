@@ -34,8 +34,8 @@ bind yg composite js "git clone " + document.location.href.replace(/https?:\/\//
 bindurl reddit.com gu urlparent 4
 
 " Only hint search results on Google and DDG
-bindurl www.google.com f hint -Jc .rc > .r > a
-bindurl www.google.com F hint -Jbc .rc>.r>a
+bindurl www.google.com f hint -Jc #search div:not(.action-menu) > a
+bindurl www.google.com F hint -Jbc #search div:not(.action-menu) > a
 
 bindurl ^https://duckduckgo.com f hint -Jc [class=result__a]
 bindurl ^https://duckduckgo.com F hint -Jbc [class=result__a]

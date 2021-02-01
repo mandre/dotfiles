@@ -12,6 +12,7 @@ servers:
     # api-url: https://api.github.com/
     additional-repositories:
       - mandre/hubtty
+      - openshift/baremetal-runtimecfg
       - openshift/cloud-provider-openstack
       - openshift/cluster-api-provider-openstack
       - openshift/cluster-cloud-controller-manager-operator

@@ -24,12 +24,14 @@ servers:
       - openshift/mdns-publisher
       - openshift/openstack-cinder-csi-driver-operator
       - openshift/release
-      - shiftstack/e2e-openstack-ocp
+      - shiftstack/bzira
+      - shiftstack/dev-install
       - shiftstack/gazelle
-      - shiftstack/manifests-openstack
-      - shiftstack/ocp-doit
-      - shiftstack/os-proxy
+      - shiftstack/secrets
       - shiftstack/shiftstack-ci
+      - gophercloud/utils
+      - gophercloud/gophercloud
+      - kubernetes/cloud-provider-openstack
 
 
 # Each server section can have the following fields:

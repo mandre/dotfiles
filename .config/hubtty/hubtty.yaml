@@ -165,8 +165,8 @@ commentlinks:
 #          query: "change:{id}"
 
 # This is the query used for the list of changes when a project is
-# selected.  The default is "status:open".
-# change-list-query: "status:open"
+# selected.  The default is "state:open".
+# change-list-query: "state:open"
 
 # This section defines default sorting options for the change
 # list. The "sort-by" key specifies the sort order, which can be
@@ -226,7 +226,7 @@ hide-comments:
 # where you were.
 dashboards:
   - name: "My changes"
-    query: "author:self status:open"
+    query: "author:self state:open"
     key: "f2"
   - name: "Incoming reviews"
     query: "is:open is:reviewer"

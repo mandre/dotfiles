@@ -11,6 +11,9 @@ servers:
     # url: https://github.com/
     # api-url: https://api.github.com/
     additional-repositories:
+      - gophercloud/gophercloud
+      - gophercloud/utils
+      - kubernetes/cloud-provider-openstack
       - mandre/hubtty
       - openshift/baremetal-runtimecfg
       - openshift/cloud-provider-openstack
@@ -29,9 +32,6 @@ servers:
       - shiftstack/gazelle
       - shiftstack/secrets
       - shiftstack/shiftstack-ci
-      - gophercloud/utils
-      - gophercloud/gophercloud
-      - kubernetes/cloud-provider-openstack
 
 
 # Each server section can have the following fields:

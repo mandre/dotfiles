@@ -240,17 +240,20 @@ dashboards:
     reverse: True
     key: "f5"
 
-# Reviewkeys are hotkeys that perform immediate reviews within the
-# change screen.  Any pending comments or review messages will be
-# attached to the review; otherwise an empty review will be left.  The
-# approvals list is exhaustive, so if you specify an empty list,
-# Hubtty will submit a review that clears any previous approvals.  To
-# submit the change with the review, include 'submit: True' with the
-# reviewkey.  Reviewkeys appear in the help text for the change
-# screen.
-# reviewkeys:
-#   - key: 'meta 0'
-#     approvals: []
+# Reviewkeys are hotkeys that perform immediate reviews within the change
+# screen.  Any pending comments or review messages will be attached to the
+# review; otherwise an empty review will be left.
+# Approval must be one of REQUEST_CHANGES, COMMENT, or APPROVE.
+# To keep the review as a draft and not submit it right away, include 'draft:
+# True' with the reviewkey.  Reviewkeys appear in the help text for the change
+# screen. Use the 'description' parameter to change the help message for the
+# reviewkey.
+reviewkeys:
+  - key: 'meta 1'
+    description: 'Comment with /lgtm and /approve'
+    approval: 'COMMENT'
+    message: "/lgtm\n/approve"
+    # draft: True
 #   - key: 'meta 1'
 #     approvals:
 #       - category: 'Code-Review'

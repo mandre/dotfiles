@@ -261,22 +261,13 @@ dashboards:
 reviewkeys:
   - key: 'meta 1'
     description: 'Comment with /lgtm and /approve'
-    approval: 'COMMENT'
+    approval: 'APPROVE'
     message: "/lgtm\n/approve"
     # draft: True
-#   - key: 'meta 1'
-#     approvals:
-#       - category: 'Code-Review'
-#         value: 1
-#   - key: 'meta 2'
-#     approvals:
-#       - category: 'Code-Review'
-#         value: 2
-#   - key: 'meta 3'
-#     approvals:
-#       - category: 'Code-Review'
-#         value: 2
-#     submit: True
+  - key: 'meta 2'
+    description: 'Comment with /retest'
+    approval: 'COMMENT'
+    message: "/retest"
 
 # 'size-column' is a set of customize parameters for the 'Size' column
 # on your dashboard.

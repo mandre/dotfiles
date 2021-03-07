@@ -105,6 +105,8 @@ editor_state_full_filename=false
 
 safe_overwrite=false
 
+shadows=true
+
 [Layout]
 message_visible=false
 keybar_visible=true
@@ -119,7 +121,7 @@ free_space=true
 
 horizontal_split=false
 vertical_equal=true
-left_panel_size=106
+left_panel_size=85
 horizontal_equal=true
 top_panel_size=40
 
@@ -149,6 +151,8 @@ linux=
 screen-256color=
 
 rxvt-unicode-256color=
+
+tmux-256color=
 
 [HotlistConfig]
 expanded_view_of_groups=0

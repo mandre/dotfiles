@@ -138,11 +138,21 @@ keymap: vi
 commentlinks:
 # Match Github change ids, and replace them with a link to an internal
 # Hubtty search for that change id.
-  - match: "(?P<id>I[0-9a-fA-F]{40})"
+  - match: "(?P<sha>\\b[a-f0-9]{6,40}\\b)"
     replacements:
       - search:
-          text: "{id}"
-          query: "change:{id}"
+          text: "{sha}"
+          query: "commit:{sha}"
+  - match: "(?P<mention_str>[^\\w]@(?P<username>\\w+))"
+    replacements:
+      - search:
+          text: "{mention_str}"
+          query: "author:{username}"
+  - match: "(?P<bug_str>[Bb]ug (?P<id>\\d+))"
+    replacements:
+     - link:
+         text: "{bug_str}"
+         url: "https://bugzilla.redhat.com/show_bug.cgi?id={id}"
 # Any number of commentlink entries may be specified.  Start each with
 # a "match" key and regex.  Named match groups within the regex may be
 # used in the replacements section.  Any number of replacements may be

@@ -143,7 +143,7 @@ commentlinks:
       - search:
           text: "{sha}"
           query: "commit:{sha}"
-  - match: "(?P<mention_str>[^\\w]@(?P<username>\\w+))"
+  - match: "(?P<mention_str>[^\\w-]@(?P<username>\\w+))"
     replacements:
       - search:
           text: "{mention_str}"

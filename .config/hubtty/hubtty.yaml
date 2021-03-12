@@ -136,23 +136,26 @@ keymap: vi
 # review messages.  They can be replaced with internal or external
 # links, or have colors applied.
 commentlinks:
-# Match Github change ids, and replace them with a link to an internal
-# Hubtty search for that change id.
-  - match: "(?P<sha>\\b[a-f0-9]{6,40}\\b)"
+  # Match Bugs, and replace them with a link to bugzilla
+  - match: "(?P<bug_str>([Bb]ug|[Bb][Zz]) ?#?(?P<id>\\d+))"
+    replacements:
+     - link:
+         text: "{bug_str}"
+         url: "https://bugzilla.redhat.com/show_bug.cgi?id={id}"
+  # Match commit sha, and replace them with a link to an internal
+  # Hubtty search for PRs containing that commit.
+  - match: "(?P<sha>\\s[a-f0-9]{6,40}\\b)"
     replacements:
       - search:
           text: "{sha}"
           query: "commit:{sha}"
+  # Match mentions, and replace them with a link to an internal
+  # Hubtty search for the user's PRs.
   - match: "(?P<mention_str>[^\\w]@(?P<username>[\\w-]+))"
     replacements:
       - search:
           text: "{mention_str}"
           query: "author:{username}"
-  - match: "(?P<bug_str>[Bb]ug (?P<id>\\d+))"
-    replacements:
-     - link:
-         text: "{bug_str}"
-         url: "https://bugzilla.redhat.com/show_bug.cgi?id={id}"
 # Any number of commentlink entries may be specified.  Start each with
 # a "match" key and regex.  Named match groups within the regex may be
 # used in the replacements section.  Any number of replacements may be

@@ -239,7 +239,7 @@ hide-comments:
 # where you were.
 dashboards:
   - name: "My changes"
-    query: "author:self state:open"
+    query: "is:open is:author"
     key: "f2"
   - name: "Incoming reviews"
     query: "is:open is:reviewer"

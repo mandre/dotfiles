@@ -1,4 +1,4 @@
-[main]
+[filemanager]
 Edit = f4; i
 Delete = f8; d
 Quit = f10; q

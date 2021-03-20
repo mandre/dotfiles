@@ -220,13 +220,15 @@ change-list-options:
 # The time interval is specified in the same way as the "age:" term in
 # Github's search syntax.  To disable it altogether, set the value to
 # the empty string.
-expire-age: '1 months'
+expire-age: '1 month'
 
 # Uncomment the following lines to Hide comments by default that match
 # certain criteria.  You can toggle their display with 't'.  Currently
 # the only supported criterion is "author".
 hide-comments:
   - author: "^.*openshift.*$"
+  - author: "k8s-ci-robot"
+  - author: "theopenlab-ci.*$"
 
 # This section defines customized dashboards.  You can supply any
 # Hubtty search string and bind them to any key.  They will appear in

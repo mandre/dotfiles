@@ -41,7 +41,6 @@ Plug 'tpope/vim-rails',         { 'for': 'ruby' }
 Plug 'sheerun/vim-polyglot'
 
 " Utility
-" Plug 'vim-scripts/YankRing.vim'
 Plug 'wellle/targets.vim'
 Plug 'vim-scripts/LargeFile'
 Plug 'vim-scripts/file-line'
@@ -61,9 +60,6 @@ Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
-if has('macunix') && !has("gui_running")
-Plug 'sjl/vitality.vim'
-endif
 Plug 'google/vim-searchindex'
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
@@ -179,14 +175,6 @@ set virtualedit+=block
 set display+=lastline
 set ttimeoutlen=20
 
-if has("cscope")
-    " use both cscope and ctag for 'ctrl-]', ':ta', and 'vim -t'
-    set cscopetag
-
-    " check cscope for definition of a symbol before checking ctags: set to 1
-    " if you want the reverse search order.
-    set csto=1
-endif
 
 " }}}
 " Text Formatting {{{
@@ -208,15 +196,6 @@ if has("autocmd")
   "         \ 'vim-repeat', 'vim-sleuth')
   "        " \ 'vim-sleuth', 'supertab', 'syntastic')
   " augroup END
-  " }}}
-
-  " Vimscript file settings {{{
-  augroup filetype_vim
-    autocmd!
-    " autocmd FileType vim setlocal foldmethod=marker
-    " Use the :help command for 'K' in .vim files
-    autocmd FileType vim set keywordprg=":help"
-  augroup END
   " }}}
 
   " text files settings {{{
@@ -470,17 +449,12 @@ nmap <F8> <Plug>CommentaryLine<ESC>j
 xmap <F8> <Plug>Commentary
 " <F9> Remove all trailing spaces
 noremap <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
-" <F10> YankRing
-" nnoremap <silent> <F10> :YRShow<cr>
-" inoremap <silent> <F10> <ESC>:YRShow<cr>
 " <F12> Compile using makefile
 noremap <F12> :make<CR>
 
 " }}}
 " Plugins Config {{{
 " ---------------------------------------------------------------------------
-
-let g:vundle_default_git_proto = 'git'
 
 " Ruby
 " let g:rubycomplete_buffer_loading=1
@@ -546,9 +520,6 @@ let g:UltiSnipsEditSplit="vertical"
 " SplitJoin
 let g:splitjoin_align=1
 
-" Stop yankring from complaining
-let g:yankring_manual_clipboard_check=0
-
 " Put tagbar on the left
 let g:tagbar_left=1
 
@@ -593,29 +564,11 @@ let g:undotree_WindowLayout = 2
 set fillchars+=vert:│
 
 colorscheme twilight
-if has("gui_running")
-  " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
-  " let &guioptions = substitute(&guioptions, "t", "", "g")
-  set guioptions-=T " no toolbar
-  set guioptions-=m " no menus
-  set guioptions-=r " no scrollbar on the right
-  set guioptions-=R " no scrollbar on the right
-  set guioptions-=L " no scrollbar on the left
-  set guioptions-=b " no scrollbar on the bottom
-  set mousemodel=popup_setpos
-
-  if has('gui_macvim')
-    set guifont=Menlo:h12
-    set transparency=15
-    set fuoptions=maxvert,maxhorz
-  endif
-else
-  if !has('nvim')
-    set ttymouse=sgr
-  endif
-  set mouse=a
-  set t_Co=256
+if !has('nvim')
+  set ttymouse=sgr
 endif
+set mouse=a
+set t_Co=256
 
 " }}}
 " Misc {{{
@@ -637,7 +590,6 @@ else
 endif
 set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
-let g:yankring_history_dir = "~/.vim/.tmp/yankring"
 let g:netrw_home = '~/.vim/.tmp/netrw'
 
 let g:netrw_clipboard = 0
@@ -652,18 +604,6 @@ set completeopt=menuone,preview
 " Highlight VCS conflict markers
 " match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
 
-
-" Scratchpad
-function! ScratchEdit(cmd, options)
-  exe a:cmd tempname()
-  setl buftype=nofile bufhidden=wipe nobuflisted
-  if !empty(a:options) | exe 'setl' a:options | endif
-endfunction
-
-command! -bar -nargs=* Sedit call ScratchEdit('edit', <q-args>)
-command! -bar -nargs=* Ssplit call ScratchEdit('split', <q-args>)
-command! -bar -nargs=* Svsplit call ScratchEdit('vsplit', <q-args>)
-command! -bar -nargs=* Stabedit call ScratchEdit('tabe', <q-args>)
 
 " vp doesn't replace paste buffer
 function! RestoreRegister()

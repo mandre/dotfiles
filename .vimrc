@@ -138,7 +138,7 @@ if has("nvim")
   autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 
   " Start terminal in insert mode
-  autocmd BufEnter term://* startinsert
+  autocmd TermOpen term://* startinsert
 endif
 
 " Wildmenu completion {{{

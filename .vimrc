@@ -584,7 +584,7 @@ if !isdirectory($HOME . "/.vim/.tmp")
 endif
 
 if has('nvim')
-  set viminfo='1000,f1,<500,:100,/100,s10,h
+  set shada='1000,f1,<500,:100,/100,s10,h
 else
   set viminfo='1000,f1,<500,:100,/100,s10,h,n~/.vim/viminfo
 endif

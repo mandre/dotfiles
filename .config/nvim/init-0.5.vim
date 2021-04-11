@@ -61,7 +61,7 @@ Plug 'google/vim-searchindex'
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
-Plug 'Lokaltog/vim-easymotion', { 'on': ['<Plug>(easymotion-s2)', '<Plug>(easymotion-j)', '<Plug>(easymotion-k)'] }
+Plug 'phaazon/hop.nvim'
 Plug 'rhysd/clever-f.vim'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
@@ -399,9 +399,7 @@ cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
 " Stop highlight search
 nnoremap <CR> :noh<CR>
 
-map <SPACE> <Plug>(easymotion-s2)
-map <Leader>j <Plug>(easymotion-j)
-map <Leader>k <Plug>(easymotion-k)
+map <SPACE> <cmd>HopChar2 <cr>
 
 vmap v <Plug>(expand_region_expand)
 vmap <C-v> <Plug>(expand_region_shrink)
@@ -491,10 +489,6 @@ let g:tagbar_left=1
 let g:ackprg='ag --nogroup --nocolor --column'
 let g:ack_wildignore = 0
 let g:ackhighlight=1
-
-" EasyMotion
-let g:EasyMotion_smartcase = 1
-let g:EasyMotion_use_smartsign_jp = 1
 
 " Clever-f
 let g:clever_f_smart_case=1

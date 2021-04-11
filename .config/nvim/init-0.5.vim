@@ -22,7 +22,6 @@ if v:version >= 703
   Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
 endif
 Plug 'tpope/vim-commentary',    { 'on': ['<Plug>Commentary', '<Plug>CommentaryLine'] }
-Plug 'w0rp/ale'
 
 " Snippets
 Plug 'SirVer/ultisnips' ",        { 'on': [] }
@@ -73,9 +72,12 @@ Plug 'AndrewRadev/splitjoin.vim'
 Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 Plug 'kyazdani42/nvim-web-devicons'
 
+Plug 'neovim/nvim-lspconfig'
+
 call plug#end()
 
 lua require("statusline")
+lua require("lsp")
 
 if (has("termguicolors"))
  set termguicolors
@@ -430,8 +432,6 @@ endfunction
 nnoremap <silent> J :<C-u>call <SID>try('SplitjoinJoin',  'J')<CR>
 nnoremap <silent> S :<C-u>call <SID>try('SplitjoinSplit', "r\015")<CR>
 
-nmap <silent> gd <Plug>(ale_go_to_definition)
-
 " }}}
 " Function Keys {{{
 " ---------------------------------------------------------------------------
@@ -464,52 +464,6 @@ noremap <F12> :make<CR>
 " Ruby
 " let g:rubycomplete_buffer_loading=1
 let ruby_space_errors=1
-
-let g:ale_lint_on_text_changed='never'
-let g:ale_sign_error='✖'
-let g:ale_sign_warning='⚠'
-let g:ale_sign_info='ℹ'
-let g:ale_echo_msg_error_str='E'
-let g:ale_echo_msg_warning_str='W'
-let g:ale_echo_msg_info_str='I'
-let g:ale_echo_msg_format='[%linter%] %s [%severity%]'
-let g:ale_fix_on_save=1
-let g:ale_linters = {
-      \  'go': ['gopls'],
-      \}
-let g:ale_fixers = {
-      \  'go': ['gofmt'],
-      \}
-let g:ale_completion_symbols = {
-      \  'text': 'text',
-      \  'method': '',
-      \  'function': '',
-      \  'constructor': '',
-      \  'field': '',
-      \  'variable': '',
-      \  'class': '',
-      \  'interface': '',
-      \  'module': '',
-      \  'property': '',
-      \  'unit': 'unit',
-      \  'value': 'val',
-      \  'enum': '',
-      \  'keyword': 'keyword',
-      \  'snippet': 'snippet',
-      \  'color': 'color',
-      \  'file': '',
-      \  'reference': 'ref',
-      \  'folder': '🗂',
-      \  'enum member': '',
-      \  'constant': '',
-      \  'struct': 'struct',
-      \  'event': 'event',
-      \  'operator': '',
-      \  'type_parameter': 'type param',
-      \  '<default>': 'v'
-      \}
-
-set omnifunc=ale#completion#OmniFunc
 
 " SuperTab
 let g:SuperTabDefaultCompletionType="context"

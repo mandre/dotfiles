@@ -36,9 +36,6 @@ Plug 'rhysd/git-messenger.vim'
 " Ruby
 Plug 'tpope/vim-rails',         { 'for': 'ruby' }
 
-" Additional language files
-Plug 'sheerun/vim-polyglot'
-
 " Utility
 Plug 'wellle/targets.vim'
 Plug 'vim-scripts/LargeFile'
@@ -74,6 +71,8 @@ Plug 'kyazdani42/nvim-web-devicons'
 Plug 'neovim/nvim-lspconfig'
 Plug 'nvim-lua/completion-nvim'
 
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+
 call plug#end()
 
 lua require("statusline")
@@ -88,6 +87,12 @@ require('kommentary.config').configure_language("default", {
     prefer_single_line_comments = true,
     use_consistent_indentation = true,
 })
+
+require'nvim-treesitter.configs'.setup {
+  highlight = {
+    enable = true
+  },
+}
 EOF
 
 " }}}

@@ -23,14 +23,14 @@ Plug 'honza/vim-snippets' ",      { 'on': [] }
 
 " Git
 Plug 'tpope/vim-fugitive'
-Plug 'tpope/vim-rhubarb'
-Plug 'rhysd/git-messenger.vim'
 Plug 'lewis6991/gitsigns.nvim'
 
+Plug 'nvim-lua/popup.nvim'
 Plug 'nvim-lua/plenary.nvim'
+Plug 'nvim-telescope/telescope.nvim'
 
 " Ruby
-Plug 'tpope/vim-rails',         { 'for': 'ruby' }
+" Plug 'tpope/vim-rails',         { 'for': 'ruby' }
 
 " Utility
 Plug 'wellle/targets.vim'
@@ -39,7 +39,7 @@ Plug 'vim-scripts/file-line'
 Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-repeat'
-Plug 'tpope/vim-sleuth' ",        { 'on': [] }
+Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
@@ -52,7 +52,6 @@ Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'junegunn/fzf.vim'
 Plug 'phaazon/hop.nvim'
 Plug 'rhysd/clever-f.vim'
 Plug 'christoomey/vim-tmux-navigator'
@@ -373,7 +372,7 @@ nnoremap <leader>v V`]
 nmap Y y$
 
 " Just because I'm used to it
-nnoremap <c-p> :Files<CR>
+nnoremap <c-p> <cmd>Telescope find_files<cr>
 
 " Ack the word under the cursor
 nnoremap <leader>a :Ack! <cword><CR>
@@ -409,7 +408,7 @@ noremap <F1> <ESC>
 " <F2> File explorer
 noremap <F2> :Explore<CR>
 " <F3> Buffer explorer
-noremap <F3> :Buffers<CR>
+noremap <F3> <cmd>Telescope buffers<cr>
 " <F5> Reload file
 noremap <F5> :e!<CR>
 " <F7> Toggle Undo tree

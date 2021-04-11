@@ -50,5 +50,5 @@ end
 -- and map buffer local keybindings when the language server attaches
 local servers = { "pyright", "gopls" }
 for _, lsp in ipairs(servers) do
-  nvim_lsp[lsp].setup { on_attach = on_attach }
+  nvim_lsp[lsp].setup { on_attach = require'completion'.on_attach }
 end

@@ -44,7 +44,6 @@ Plug 'wellle/targets.vim'
 Plug 'vim-scripts/LargeFile'
 Plug 'vim-scripts/file-line'
 Plug 'ConradIrwin/vim-bracketed-paste'
-Plug 'ervandew/supertab' ",       { 'on': [] }
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-sleuth' ",        { 'on': [] }
@@ -73,6 +72,7 @@ Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 Plug 'kyazdani42/nvim-web-devicons'
 
 Plug 'neovim/nvim-lspconfig'
+Plug 'nvim-lua/completion-nvim'
 
 call plug#end()
 
@@ -194,16 +194,6 @@ if has("autocmd")
   " 'cindent' is on in C files, etc.
   " Also load indent files, to automatically do language-dependent indenting.
   filetype plugin indent on
-
-  " Insert mode plugins {{{
-  " augroup insert_mode_plugins
-  "   autocmd!
-  "   autocmd InsertEnter * call plug#load('supertab',
-  "         \ 'ultisnips', 'vim-snippets', 'vim-endwise',
-  "         \ 'vim-repeat', 'vim-sleuth')
-  "        " \ 'vim-sleuth', 'supertab', 'syntastic')
-  " augroup END
-  " }}}
 
   " text files settings {{{
   augroup filetype_text
@@ -465,11 +455,6 @@ noremap <F12> :make<CR>
 " let g:rubycomplete_buffer_loading=1
 let ruby_space_errors=1
 
-" SuperTab
-let g:SuperTabDefaultCompletionType="context"
-" let g:SuperTabContextDefaultCompletionType="<c-x><c-o>"
-" let g:SuperTabCrMapping=0
-
 " UltiSnips
 let g:UltiSnipsExpandTrigger="<tab>"
 let g:UltiSnipsJumpForwardTrigger="<tab>"
@@ -532,12 +517,17 @@ set shada='1000,f1,<500,:100,/100,s10,h
 
 let g:netrw_clipboard = 0
 
-set completeopt=menuone,preview
-" Make Vim completion popup menu work just like in an IDE
-" set completeopt=longest,menuone
-" inoremap <expr> <cr> pumvisible() ? "\<c-y>" : "\<c-g>u\<cr>"
-" inoremap <expr> <c-n> pumvisible() ? "\<lt>c-n>" : "\<lt>c-n>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>"
-" inoremap <expr> <m-;> pumvisible() ? "\<lt>c-n>" : "\<lt>c-x>\<lt>c-o>\<lt>c-n>\<lt>c-p>\<lt>c-r>=pumvisible() ? \"\\<lt>down>\" : \"\"\<lt>cr>
+" Set completeopt to have a better completion experience
+set completeopt=menuone,noinsert,noselect
+
+" Avoid showing message extra message when using completion
+set shortmess+=c
+
+imap <tab> <Plug>(completion_smart_tab)
+imap <s-tab> <Plug>(completion_smart_s_tab)
+
+let g:completion_enable_auto_popup = 0
+let g:completion_enable_auto_signature = 0
 
 " Highlight VCS conflict markers
 " match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'

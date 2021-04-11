@@ -106,9 +106,8 @@ set showmatch		" Show matching brackets.
 " Use sane regexes.
 " nnoremap / /\v
 " vnoremap / /\v
-if has("nvim")
-    set inccommand=nosplit
-endif
+
+set inccommand=nosplit
 
 " Spell
 if has("spell")
@@ -124,22 +123,20 @@ if &t_Co > 2 || has("gui_running")
   set hlsearch
 endif
 
-if has("nvim")
-  " Make escape work in the Neovim terminal
-  tnoremap <Esc> <C-\><C-n>
+" Make escape work in the Neovim terminal
+tnoremap <Esc> <C-\><C-n>
 
-  " Make navigation into and out of Neovim terminal splits nicer
-  tnoremap <C-h> <C-\><C-N><C-w>h
-  tnoremap <C-j> <C-\><C-N><C-w>j
-  tnoremap <C-k> <C-\><C-N><C-w>k
-  tnoremap <C-l> <C-\><C-N><C-w>l
+" Make navigation into and out of Neovim terminal splits nicer
+tnoremap <C-h> <C-\><C-N><C-w>h
+tnoremap <C-j> <C-\><C-N><C-w>j
+tnoremap <C-k> <C-\><C-N><C-w>k
+tnoremap <C-l> <C-\><C-N><C-w>l
 
-  " Relative numbers when in normal mode
-  autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
+" Relative numbers when in normal mode
+autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 
-  " Start terminal in insert mode
-  autocmd TermOpen term://* startinsert
-endif
+" Start terminal in insert mode
+autocmd TermOpen term://* startinsert
 
 " Wildmenu completion {{{
 set wildmenu
@@ -564,9 +561,6 @@ let g:undotree_WindowLayout = 2
 set fillchars+=vert:│
 
 colorscheme twilight
-if !has('nvim')
-  set ttymouse=sgr
-endif
 set mouse=a
 set t_Co=256
 
@@ -575,11 +569,7 @@ set t_Co=256
 " ---------------------------------------------------------------------------
 
 
-if has('nvim')
-  set shada='1000,f1,<500,:100,/100,s10,h
-else
-  set viminfo='1000,f1,<500,:100,/100,s10,h,n~/.vim/viminfo
-endif
+set shada='1000,f1,<500,:100,/100,s10,h
 " set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 " set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
 " let g:netrw_home = '~/.vim/.tmp/netrw'

@@ -31,7 +31,9 @@ Plug 'honza/vim-snippets' ",      { 'on': [] }
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-rhubarb'
 Plug 'rhysd/git-messenger.vim'
-" Plug 'airblade/vim-gitgutter'
+Plug 'lewis6991/gitsigns.nvim'
+
+Plug 'nvim-lua/plenary.nvim'
 
 " Ruby
 Plug 'tpope/vim-rails',         { 'for': 'ruby' }
@@ -77,6 +79,7 @@ call plug#end()
 
 lua require("statusline")
 lua require("lsp")
+lua require('gitsigns').setup()
 
 if (has("termguicolors"))
  set termguicolors

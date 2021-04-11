@@ -162,3 +162,21 @@ hi link cssFunctionName      Type
 hi StorageClass              guifg=#F8F8F8 ctermfg=231
 hi sassMixing                guifg=#9B5C2E ctermfg=94
 hi sassClass                 guifg=#F9EE98 ctermfg=228
+
+" LSP
+hi LspDiagnosticsDefaultError             guifg=#ec5f67 ctermfg=203
+hi LspDiagnosticsUnderlineError           gui=undercurl cterm=undercurl
+
+hi LspDiagnosticsDefaultWarning           guifg=#e5c07b ctermfg=221
+hi LspDiagnosticsUnderlineWarning         gui=undercurl cterm=undercurl
+
+hi LspDiagnosticsDefaultInformation       guifg=#6699cc ctermfg=68
+hi LspDiagnosticsUnderlineInformation     gui=undercurl cterm=undercurl
+
+hi LspDiagnosticsDefaultHint              guifg=#5F5A60 ctermfg=68
+hi LspDiagnosticsUnderlineHint            gui=undercurl cterm=undercurl
+
+" GitSigns
+hi GitSignsAdd               guifg=#99c794 ctermfg=114  gui=bold cterm=bold
+hi GitSignsChange            guifg=#e5c07b ctermfg=68   gui=bold cterm=bold
+hi GitSignsDelete            guifg=#ec5f67 ctermfg=203  gui=bold cterm=bold

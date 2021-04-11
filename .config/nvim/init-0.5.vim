@@ -43,7 +43,7 @@ Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
-Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
+" Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
 Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'vim-scripts/ZoomWin'
@@ -314,10 +314,10 @@ nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
 nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
 
 " Tabularize
-nnoremap <leader>a= :Tabularize /=<cr>
-vnoremap <leader>a= :Tabularize /=<cr>
-nnoremap <leader>a: :Tabularize /:\zs<cr>
-vnoremap <leader>a: :Tabularize /:\zs<cr>
+" nnoremap <leader>a= :Tabularize /=<cr>
+" vnoremap <leader>a= :Tabularize /=<cr>
+" nnoremap <leader>a: :Tabularize /:\zs<cr>
+" vnoremap <leader>a: :Tabularize /:\zs<cr>
 
 " Easier start/end of line
 noremap H ^
@@ -482,6 +482,10 @@ set shada='1000,f1,<500,:100,/100,s10,h
 " let g:netrw_home = '~/.vim/.tmp/netrw'
 
 let g:netrw_clipboard = 0
+
+" Use <Tab> and <S-Tab> to navigate through popup menu
+inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
 
 " Set completeopt to have a better completion experience
 set completeopt=menuone,noinsert,noselect

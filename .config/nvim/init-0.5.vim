@@ -1,8 +1,6 @@
 " Preamble {{{
 " ---------------------------------------------------------------------------
 
-set nocompatible               " be iMproved
-
 " Automatically install vim-plug if it isn't installed
 let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
 if empty(glob(data_dir . '/autoload/plug.vim'))
@@ -17,10 +15,6 @@ endif
 call plug#begin(stdpath('data') . '/plugged')
 
 " Programming
-Plug 'vim-scripts/matchit.zip'
-if v:version >= 703
-  Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
-endif
 Plug 'b3nj5m1n/kommentary'
 
 " Snippets
@@ -49,7 +43,6 @@ Plug 'tpope/vim-sleuth' ",        { 'on': [] }
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
-Plug 'tpope/vim-obsession'
 Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
 Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
@@ -57,7 +50,6 @@ Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
-Plug 'google/vim-searchindex'
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
@@ -81,6 +73,7 @@ lua require("statusline")
 lua require("lsp")
 lua require('gitsigns').setup()
 
+syntax enable
 if (has("termguicolors"))
  set termguicolors
 endif
@@ -109,35 +102,26 @@ EOF
 
 let mapleader = ","
 let g:mapleader = ","
-set encoding=utf-8
-set history=50		" keep 50 lines of command line history
+set history=50
 set hidden
 set confirm
 set nobackup
 set nowritebackup
 set noswapfile
 set undofile
-set autoread
-set sessionoptions="blank,buffers,curdir,folds,help,tabpages,winsize"
-set nomodeline          " disable mode lines (security measure)
 set smarttab
 set shiftround
 
-set number
-set relativenumber
+" set number
+" set relativenumber
 set cursorline
 
 " Match and search
-set ignorecase		" Do case insensitive matching
+set ignorecase
 set smartcase
-set gdefault
-set incsearch		" do incremental searching
-set showmatch		" Show matching brackets.
-" Use sane regexes.
-" nnoremap / /\v
-" vnoremap / /\v
-
+set showmatch
 set inccommand=nosplit
+
 
 " Spell
 if has("spell")
@@ -146,13 +130,7 @@ if has("spell")
   nnoremap <leader>ss :set spell!<CR>
 endif
 
-" Switch syntax highlighting on, when the terminal has colors
-" Also switch on highlighting the last used search pattern.
-if &t_Co > 2 || has("gui_running")
-  syntax on
-  set hlsearch
-endif
-
+" Terminal {{{
 " Make escape work in the Neovim terminal
 tnoremap <Esc> <C-\><C-n>
 
@@ -161,6 +139,7 @@ tnoremap <C-h> <C-\><C-N><C-w>h
 tnoremap <C-j> <C-\><C-N><C-w>j
 tnoremap <C-k> <C-\><C-N><C-w>k
 tnoremap <C-l> <C-\><C-N><C-w>l
+" }}}
 
 " Relative numbers when in normal mode
 autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
@@ -169,7 +148,6 @@ autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
 autocmd TermOpen term://* startinsert
 
 " Wildmenu completion {{{
-set wildmenu
 set wildmode=list:longest,list:full
 
 set wildignore+=.hg,.git,.svn                    " Version control
@@ -186,20 +164,13 @@ set wildignore+=*.DS_Store?                      " OSX bullshit
 " UI {{{
 " ---------------------------------------------------------------------------
 
-set title
+" set title
 set scrolloff=3
-set sidescroll=1
 set sidescrolloff=10
 set listchars+=precedes:❮,extends:❯
 set showbreak=↪
-set ruler
 set noshowmode
-set showcmd
-set novisualbell
-set backspace=indent,eol,start
-set laststatus=2
 set virtualedit+=block
-set display+=lastline
 set ttimeoutlen=20
 
 
@@ -280,7 +251,7 @@ if has("autocmd")
     autocmd VimResized * exe "normal! \<c-w>="
 
     " When vimrc is edited, automatically reload it
-    autocmd bufwritepost .vimrc source %
+    autocmd bufwritepost .config/nvim/init-0.5.vim source %
   augroup END
   " }}}
 
@@ -294,22 +265,10 @@ if has("autocmd")
     map <buffer> l <CR>
   endfunction
   " }}}
-else
-  set autoindent		" always set autoindenting on
-endif " has("autocmd")
+endif
 
 set formatoptions+=n1rj
 set expandtab
-
-" }}}
-" Status Line {{{
-" ---------------------------------------------------------------------------
-
-set statusline=%#warningmsg#
-set statusline+=%*
-set statusline+=%{fugitive#statusline()}
-set statusline+=\ %<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
-" set statusline+=%{ruby_debugger#statusline()}
 
 " }}}
 " Mappings {{{
@@ -451,8 +410,6 @@ noremap <F1> <ESC>
 noremap <F2> :Explore<CR>
 " <F3> Buffer explorer
 noremap <F3> :Buffers<CR>
-" <F4> Tagbar
-noremap <F4> :TagbarToggle<CR>
 " <F5> Reload file
 noremap <F5> :e!<CR>
 " <F7> Toggle Undo tree
@@ -474,16 +431,13 @@ noremap <F12> :make<CR>
 let ruby_space_errors=1
 
 " UltiSnips
-let g:UltiSnipsExpandTrigger="<tab>"
-let g:UltiSnipsJumpForwardTrigger="<tab>"
-let g:UltiSnipsJumpBackwardTrigger="<s-tab>"
-let g:UltiSnipsEditSplit="vertical"
+" let g:UltiSnipsExpandTrigger="<tab>"
+" let g:UltiSnipsJumpForwardTrigger="<tab>"
+" let g:UltiSnipsJumpBackwardTrigger="<s-tab>"
+" let g:UltiSnipsEditSplit="vertical"
 
 " SplitJoin
 let g:splitjoin_align=1
-
-" Put tagbar on the left
-let g:tagbar_left=1
 
 " Ack
 let g:ackprg='ag --nogroup --nocolor --column'
@@ -517,7 +471,6 @@ set fillchars+=vert:│
 
 colorscheme twilight
 set mouse=a
-set t_Co=256
 
 " }}}
 " Misc {{{

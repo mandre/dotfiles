@@ -21,7 +21,7 @@ Plug 'vim-scripts/matchit.zip'
 if v:version >= 703
   Plug 'majutsushi/tagbar',       { 'on': 'TagbarToggle' }
 endif
-Plug 'tpope/vim-commentary',    { 'on': ['<Plug>Commentary', '<Plug>CommentaryLine'] }
+Plug 'b3nj5m1n/kommentary'
 
 " Snippets
 Plug 'SirVer/ultisnips' ",        { 'on': [] }
@@ -82,6 +82,13 @@ lua require("lsp")
 if (has("termguicolors"))
  set termguicolors
 endif
+
+lua << EOF
+require('kommentary.config').configure_language("default", {
+    prefer_single_line_comments = true,
+    use_consistent_indentation = true,
+})
+EOF
 
 " }}}
 " General {{{
@@ -440,8 +447,8 @@ noremap <F5> :e!<CR>
 " <F7> Toggle Undo tree
 noremap <F7> :UndotreeToggle<CR>
 " <F8> Comment
-nmap <F8> <Plug>CommentaryLine<ESC>j
-xmap <F8> <Plug>Commentary
+nmap <F8> <Plug>kommentary_line_default<ESC>j
+xmap <F8> <Plug>kommentary_visual_default<ESC>
 " <F9> Remove all trailing spaces
 noremap <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
 " <F12> Compile using makefile

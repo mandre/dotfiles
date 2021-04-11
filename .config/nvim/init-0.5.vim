@@ -69,9 +69,17 @@ Plug 'rhysd/clever-f.vim'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'
-Plug 'bling/vim-airline'
+
+Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
+Plug 'kyazdani42/nvim-web-devicons'
 
 call plug#end()
+
+lua require("statusline")
+
+if (has("termguicolors"))
+ set termguicolors
+endif
 
 " }}}
 " General {{{
@@ -540,12 +548,6 @@ let g:clever_f_fix_key_direction=1
 " Medium mode
 let g:mediummode_enabled = 0
 let g:mediummode_allowed_motions = 5
-
-" Airline
-let g:airline#extensions#tagbar#enabled=0
-let g:airline#extensions#hunks#enabled=0
-let g:airline#extensions#ale#enabled=1
-let g:airline_theme='twilight'
 
 " Mustache
 let g:mustache_abbreviations = 1

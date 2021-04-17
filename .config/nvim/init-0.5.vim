@@ -15,6 +15,7 @@ endif
 call plug#begin(stdpath('data') . '/plugged')
 
 " Programming
+Plug 'liuchengxu/vista.vim',       { 'on': 'Vista' }
 Plug 'b3nj5m1n/kommentary'
 
 " Snippets
@@ -396,6 +397,8 @@ noremap <F1> <ESC>
 noremap <F2> :Explore<CR>
 " <F3> Buffer explorer
 noremap <F3> <cmd>Telescope buffers<cr>
+" <F4> Vista
+noremap <F4> :Vista!!<CR>
 " <F5> Reload file
 noremap <F5> :e!<CR>
 " <F7> Toggle Undo tree
@@ -424,6 +427,11 @@ let ruby_space_errors=1
 
 " SplitJoin
 let g:splitjoin_align=1
+
+" Vista
+let g:vista_default_executive = 'nvim_lsp'
+let g:vista_sidebar_position = 'vertical topleft'
+let g:vista_disable_statusline = 1
 
 " Ack
 let g:ackprg='ag --nogroup --nocolor --column'

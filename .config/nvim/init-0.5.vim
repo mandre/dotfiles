@@ -55,7 +55,7 @@ Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'phaazon/hop.nvim'
 Plug 'rhysd/clever-f.vim'
-Plug 'christoomey/vim-tmux-navigator'
+Plug 'numToStr/Navigator.nvim'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'
 
@@ -94,6 +94,11 @@ vim.fn.sign_define("LspDiagnosticsSignError", {text="", texthl=LspDiagnostics
 vim.fn.sign_define("LspDiagnosticsSignWarning", {text="", texthl=LspDiagnosticsSignWarning})
 vim.fn.sign_define("LspDiagnosticsSignInformation", {text="", texthl=LspDiagnosticsSignInformation})
 vim.fn.sign_define("LspDiagnosticsSignHint", {text="", texthl=LspDiagnosticsSignHint})
+
+
+require('Navigator').setup({
+    disable_on_zoom = true
+})
 EOF
 
 " }}}
@@ -320,11 +325,11 @@ inoremap <c-u> <esc>viwUi
 " nnoremap n nzz
 " nnoremap N Nzz
 
-" Move between splits
-nnoremap <C-h> <C-w>h
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-l> <C-w>l
+" Move between splits, transparently with tmux
+nnoremap <silent> <C-h> :lua require('Navigator').left()<cr>
+nnoremap <silent> <C-j> :lua require('Navigator').down()<cr>
+nnoremap <silent> <C-k> :lua require('Navigator').up()<cr>
+nnoremap <silent> <C-l> :lua require('Navigator').right()<cr>
 
 " Make something useful from these arrow keys
 nmap <Left> <<

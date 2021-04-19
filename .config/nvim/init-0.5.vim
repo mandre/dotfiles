@@ -19,8 +19,8 @@ Plug 'liuchengxu/vista.vim',       { 'on': 'Vista' }
 Plug 'b3nj5m1n/kommentary'
 
 " Snippets
-Plug 'SirVer/ultisnips' ",        { 'on': [] }
-Plug 'honza/vim-snippets' ",      { 'on': [] }
+" Plug 'SirVer/ultisnips' ",        { 'on': [] }
+" Plug 'honza/vim-snippets' ",      { 'on': [] }
 
 " Git
 Plug 'tpope/vim-fugitive'

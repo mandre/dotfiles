@@ -65,6 +65,8 @@ Plug 'kyazdani42/nvim-web-devicons'
 Plug 'neovim/nvim-lspconfig'
 Plug 'nvim-lua/completion-nvim'
 
+Plug 'mhartington/oceanic-next'
+
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
 call plug#end()
@@ -468,7 +470,11 @@ let g:undotree_WindowLayout = 2
 " Use a line-drawing char for pretty vertical splits.
 set fillchars+=vert:│
 
-colorscheme twilight
+" colorscheme twilight
+let g:oceanic_next_terminal_italic=1
+let g:oceanic_next_terminal_bold=1
+colorscheme OceanicNext
+
 set mouse=a
 
 " }}}

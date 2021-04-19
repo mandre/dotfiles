@@ -475,6 +475,22 @@ let g:oceanic_next_terminal_italic=1
 let g:oceanic_next_terminal_bold=1
 colorscheme OceanicNext
 
+hi Normal guibg=NONE ctermbg=NONE
+hi LineNr guibg=NONE ctermbg=NONE
+hi SignColumn guibg=NONE ctermbg=NONE
+hi EndOfBuffer guibg=NONE ctermbg=NONE
+
+" LSP
+hi LspDiagnosticsDefaultError             guifg=#ec5f67 ctermfg=203
+hi LspDiagnosticsDefaultWarning           guifg=#e5c07b ctermfg=221
+hi LspDiagnosticsDefaultInformation       guifg=#6699cc ctermfg=68
+hi LspDiagnosticsDefaultHint              guifg=#5F5A60 ctermfg=68
+
+" GitSigns
+hi GitSignsAdd               guifg=#99c794 ctermfg=114  gui=bold cterm=bold
+hi GitSignsChange            guifg=#e5c07b ctermfg=68   gui=bold cterm=bold
+hi GitSignsDelete            guifg=#ec5f67 ctermfg=203  gui=bold cterm=bold
+
 set mouse=a
 
 " }}}

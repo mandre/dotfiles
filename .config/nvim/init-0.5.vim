@@ -34,9 +34,7 @@ Plug 'nvim-telescope/telescope.nvim'
 " Plug 'tpope/vim-rails',         { 'for': 'ruby' }
 
 " Utility
-Plug 'wellle/targets.vim'
-Plug 'vim-scripts/LargeFile'
-Plug 'vim-scripts/file-line'
+Plug 'bogado/file-line'
 Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'tpope/vim-endwise'
 Plug 'tpope/vim-repeat'
@@ -44,27 +42,28 @@ Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
-" Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
 Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
-Plug 'vim-scripts/ZoomWin'
 Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
 Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'phaazon/hop.nvim'
-Plug 'rhysd/clever-f.vim'
 Plug 'numToStr/Navigator.nvim'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'
-
-Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
-Plug 'kyazdani42/nvim-web-devicons'
+" Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
+" Plug 'rhysd/clever-f.vim'
+" Plug 'wellle/targets.vim'
+" Plug 'vim-scripts/LargeFile'
+" Plug 'vim-scripts/ZoomWin'
 
 Plug 'neovim/nvim-lspconfig'
 Plug 'nvim-lua/completion-nvim'
 
+Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
+Plug 'kyazdani42/nvim-web-devicons'
 Plug 'mhartington/oceanic-next'
 
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
@@ -446,12 +445,12 @@ let g:ack_wildignore = 0
 let g:ackhighlight=1
 
 " Clever-f
-let g:clever_f_smart_case=1
-let g:clever_f_timeout_ms=10000
-let g:clever_f_show_prompt=1
-let g:clever_f_mark_cursor=1
-let g:clever_f_chars_match_any_signs=';:'
-let g:clever_f_fix_key_direction=1
+" let g:clever_f_smart_case=1
+" let g:clever_f_timeout_ms=10000
+" let g:clever_f_show_prompt=1
+" let g:clever_f_mark_cursor=1
+" let g:clever_f_chars_match_any_signs=';:'
+" let g:clever_f_fix_key_direction=1
 
 " Medium mode
 let g:mediummode_enabled = 0

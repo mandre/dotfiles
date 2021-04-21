@@ -440,8 +440,7 @@ let g:vista_sidebar_position = 'vertical topleft'
 let g:vista_disable_statusline = 1
 
 " Ack
-let g:ackprg='ag --nogroup --nocolor --column'
-let g:ack_wildignore = 0
+let g:ackprg='ag --vimgrep'
 let g:ackhighlight=1
 
 " Clever-f

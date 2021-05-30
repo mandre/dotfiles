@@ -60,7 +60,7 @@ Plug 'AndrewRadev/splitjoin.vim'
 " Plug 'vim-scripts/ZoomWin'
 
 Plug 'neovim/nvim-lspconfig'
-Plug 'nvim-lua/completion-nvim'
+Plug 'hrsh7th/nvim-compe'
 
 Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 Plug 'kyazdani42/nvim-web-devicons'
@@ -72,6 +72,7 @@ call plug#end()
 
 lua require("statusline")
 lua require("lsp")
+lua require("completion")
 lua require('gitsigns').setup()
 
 syntax enable
@@ -503,21 +504,11 @@ set shada='1000,f1,<500,:100,/100,s10,h
 
 let g:netrw_clipboard = 0
 
-" Use <Tab> and <S-Tab> to navigate through popup menu
-inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
-inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-
 " Set completeopt to have a better completion experience
 set completeopt=menuone,noinsert,noselect
 
 " Avoid showing message extra message when using completion
 set shortmess+=c
-
-imap <tab> <Plug>(completion_smart_tab)
-imap <s-tab> <Plug>(completion_smart_s_tab)
-
-let g:completion_enable_auto_popup = 0
-let g:completion_enable_auto_signature = 0
 
 " Highlight VCS conflict markers
 " match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'

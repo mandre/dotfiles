@@ -38,13 +38,11 @@ zstyle ':prezto:load' pmodule \
   'directory' \
   'spectrum' \
   'utility' \
+  'python' \
   'completion' \
   'prompt' \
   'archive' \
-  'git' \
-  'ruby' \
-  'python' \
-  'macports'
+  'git'
 
 #
 # Autosuggestions

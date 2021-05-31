@@ -13,8 +13,9 @@ servers:
     additional-repositories:
       - gophercloud/gophercloud
       - gophercloud/utils
+      - hubtty/hubtty
+      - hubtty/hubtty-playground
       - kubernetes/cloud-provider-openstack
-      - mandre/hubtty
       - openshift/baremetal-runtimecfg
       - openshift/cloud-provider-openstack
       - openshift/cluster-api-provider-openstack

@@ -28,9 +28,12 @@ servers:
       - openshift/mdns-publisher
       - openshift/openstack-cinder-csi-driver-operator
       - openshift/release
+      - shiftstack/bugwatcher
       - shiftstack/bzira
+      - shiftstack/ci-configs
       - shiftstack/dev-install
       - shiftstack/gazelle
+      - shiftstack/merge-bot
       - shiftstack/secrets
       - shiftstack/shiftstack-ci
 

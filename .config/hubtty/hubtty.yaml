@@ -15,17 +15,19 @@ servers:
       - gophercloud/utils
       - hubtty/hubtty
       - hubtty/hubtty-playground
+      - kubernetes-sigs/cluster-api-provider-openstack
       - kubernetes/cloud-provider-openstack
       - openshift/baremetal-runtimecfg
       - openshift/cloud-provider-openstack
       - openshift/cluster-api-provider-openstack
       - openshift/cluster-cloud-controller-manager-operator
       - openshift/csi-driver-manila-operator
+      - openshift/csi-driver-nfs
       - openshift/enhancements
       - openshift/installer
+      - openshift/kuryr-kubernetes
       - openshift/machine-config-operator
       - openshift/manila-provisioner-operator
-      - openshift/mdns-publisher
       - openshift/openstack-cinder-csi-driver-operator
       - openshift/release
       - shiftstack/bugwatcher

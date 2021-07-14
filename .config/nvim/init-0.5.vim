@@ -490,6 +490,17 @@ hi GitSignsAdd               guifg=#99c794 ctermfg=114  gui=bold cterm=bold
 hi GitSignsChange            guifg=#e5c07b ctermfg=68   gui=bold cterm=bold
 hi GitSignsDelete            guifg=#ec5f67 ctermfg=203  gui=bold cterm=bold
 
+" Diff
+hi DiffAdd        guifg=#99c794 ctermfg=114 guibg=#343d46 ctermbg=237 gui=none cterm=none
+hi DiffChange     guifg=#65737e ctermfg=243 guibg=#343d46 ctermbg=237 gui=none cterm=none
+hi DiffDelete     guifg=#ec5f67 ctermfg=203 guibg=#343d46 ctermbg=237 gui=none cterm=none
+hi DiffText       guifg=#6699cc ctermfg=68 guibg=#343d46 ctermbg=237 gui=none cterm=none
+hi DiffAdded      guifg=#99c794 ctermfg=114 guibg=none ctermbg=none gui=none cterm=none
+hi DiffRemoved    guifg=#ec5f67 ctermfg=203 guibg=none ctermbg=none gui=none cterm=none
+hi DiffFile       guifg=#fac863 ctermfg=221 guibg=none ctermbg=none gui=none cterm=none
+hi DiffNewFile    guifg=#fac863 ctermfg=221 guibg=none ctermbg=none gui=none cterm=none
+hi DiffLine       guifg=#6699cc ctermfg=68 guibg=none ctermbg=none gui=none cterm=none
+
 set mouse=a
 
 " }}}

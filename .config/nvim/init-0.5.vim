@@ -490,6 +490,12 @@ hi GitSignsAdd               guifg=#99c794 ctermfg=114  gui=bold cterm=bold
 hi GitSignsChange            guifg=#e5c07b ctermfg=68   gui=bold cterm=bold
 hi GitSignsDelete            guifg=#ec5f67 ctermfg=203  gui=bold cterm=bold
 
+" Hop
+hi default HopNextKey  guifg=#ff007c gui=bold ctermfg=198 cterm=bold
+hi default HopNextKey1 guifg=#00dfff gui=bold ctermfg=45 cterm=bold
+hi default HopNextKey2 guifg=#2b8db3 ctermfg=33
+hi default HopUnmatched guifg=#666666 ctermfg=242
+
 " Diff
 hi DiffAdd        guifg=#99c794 ctermfg=114 guibg=#343d46 ctermbg=237 gui=none cterm=none
 hi DiffChange     guifg=#65737e ctermfg=243 guibg=#343d46 ctermbg=237 gui=none cterm=none

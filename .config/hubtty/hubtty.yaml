@@ -10,6 +10,7 @@ servers:
     git-root: ~/hubtty/
     # url: https://github.com/
     # api-url: https://api.github.com/
+    git-url: ssh://git@github.com
     additional-repositories:
       - gophercloud/gophercloud
       - gophercloud/utils

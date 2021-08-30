@@ -28,7 +28,6 @@ servers:
       - openshift/installer
       - openshift/kuryr-kubernetes
       - openshift/machine-config-operator
-      - openshift/manila-provisioner-operator
       - openshift/openstack-cinder-csi-driver-operator
       - openshift/release
       - shiftstack/bugwatcher
@@ -55,10 +54,10 @@ servers:
 # Hubtty will not modify them unless you tell it to, and even then the
 # normal git protections against losing work remain in place. [required]
 #    git-root: ~/git/
-# The URL to clone git repos. By default, <url>/p/<project> is used. For a list
+# The URL to clone git repos. By default, <url> is used. For a list
 # of valid URLs, see:
 # https://www.kernel.org/pub/software/scm/git/docs/git-clone.html#URLS
-#    git-url: ssh://user@example.org:29418
+#    git-url: ssh://git@github.com
 # The location of Hubtty's sqlite database.  If you have more than one
 # server, you should specify a dburi for any additional servers.
 # By default a SQLite database called ~/.local/share/hubtty/hubtty.db is used.
@@ -77,7 +76,7 @@ servers:
 # permission.  You can add extra repositories to this list using the
 # additional-repositories. Example:
 #    additional-repositories:
-#      - mandre/hubtty
+#      - hubtty/hubtty
 
 # Hubtty comes with two palettes defined internally.  The default
 # palette is suitable for use on a terminal with a dark background.
@@ -129,11 +128,15 @@ servers:
 #   - name: custom
 #     review: ['r', 'R']
 #   - name: osx # MacOS blocks ctrl+o
-#     change-search: 'ctrl s'
+#     pr-search: 'ctrl s'
 # To specify a sequence of keys, they must be a list of keystrokes
 # within a list of key series.  For example:
 #   - name: vi
 #     quit: [[':', 'q']]
+
+keymaps:
+  - name: vi
+    edit-labels: '#'
 
 # The default keymap may be selected with the '-k KEYMAP' command line
 # option, or with the following line:
@@ -182,17 +185,17 @@ commentlinks:
 # activated.
 #      - search:
 #          text: "{id}"
-#          query: "change:{id}"
+#          query: "pr:{id}"
 
-# This is the query used for the list of changes when a project is
+# This is the query used for the list of pull-requests when a repository is
 # selected.  The default is "state:open".
-# change-list-query: "state:open"
+# pr-list-query: "state:open"
 
-# This section defines default sorting options for the change
+# This section defines default sorting options for the pull request
 # list. The "sort-by" key specifies the sort order, which can be
 # 'number', 'updated', or 'last-seen'.  The 'reverse' key specifies
 # ascending (true) or descending (false) order.
-change-list-options:
+pr-list-options:
   sort-by: 'updated'
   reverse: true
 
@@ -200,17 +203,13 @@ change-list-options:
 # at the bottom of the screen:
 # breadcrumbs: false
 
-# Uncomment the following line to close a change after saving
+# Uncomment the following line to close a pull request after saving
 # a review.
-# close-change-on-review: true
+# close-pr-on-review: true
 
 # Uncomment the following line to use a unified diff view instead
 # of the default side-by-side:
 # diff-view: unified
-
-# Dependent changes are displayed as "threads" in the change list by
-# default.  To disable this behavior, uncomment the following line:
-# thread-changes: false
 
 # Times are displayed in the local timezone by default.  To display
 # them in UTC instead, uncomment the following line:
@@ -220,8 +219,8 @@ change-list-options:
 # with your terminal's mouse handling, uncomment the following line:
 # handle-mouse: false
 
-# Closed changes that are older than two months are removed from the
-# local database (and their refs are removed from the local git repos
+# Closed pull requests that are older than two months are removed from
+# the local database (and their refs are removed from the local git repos
 # so that git may garbage collect them).  If you would like to change
 # the expiration delay or disable it, uncomment the following line.
 # The time interval is specified in the same way as the "age:" term in
@@ -242,34 +241,35 @@ hide-comments:
 # the global help text, and pressing the key anywhere in Hubtty will
 # run the query and display the results.
 #
-# NB: "recentlyseen:24 hours" does not just return changes seen in the
-# last 24 hours -- it returns changes seen within 24 hours of the most
-# recently seen change.  So you can take the weekend off and pick up
+# NB: "recentlyseen:24 hours" does not just return pull requests seen in the
+# last 24 hours -- it returns pull requests seen within 24 hours of the most
+# recently seen pull request.  So you can take the weekend off and pick up
 # where you were.
 dashboards:
-  - name: "My changes"
+  - name: "My pull requests"
     query: "is:open is:author"
     key: "f2"
   - name: "Incoming reviews"
     query: "is:open is:reviewer"
     key: "f3"
-  - name: "Starred changes"
+  - name: "Starred pull requests"
     query: "is:starred"
     key: "f4"
-  - name: "Recently seen changes"
+  - name: "Recently seen pull requests"
     query: "recentlyseen:24 hours"
     sort-by: "last-seen"
     reverse: True
     key: "f5"
 
-# Reviewkeys are hotkeys that perform immediate reviews within the change
+# Reviewkeys are hotkeys that perform immediate reviews within the pull request
 # screen.  Any pending comments or review messages will be attached to the
 # review; otherwise an empty review will be left.
 # Approval must be one of REQUEST_CHANGES, COMMENT, or APPROVE.
 # To keep the review as a draft and not submit it right away, include 'draft:
-# True' with the reviewkey.  Reviewkeys appear in the help text for the change
-# screen. Use the 'description' parameter to change the help message for the
-# reviewkey.
+# True' with the reviewkey.  Add 'merge: true' to merge the pull request
+# directly.  Reviewkeys appear in the help text for the pull request screen.
+# Use the 'description' parameter to change the help message for the reviewkey.
+# reviewkeys:
 reviewkeys:
   - key: 'meta 1'
     description: 'Comment with /lgtm and /approve'

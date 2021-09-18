@@ -60,7 +60,12 @@ Plug 'AndrewRadev/splitjoin.vim'
 " Plug 'vim-scripts/ZoomWin'
 
 Plug 'neovim/nvim-lspconfig'
-Plug 'hrsh7th/nvim-compe'
+Plug 'hrsh7th/cmp-nvim-lsp'
+Plug 'hrsh7th/cmp-buffer'
+Plug 'hrsh7th/cmp-path'
+Plug 'hrsh7th/cmp-calc'
+Plug 'hrsh7th/cmp-emoji'
+Plug 'hrsh7th/nvim-cmp'
 
 Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 Plug 'kyazdani42/nvim-web-devicons'

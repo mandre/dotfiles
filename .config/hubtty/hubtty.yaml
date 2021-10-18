@@ -27,14 +27,17 @@ servers:
       - openshift/enhancements
       - openshift/installer
       - openshift/kuryr-kubernetes
+      - openshift/machine-api-provider-openstack
       - openshift/machine-config-operator
       - openshift/openstack-cinder-csi-driver-operator
+      - openshift/openstack-test
       - openshift/release
       - shiftstack/bugwatcher
       - shiftstack/bzira
       - shiftstack/ci-configs
       - shiftstack/dev-install
       - shiftstack/gazelle
+      - shiftstack/machine-api-provider-openstack
       - shiftstack/merge-bot
       - shiftstack/secrets
       - shiftstack/shiftstack-ci
@@ -260,6 +263,13 @@ dashboards:
     sort-by: "last-seen"
     reverse: True
     key: "f5"
+  - name: "OpenStack related PRs"
+    query: "repo:openshift/release state:open file:openstack or file:shiftstack"
+    key: "f6"
+  - name: "Team originated PRs"
+    query: "state:open not org:hubtty author:mandre or author:mdbooth or author:EmilienM or author:stephenfin or author:pierreprinetti or author:iamemilio or author:adduarte"
+    # sort-by: "repository"
+    key: "f7"
 
 # Reviewkeys are hotkeys that perform immediate reviews within the pull request
 # screen.  Any pending comments or review messages will be attached to the

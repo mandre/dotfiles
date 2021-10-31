@@ -259,6 +259,9 @@ if has("autocmd")
 
     " When vimrc is edited, automatically reload it
     autocmd bufwritepost .config/nvim/init-0.5.vim source %
+
+    " Highlight yanked text
+    autocmd TextYankPost * lua vim.highlight.on_yank {higroup="IncSearch", timeout=150, on_visual=true}
   augroup END
   " }}}
 

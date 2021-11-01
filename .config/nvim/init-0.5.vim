@@ -42,6 +42,7 @@ Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
+Plug 'steelsojka/pears.nvim'
 Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'mileszs/ack.vim'
@@ -106,6 +107,8 @@ vim.fn.sign_define("LspDiagnosticsSignHint", {text="", texthl=LspDiagnosticsS
 require('Navigator').setup({
     disable_on_zoom = true
 })
+
+require "pears".setup()
 EOF
 
 " }}}

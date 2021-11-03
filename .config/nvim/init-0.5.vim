@@ -109,6 +109,7 @@ require('Navigator').setup({
 })
 
 require "pears".setup()
+require "hop".setup()
 EOF
 
 " }}}

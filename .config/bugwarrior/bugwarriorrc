@@ -112,10 +112,11 @@ only_on_new_tasks = True
 service = jira
 jira.base_uri = https://issues.redhat.com
 jira.username = mandre
-jira.password = @oracle:use_keyring
+jira.PAT = @oracle:use_keyring
 jira.description_template = [{{jiraid}}] {{jirasummary}}
 jira.project_template = Work.Issues
 jira.add_tags = jira
+jira.query = assignee = currentUser() AND resolution is empty AND type != Epic AND status != "QE REVIEW" AND status != "CLOSED"
 # jira.import_sprints_as_tags = True
 #jira.query = assignee = ralph and status != closed and status != resolved
 ## Set this to your jira major version. We currently support only jira version

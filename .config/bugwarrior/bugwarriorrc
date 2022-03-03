@@ -170,7 +170,7 @@ jira.query = assignee = currentUser() AND resolution is empty AND type != Epic A
 service = bugzilla
 bugzilla.base_uri = bugzilla.redhat.com
 bugzilla.username = m.andre@redhat.com
-bugzilla.password = @oracle:use_keyring
+bugzilla.api_key = @oracle:use_keyring
 bugzilla.ignore_cc = True
 bugzilla.description_template = [BZ#{{bugzillabugid}}] {{bugzillasummary}}
 bugzilla.open_statuses = NEW,ASSIGNED,ON_DEV,REOPENED,FAILS_QA

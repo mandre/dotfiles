@@ -24,6 +24,7 @@ Plug 'b3nj5m1n/kommentary'
 
 " Git
 Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-rhubarb'
 Plug 'lewis6991/gitsigns.nvim'
 
 Plug 'nvim-lua/popup.nvim'

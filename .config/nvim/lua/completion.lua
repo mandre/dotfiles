@@ -47,7 +47,9 @@ cmp.setup({
   completion = {
     autocomplete = false
   },
-  documentation = {
-    border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+  window = {
+    documentation = {
+      border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+    }
   }
 })

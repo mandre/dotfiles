@@ -43,7 +43,7 @@ Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
-Plug 'steelsojka/pears.nvim'
+Plug 'windwp/nvim-autopairs'
 Plug 'eiginn/netrw',
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'mileszs/ack.vim'
@@ -109,7 +109,7 @@ require('Navigator').setup({
     disable_on_zoom = true
 })
 
-require "pears".setup()
+require "nvim-autopairs".setup{}
 require "hop".setup()
 EOF
 

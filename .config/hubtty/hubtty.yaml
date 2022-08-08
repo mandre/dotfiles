@@ -237,6 +237,7 @@ hide-comments:
   - author: "^.*openshift.*$"
   - author: "k8s-ci-robot"
   - author: "theopenlab-ci.*$"
+  - author: "netlify.*$"
 
 # This section defines customized dashboards.  You can supply any
 # Hubtty search string and bind them to any key.  They will appear in

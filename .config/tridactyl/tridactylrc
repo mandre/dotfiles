@@ -21,27 +21,19 @@ bind n findnext 1
 bind N findnext -1
 bind ,<Space> nohlsearch
 
-" Comment toggler for Reddit and Hacker News
-bind ;c hint -c [class*="expand"],[class="togg"]
-
-" GitHub pull request checkout command to clipboard (only works if you're a collaborator or above)
-bind yp composite js document.getElementById("clone-help-step-1").textContent.replace("git checkout -b", "git checkout -B").replace("git pull ", "git fetch ") + "git reset --hard " + document.getElementById("clone-help-step-1").textContent.split(" ")[3].replace("-","/") | yank
-
-" Git{Hub,Lab} git clone via SSH yank
-bind yg composite js "git clone " + document.location.href.replace(/https?:\/\//,"git@").replace("/",":").replace(/$/,".git") | clipboard yank
-
-" Make gu take you back to subreddit from comments
-bindurl reddit.com gu urlparent 4
-
 " Only hint search results on Google and DDG
 bindurl www.google.com f hint -Jc #search div:not(.action-menu) > a
 bindurl www.google.com F hint -Jbc #search div:not(.action-menu) > a
 
-bindurl ^https://duckduckgo.com f hint -Jc [class=result__a]
-bindurl ^https://duckduckgo.com F hint -Jbc [class=result__a]
+
+bindurl ^https://duckduckgo.com f hint -Jc [data-testid="result-title-a"]
+bindurl ^https://duckduckgo.com F hint -Jbc [data-testid="result-title-a"]
 
 " Allow Ctrl-a to select all in the commandline
 unbind --mode=ex <C-a>
+
+" Allow Ctrl-c to copy in the commandline
+unbind --mode=ex <C-c>
 
 " Allow Ctrl-f to start a search
 unbind <C-f>
@@ -51,7 +43,7 @@ bind gd tabdetach
 bind gD composite tabduplicate | tabdetach
 
 " Make yy use canonical / short links on the 5 websites that support them
-bind yy clipboard yankshort
+" bind yy clipboard yankshort
 
 "
 " Misc settings
@@ -76,9 +68,6 @@ seturl https://redhat.service-now.com/help noiframe true
 " URL redirects
 "
 
-" Mosquito nets won't make themselves
-" autocmd DocStart www.amazon.com js tri.excmds.urlmodify("-t", "www", "smile")
-
 set followpagepatterns.next ^(next|newer|prochain|suivant)\b|→|»|>>
 set followpagepatterns.prev ^(prev(ious)?|older|précédent)\b|←|«|<<
 
@@ -101,5 +90,5 @@ set searchurls.ghpr https://github.com/pulls?q=is%3Aopen+is%3Apr+author%3A%s+arc
 set searchurls.tr http://www.wordreference.com/redirect/translation.aspx?w=%s&dict=enfr
 set searchurls.conj http://www.les-verbes.com/conjuguer.php?verbe=%s
 
-" This will have to do until someone writes us a nice syntax file :)
+" For syntax highlighting see https://github.com/tridactyl/vim-tridactyl
 " vim: set filetype=vim:

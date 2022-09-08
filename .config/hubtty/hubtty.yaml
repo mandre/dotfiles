@@ -154,6 +154,12 @@ commentlinks:
      - link:
          text: "{bug_str}"
          url: "https://bugzilla.redhat.com/show_bug.cgi?id={id}"
+  # Match Jira issue IDs, and replace them with a link to jira
+  - match: "(?P<jira_str>(\\b[A-Z]+-[0-9]+\\b))"
+    replacements:
+     - link:
+         text: "{jira_str}"
+         url: "https://issues.redhat.com/browse/{jira_str}"
   # Match commit sha, and replace them with a link to an internal
   # Hubtty search for PRs containing that commit.
   - match: "(?P<sha>\\s[a-f0-9]{6,40}\\b)"

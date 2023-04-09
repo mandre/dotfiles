@@ -47,7 +47,7 @@ if (( $+commands[oc] )); then
     __OC_COMPLETION_FILE="${ZSH_CACHE_DIR}/oc_completion"
 
     if [[ ! -f $__OC_COMPLETION_FILE ]]; then
-        oc completion zsh >! $__OC_COMPLETION_FILE
+        oc completion zsh | sed 's#${requestComp} 2>/dev/null#${requestComp} 2>/dev/null | head -n -1 | fzf --no-multi -1 -0 --cycle #g' >! $__OC_COMPLETION_FILE
     fi
 
     [[ -f $__OC_COMPLETION_FILE ]] && source $__OC_COMPLETION_FILE

@@ -12,6 +12,7 @@ fi
 
 export GOPATH=$HOME/go
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+export FZF_DEFAULT_OPTS='--prompt="▷ " --pointer="➜" --color="bg+:-1,info:green,fg:white,fg+:white,pointer:red,hl:bright-yellow,hl+:blue,prompt:white,header:blue"'
 
 alias vi=nvim
 alias vim=nvim

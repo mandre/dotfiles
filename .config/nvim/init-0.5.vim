@@ -222,6 +222,13 @@ if has("autocmd")
   augroup END
   " }}}
 
+  " tf files settings {{{
+  augroup filetype_tf
+    autocmd!
+    autocmd BufNewFile,BufRead *.tf set filetype=hcl
+  augroup END
+  " }}}
+
   " git commit messages {{{
   augroup filetype_gitcommit
     autocmd!

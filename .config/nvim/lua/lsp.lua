@@ -2,6 +2,7 @@ local lspconfig = require('lspconfig')
 lspconfig.pyright.setup {}
 lspconfig.gopls.setup {}
 lspconfig.bashls.setup {}
+lspconfig.terraformls.setup {}
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions

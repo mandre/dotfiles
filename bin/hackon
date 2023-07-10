@@ -3,7 +3,7 @@
 HACKON_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/hackon"
 TARGET_DIR=$(readlink "${HACKON_DIR}"/"$1")
 
-if tmux list-windows -F "#W" | grep -q "$1"; then
+if tmux list-windows -F "#W" | grep -q "^${1}\$"; then
 	# If the window already exist, switch to it
 	tmux select-window -t "$1"
 else

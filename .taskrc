@@ -51,3 +51,4 @@ urgency.user.tag.ready.coefficient=-3
 reserved.lines=2
 
 search.case.sensitive=no
+news.version=2.6.0

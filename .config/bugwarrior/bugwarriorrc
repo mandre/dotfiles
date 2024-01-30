@@ -2,7 +2,8 @@
 # Here you define a comma separated list of targets.  Each of them must have a
 # section below determining their properties, how to query them, etc.  The name
 # is just a symbol, and doesn't have any functional importance.
-targets = bugzilla, jira
+# targets = bugzilla, jira
+targets = jira
 
 # If unspecified, the default taskwarrior config will be used.
 #taskrc = /path/to/.taskrc
@@ -116,7 +117,7 @@ jira.PAT = @oracle:use_keyring
 jira.description_template = [{{jiraid}}] {{jirasummary}}
 jira.project_template = Work.Issues
 jira.add_tags = jira
-jira.query = assignee = currentUser() AND resolution is empty AND type != Epic AND status != "QE REVIEW" AND status != "CLOSED"
+jira.query = assignee = currentUser() AND resolution is empty AND type != Epic AND status != "QE REVIEW" AND status != "ON_QA" AND status != "CLOSED" AND status != Verified
 # jira.import_sprints_as_tags = True
 #jira.query = assignee = ralph and status != closed and status != resolved
 ## Set this to your jira major version. We currently support only jira version

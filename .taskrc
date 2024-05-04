@@ -52,3 +52,5 @@ reserved.lines=2
 
 search.case.sensitive=no
 news.version=2.6.0
+
+alias.recent=end.after:today-1wk completed

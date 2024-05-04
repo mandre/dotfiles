@@ -15,7 +15,7 @@
 	rebase = true
 
 [rerere]
-	enabled = true
+	enabled = false
 
 ; [init]
 ; 	templatedir = ~/.git_template

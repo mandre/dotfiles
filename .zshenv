@@ -16,4 +16,5 @@ export FZF_DEFAULT_OPTS='--prompt="▷ " --pointer="➜" --color="bg+:-1,info:gr
 
 alias vi=nvim
 alias vim=nvim
+alias vimdiff='nvim -d'
 alias docker=podman

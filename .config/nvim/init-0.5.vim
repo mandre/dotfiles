@@ -44,7 +44,8 @@ Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-eunuch'
 Plug 'windwp/nvim-autopairs'
-Plug 'eiginn/netrw',
+Plug 'nvim-neo-tree/neo-tree.nvim'
+Plug 'MunifTanjim/nui.nvim'
 Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
@@ -103,6 +104,16 @@ vim.fn.sign_define("LspDiagnosticsSignError", {text="", texthl=LspDiagnostics
 vim.fn.sign_define("LspDiagnosticsSignWarning", {text="", texthl=LspDiagnosticsSignWarning})
 vim.fn.sign_define("LspDiagnosticsSignInformation", {text="", texthl=LspDiagnosticsSignInformation})
 vim.fn.sign_define("LspDiagnosticsSignHint", {text="", texthl=LspDiagnosticsSignHint})
+
+require('neo-tree').setup({
+  window = {
+    position = "float",
+    mappings = {
+      ["h"] = "close_node",
+      ["l"] = "open",
+    },
+  },
+})
 
 
 require('Navigator').setup({
@@ -276,17 +287,6 @@ if has("autocmd")
     autocmd TextYankPost * lua vim.highlight.on_yank {higroup="IncSearch", timeout=150, on_visual=true}
   augroup END
   " }}}
-
-  " Netrw mappings {{{
-  augroup netrw_mappings
-    autocmd!
-    autocmd filetype netrw call Netrw_mappings()
-  augroup END
-  function! Netrw_mappings()
-    map <buffer> h -
-    map <buffer> l <CR>
-  endfunction
-  " }}}
 endif
 
 set formatoptions+=n1rj
@@ -429,7 +429,7 @@ nnoremap <silent> S :<C-u>call <SID>try('SplitjoinSplit', "r\015")<CR>
 inoremap <F1> <ESC>
 noremap <F1> <ESC>
 " <F2> File explorer
-noremap <F2> :Explore<CR>
+noremap <F2> :Neotree toggle reveal<CR>
 " <F3> Buffer explorer
 noremap <F3> <cmd>Telescope buffers<cr>
 " <F4> Vista
@@ -545,9 +545,6 @@ set mouse=a
 set shada='1000,f1,<500,:100,/100,s10,h
 " set backupdir=~/.vim/.tmp/backup,~/.vim/.tmp,/tmp
 " set undodir=~/.vim/.tmp/undo,~/.vim/.tmp,/tmp
-" let g:netrw_home = '~/.vim/.tmp/netrw'
-
-let g:netrw_clipboard = 0
 
 " Set completeopt to have a better completion experience
 set completeopt=menuone,noinsert,noselect

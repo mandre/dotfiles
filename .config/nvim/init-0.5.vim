@@ -46,7 +46,6 @@ Plug 'tpope/vim-eunuch'
 Plug 'windwp/nvim-autopairs'
 Plug 'nvim-neo-tree/neo-tree.nvim'
 Plug 'MunifTanjim/nui.nvim'
-Plug 'tpope/vim-vinegar' ",       { 'on': 'Explore' }
 Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'

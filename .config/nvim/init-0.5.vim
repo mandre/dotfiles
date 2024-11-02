@@ -55,7 +55,6 @@ Plug 'numToStr/Navigator.nvim'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'
 " Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
-" Plug 'rhysd/clever-f.vim'
 " Plug 'wellle/targets.vim'
 " Plug 'vim-scripts/LargeFile'
 " Plug 'vim-scripts/ZoomWin'
@@ -468,14 +467,6 @@ let g:vista_disable_statusline = 1
 " Ack
 let g:ackprg='ag --vimgrep'
 let g:ackhighlight=1
-
-" Clever-f
-" let g:clever_f_smart_case=1
-" let g:clever_f_timeout_ms=10000
-" let g:clever_f_show_prompt=1
-" let g:clever_f_mark_cursor=1
-" let g:clever_f_chars_match_any_signs=';:'
-" let g:clever_f_fix_key_direction=1
 
 " Mustache
 let g:mustache_abbreviations = 1

@@ -50,7 +50,7 @@ Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'smoka7/hop.nvim'
+Plug 'ggandor/leap.nvim'
 Plug 'numToStr/Navigator.nvim'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'
@@ -119,7 +119,7 @@ require('Navigator').setup({
 })
 
 require "nvim-autopairs".setup{}
-require "hop".setup()
+require('leap').create_default_mappings()
 EOF
 
 " }}}
@@ -377,7 +377,7 @@ cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
 " Stop highlight search
 nnoremap <CR> :noh<CR>
 
-map <SPACE> <cmd>HopChar2 <cr>
+map <SPACE> <Plug>(leap)
 
 vmap v <Plug>(expand_region_expand)
 vmap <C-v> <Plug>(expand_region_shrink)
@@ -416,7 +416,7 @@ function! s:try(cmd, default)
 endfunction
 
 nnoremap <silent> J :<C-u>call <SID>try('SplitjoinJoin',  'J')<CR>
-nnoremap <silent> S :<C-u>call <SID>try('SplitjoinSplit', "r\015")<CR>
+" nnoremap <silent> S :<C-u>call <SID>try('SplitjoinSplit', "r\015")<CR>
 
 " }}}
 " Function Keys {{{
@@ -510,12 +510,6 @@ hi LspDiagnosticsDefaultHint              guifg=#5F5A60 ctermfg=68
 hi GitSignsAdd               guifg=#99c794 ctermfg=114  gui=bold cterm=bold
 hi GitSignsChange            guifg=#e5c07b ctermfg=68   gui=bold cterm=bold
 hi GitSignsDelete            guifg=#ec5f67 ctermfg=203  gui=bold cterm=bold
-
-" Hop
-hi default HopNextKey  guifg=#ff007c gui=bold ctermfg=198 cterm=bold
-hi default HopNextKey1 guifg=#00dfff gui=bold ctermfg=45 cterm=bold
-hi default HopNextKey2 guifg=#2b8db3 ctermfg=33
-hi default HopUnmatched guifg=#666666 ctermfg=242
 
 " Diff
 hi DiffAdd        guifg=#99c794 ctermfg=114 guibg=#343d46 ctermbg=237 gui=none cterm=none

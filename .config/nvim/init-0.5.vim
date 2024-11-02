@@ -49,7 +49,6 @@ Plug 'MunifTanjim/nui.nvim'
 Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
-Plug 'thcipriani/mediummode',   { 'on': 'MediumModeToggle' }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'smoka7/hop.nvim'
 Plug 'numToStr/Navigator.nvim'
@@ -306,7 +305,6 @@ nnoremap <leader>sn :set number!<cr>
 nnoremap <leader>sr :set relativenumber!<cr>
 nnoremap <leader>sw :set wrap!<cr>
 nnoremap <silent> <leader>sl :call ToggleCursorline()<cr>
-nnoremap <leader>sh :MediumModeToggle<cr>
 nnoremap <leader>sp :set paste!<CR>
 
 function! ToggleCursorline()
@@ -478,10 +476,6 @@ let g:ackhighlight=1
 " let g:clever_f_mark_cursor=1
 " let g:clever_f_chars_match_any_signs=';:'
 " let g:clever_f_fix_key_direction=1
-
-" Medium mode
-let g:mediummode_enabled = 0
-let g:mediummode_allowed_motions = 5
 
 " Mustache
 let g:mustache_abbreviations = 1

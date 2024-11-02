@@ -232,7 +232,7 @@ gls.right[2] = {
         provider = 'DiffModified',
         condition = checkwidth,
         -- icon = '~',
-        icon = ' 柳',
+        icon = '  ',
         highlight = {colors.orange, colors.bg}
     }
 }
@@ -253,7 +253,7 @@ gls.right[4] = {
 }
 gls.right[5] = {
     GitIcon = {
-        provider = function() return '  ' end,
+        provider = function() return '  ' end,
         condition = condition.check_git_workspace,
         highlight = {colors.middlegrey, colors.bg}
     }

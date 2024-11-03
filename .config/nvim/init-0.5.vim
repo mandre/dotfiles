@@ -118,7 +118,10 @@ require('Navigator').setup({
 })
 
 require "nvim-autopairs".setup{}
-require('leap').create_default_mappings()
+require('leap')
+vim.keymap.set({'n', 'x', 'o'}, 's',  '<Plug>(leap-forward)')
+vim.keymap.set({'n', 'o'}, 'S',  '<Plug>(leap-backward)')
+vim.keymap.set({'n', 'x', 'o'}, 'gs', '<Plug>(leap-from-window)')
 EOF
 
 " }}}

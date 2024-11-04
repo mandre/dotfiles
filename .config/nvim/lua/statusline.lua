@@ -4,8 +4,7 @@ local utils = require('conf.utils')
 local condition = require('galaxyline.condition')
 
 local gls = gl.section
--- gl.short_line_list = {'defx', 'packager', 'vista', 'NvimTree'}
-gl.short_line_list = {'NvimTree','vista','dbui','packer'}
+gl.short_line_list = {'neo-tree','vista_kind'}
 
 local colors = {
     bg = '#282c34',
@@ -64,7 +63,7 @@ end
 
 local function file_readonly()
     if vim.bo.filetype == 'help' then return '' end
-    if vim.bo.readonly == true then return '  ' end
+    if vim.bo.readonly == true then return '  ' end
     return ''
 end
 
@@ -106,15 +105,6 @@ end
 --     return #buffers
 -- end
 
-local function get_basename(file) return file:match("^.+/(.+)$") end
-
-local GetGitRoot = function()
-    local git_dir = require('galaxyline.provider_vcs').get_git_dir()
-    if not git_dir then return '' end
-
-    local git_root = git_dir:gsub('/.git/?$', '')
-    return get_basename(git_root)
-end
 
 -- Left side
 gls.left[1] = {
@@ -181,41 +171,34 @@ gls.left[3] = {
 --         highlight = {colors.fg, colors.bg}
 --     }
 -- }
-gls.left[9] = {
+gls.left[6] = {
     DiagnosticError = {
         provider = 'DiagnosticError',
         icon = '  ',
-        highlight = {colors.red1, colors.bg}
+        highlight = {colors.red1, colors.bg},
     }
 }
-gls.left[10] = {
-    Space = {
-        provider = function() return ' ' end,
-        highlight = {colors.section_bg, colors.bg}
-    }
-}
-gls.left[11] = {
+gls.left[7] = {
     DiagnosticWarn = {
         provider = 'DiagnosticWarn',
         icon = '  ',
-        highlight = {colors.orange, colors.bg}
+        highlight = {colors.orange, colors.bg},
     }
 }
-gls.left[12] = {
-    Space = {
-        provider = function() return ' ' end,
-        highlight = {colors.section_bg, colors.bg}
-    }
-}
-gls.left[13] = {
+gls.left[8] = {
     DiagnosticInfo = {
         provider = 'DiagnosticInfo',
         icon = '  ',
-        highlight = {colors.blue, colors.section_bg},
-        separator = ' ',
-        separator_highlight = {colors.section_bg, colors.bg}
+        highlight = {colors.blue, colors.bg},
     }
 }
+-- gls.left[9] = {
+--     DiagnosticHint = {
+--         provider = 'DiagnosticHint',
+--         icon = '  ',
+--         highlight = {colors.blue, colors.bg},
+--     }
+-- }
 
 -- Right side
 gls.right[1] = {
@@ -265,15 +248,6 @@ gls.right[6] = {
         highlight = {colors.middlegrey, colors.bg}
     }
 }
--- gls.right[7] = {
---     GitRoot = {
---         provider = {GetGitRoot, function() return ' ' end},
---         condition = function()
---             return utils.has_width_gt(45) and condition.check_git_workspace
---         end,
---         highlight = {colors.middlegrey, colors.bg}
---     }
--- }
 
 gls.right[7] = {
     LineInfo = {
@@ -282,8 +256,6 @@ gls.right[7] = {
         separator = ' ',
         highlight = {colors.middlegrey, colors.bg},
         separator_highlight = {colors.middlegrey, colors.bg}
-        -- separator_highlight = {'NONE',colors.bg},
-        -- highlight = {colors.fg,colors.bg},
     },
 }
 
@@ -307,7 +279,7 @@ gls.short_line_left[1] = {
         highlight = {
             require('galaxyline.provider_fileinfo').get_file_icon,
             colors.section_bg
-        }
+        },
     }
 }
 gls.short_line_left[2] = {

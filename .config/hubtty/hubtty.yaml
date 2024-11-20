@@ -13,6 +13,7 @@ servers:
     git-url: ssh://git@github.com
     additional-repositories:
       - gophercloud/gophercloud
+      - gophercloud/gophercloud.github.io
       - gophercloud/utils
       - hubtty/hubtty
       - hubtty/hubtty-playground
@@ -22,23 +23,23 @@ servers:
       - openshift/cloud-provider-openstack
       - openshift/cluster-api-provider-openstack
       - openshift/cluster-cloud-controller-manager-operator
+      - openshift/cluster-storage-operator
       - openshift/csi-driver-manila-operator
       - openshift/csi-driver-nfs
+      - openshift/csi-operator
       - openshift/enhancements
+      - openshift/hypershift
       - openshift/installer
-      - openshift/kuryr-kubernetes
       - openshift/machine-api-provider-openstack
       - openshift/machine-config-operator
       - openshift/openstack-cinder-csi-driver-operator
       - openshift/openstack-test
       - openshift/release
       - shiftstack/bugwatcher
-      - shiftstack/bzira
       - shiftstack/ci-configs
       - shiftstack/dev-install
       - shiftstack/gazelle
       - shiftstack/merge-bot
-      - shiftstack/secrets
       - shiftstack/shiftstack-ci
 
 
@@ -273,7 +274,7 @@ dashboards:
     query: "repo:openshift/release state:open file:openstack or file:shiftstack"
     key: "f6"
   - name: "Team originated PRs"
-    query: "state:open not org:hubtty author:mandre or author:mdbooth or author:EmilienM or author:stephenfin or author:pierreprinetti or author:MaysaMacedo or author:dulek or author:gryf"
+    query: "state:open not org:hubtty author:mandre or author:mdbooth or author:EmilienM or author:stephenfin or author:pierreprinetti or author:MaysaMacedo or author:gryf or author:MiguelCarpio or author:dkokkino"
     # sort-by: "repository"
     key: "f7"
   - name: "Backports"

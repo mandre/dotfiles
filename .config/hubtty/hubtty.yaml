@@ -17,6 +17,7 @@ servers:
       - gophercloud/utils
       - hubtty/hubtty
       - hubtty/hubtty-playground
+      - k-orc/openstack-resource-controller
       - kubernetes-sigs/cluster-api-provider-openstack
       - kubernetes/cloud-provider-openstack
       - openshift/baremetal-runtimecfg

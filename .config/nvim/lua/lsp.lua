@@ -1,4 +1,5 @@
 vim.lsp.enable({'pyright', 'gopls', 'bashls', 'terraformls'})
+vim.lsp.inlay_hint.enable()
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions

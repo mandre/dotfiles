@@ -517,6 +517,10 @@ hi DiffFile       guifg=#fac863 ctermfg=221 guibg=none ctermbg=none gui=none cte
 hi DiffNewFile    guifg=#fac863 ctermfg=221 guibg=none ctermbg=none gui=none cterm=none
 hi DiffLine       guifg=#6699cc ctermfg=68 guibg=none ctermbg=none gui=none cterm=none
 
+" NeoTree
+hi NeoTreeFloatBorder   guifg=#38393f guibg=#181818
+hi NeoTreeTitleBar      guifg=#aab2bf guibg=#38393f
+
 set mouse=a
 
 " }}}

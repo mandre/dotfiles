@@ -488,6 +488,7 @@ hi Normal guibg=NONE ctermbg=NONE
 hi LineNr guibg=NONE ctermbg=NONE
 hi SignColumn guibg=NONE ctermbg=NONE
 hi EndOfBuffer guibg=NONE ctermbg=NONE
+hi WinSeparator  guifg=#38393f   guibg=NONE
 
 " LSP
 hi LspDiagnosticsDefaultError             guifg=#ec5f67 ctermfg=203

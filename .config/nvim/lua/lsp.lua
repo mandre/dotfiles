@@ -1,8 +1,4 @@
-local lspconfig = require('lspconfig')
-lspconfig.pyright.setup {}
-lspconfig.gopls.setup {}
-lspconfig.bashls.setup {}
-lspconfig.terraformls.setup {}
+vim.lsp.enable({'pyright', 'gopls', 'bashls', 'terraformls'})
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions

@@ -16,7 +16,6 @@ call plug#begin(stdpath('data') . '/plugged')
 
 " Programming
 Plug 'liuchengxu/vista.vim',       { 'on': 'Vista' }
-Plug 'b3nj5m1n/kommentary'
 
 " Snippets
 " Plug 'SirVer/ultisnips' ",        { 'on': [] }
@@ -86,11 +85,6 @@ if (has("termguicolors"))
 endif
 
 lua << EOF
-require('kommentary.config').configure_language("default", {
-    prefer_single_line_comments = true,
-    use_consistent_indentation = true,
-})
-
 require'nvim-treesitter.configs'.setup {
   highlight = {
     enable = true
@@ -439,8 +433,8 @@ noremap <F5> :e!<CR>
 " <F7> Toggle Undo tree
 noremap <F7> :UndotreeToggle<CR>
 " <F8> Comment
-nmap <F8> <Plug>kommentary_line_default<ESC>j
-xmap <F8> <Plug>kommentary_visual_default<ESC>
+nmap <F8> gcc<ESC>j
+xmap <F8> gc<ESC>
 " <F9> Remove all trailing spaces
 noremap <F9> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
 " <F12> Compile using makefile

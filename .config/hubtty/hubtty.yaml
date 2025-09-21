@@ -34,13 +34,15 @@ servers:
       - openshift/machine-api-provider-openstack
       - openshift/machine-config-operator
       - openshift/openstack-cinder-csi-driver-operator
+      - openshift/openstack-resource-controller
       - openshift/openstack-test
       - openshift/release
       - shiftstack/bugwatcher
       - shiftstack/ci-configs
       - shiftstack/dev-install
-      - shiftstack/gazelle
+      - shiftstack/ghira
       - shiftstack/merge-bot
+      - shiftstack/prune
       - shiftstack/shiftstack-ci
 
 

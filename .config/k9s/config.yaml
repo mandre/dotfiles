@@ -10,6 +10,7 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: true
     noIcons: false
     skin: mandre
     reactive: false

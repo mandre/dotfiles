@@ -43,6 +43,9 @@ cmp.setup({
     { name = 'buffer' },
     { name = 'calc' },
     { name = 'emoji' },
+    per_filetype = {
+      codecompanion = { "codecompanion" },
+    },
   },
   completion = {
     autocomplete = false

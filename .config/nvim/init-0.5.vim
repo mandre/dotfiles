@@ -26,9 +26,9 @@ Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-rhubarb'
 Plug 'lewis6991/gitsigns.nvim'
 
-Plug 'nvim-lua/popup.nvim'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'nvim-telescope/telescope.nvim'
+Plug 'nvim-telescope/telescope-ui-select.nvim'
 
 " Ruby
 " Plug 'tpope/vim-rails',         { 'for': 'ruby' }
@@ -71,6 +71,9 @@ Plug 'nvim-tree/nvim-web-devicons'
 Plug 'mhartington/oceanic-next'
 
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+
+Plug 'MeanderingProgrammer/render-markdown.nvim'
+Plug 'olimorris/codecompanion.nvim'
 
 call plug#end()
 
@@ -117,6 +120,100 @@ require('leap')
 vim.keymap.set({'n', 'x', 'o'}, 's',  '<Plug>(leap-forward)')
 vim.keymap.set({'n', 'o'}, 'S',  '<Plug>(leap-backward)')
 vim.keymap.set({'n', 'x', 'o'}, 'gs', '<Plug>(leap-from-window)')
+
+require("telescope").setup {
+  defaults = {
+    layout_strategy = "center",
+    prompt_prefix = "🔍 ",
+    selection_caret = "➔ ",
+  },
+  extensions = {
+    ["ui-select"] = {
+      require("telescope.themes").get_dropdown {
+      }
+    }
+  }
+}
+require("telescope").load_extension("ui-select")
+
+require("codecompanion").setup({
+  strategies = {
+    chat = {
+      adapter = "gemini",
+      model = "gemini-2.5-pro",
+    },
+    inline = {
+      adapter = "gemini",
+      model = "gemini-2.5-pro",
+    },
+    cmd = {
+      adapter = "gemini",
+      model = "gemini-2.5-pro",
+    }
+  },
+  adapters = {
+    http ={
+      gemini = function()
+        return require("codecompanion.adapters").extend("gemini", {
+          env = {
+            api_key = "cmd:pass show gemini/api_key",
+          },
+        })
+      end,
+    },
+  },
+  display = {
+    action_palette = {
+  --     width = 95,
+  --     height = 10,
+  --     prompt = "Prompt ", -- Prompt used for interactive LLM calls
+      provider = "default", -- Can be "default", "telescope", "fzf_lua", "mini_pick" or "snacks". If not specified, the plugin will autodetect installed providers.
+      opts = {
+        show_default_actions = true, -- Show the default actions in the action palette?
+        show_default_prompt_library = true, -- Show the default prompt library in the action palette?
+  --       title = "CodeCompanion actions", -- The title of the action palette
+      },
+    },
+  },
+  prompt_library = {
+    ["Docusaurus"] = {
+      strategy = "chat",
+      description = "Write documentation for me",
+      opts = {
+        index = 11,
+        is_slash_cmd = false,
+        auto_submit = false,
+        short_name = "docs",
+      },
+      context = {
+        {
+          type = "file",
+          path = {
+            "doc/.vitepress/config.mjs",
+            "lua/codecompanion/config.lua",
+            "README.md",
+          },
+        },
+      },
+      prompts = {
+        {
+          role = "user",
+          content = [[I'm rewriting the documentation for my plugin CodeCompanion.nvim, as I'm moving to a vitepress website. Can you help me rewrite it?
+
+I'm sharing my vitepress config file so you have the context of how the documentation website is structured in the `sidebar` section of that file.
+
+I'm also sharing my `config.lua` file which I'm mapping to the `configuration` section of the sidebar.
+]],
+        },
+      },
+    },
+  },
+})
+
+require('render-markdown').setup({
+  file_types = { "markdown", "codecompanion" }
+})
+
 EOF
 
 " }}}
@@ -164,8 +261,7 @@ tnoremap <C-k> <C-\><C-N><C-w>k
 tnoremap <C-l> <C-\><C-N><C-w>l
 " }}}
 
-" Relative numbers when in normal mode
-autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0 relativenumber
+autocmd TermOpen * setlocal conceallevel=0 colorcolumn=0
 
 " Start terminal in insert mode
 autocmd TermOpen term://* startinsert
@@ -389,7 +485,7 @@ nnoremap <leader>v V`]
 nmap Y y$
 
 " Just because I'm used to it
-nnoremap <c-p> <cmd>Telescope find_files<cr>
+nnoremap <c-p> <cmd>Telescope find_files layout_strategy=horizontal<cr>
 
 " Ack the word under the cursor
 nnoremap <leader>a :Ack! <cword><CR>
@@ -425,7 +521,7 @@ noremap <F1> <ESC>
 " <F2> File explorer
 noremap <F2> :Neotree toggle reveal<CR>
 " <F3> Buffer explorer
-noremap <F3> <cmd>Telescope buffers<cr>
+noremap <F3> <cmd>Telescope buffers layout_strategy=horizontal<cr>
 " <F4> Vista
 noremap <F4> :Vista!!<CR>
 " <F5> Reload file

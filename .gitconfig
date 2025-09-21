@@ -40,3 +40,5 @@
 
 [include]
 	path = .gitconfig.private
+[commit]
+	gpgsign = true

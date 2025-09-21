@@ -74,6 +74,7 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
 Plug 'MeanderingProgrammer/render-markdown.nvim'
 Plug 'olimorris/codecompanion.nvim'
+Plug 'franco-ruggeri/codecompanion-lualine.nvim'
 
 call plug#end()
 

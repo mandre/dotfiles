@@ -56,7 +56,7 @@ Plug 'AndrewRadev/splitjoin.vim'
 " Plug 'godlygeek/tabular',       { 'on': 'Tabularize' }
 " Plug 'wellle/targets.vim'
 " Plug 'vim-scripts/LargeFile'
-" Plug 'vim-scripts/ZoomWin'
+ Plug 'dhruvasagar/vim-zoom'
 
 Plug 'neovim/nvim-lspconfig'
 Plug 'hrsh7th/cmp-nvim-lsp'
@@ -511,6 +511,8 @@ endfunction
 
 nnoremap <silent> J :<C-u>call <SID>try('SplitjoinJoin',  'J')<CR>
 " nnoremap <silent> S :<C-u>call <SID>try('SplitjoinSplit', "r\015")<CR>
+
+nmap <C-W>z <Plug>(zoom-toggle)
 
 " }}}
 " Function Keys {{{

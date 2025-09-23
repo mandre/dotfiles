@@ -138,6 +138,7 @@ require('lualine').setup {
         },
       },
       { 'codecompanion' },
+      { "vim.fn['zoom#statusline']()" },
       {'branch', icon = ''},
     },
     lualine_y = {'location'},

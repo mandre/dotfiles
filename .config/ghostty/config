@@ -1,8 +1,13 @@
-adjust-cell-height = -1
-bold-is-bright = true
+adjust-cell-height = -3
+bold-color = bright
 font-family = "Cousine Regular Nerd Font Complete Mono"
 font-size = 11
 theme = mandre
-window-decoration = false
-# ghostty currently scrolls 6 times too fast in tmux
-mouse-scroll-multiplier = 0.166
+gtk-titlebar = false
+# Would prefer to use the following, but doesn't
+# do what I expect when maximized for half of the screen
+# gtk-titlebar-hide-when-maximized = true
+mouse-hide-while-typing = true
+mouse-scroll-multiplier = 0.5
+app-notifications = no-clipboard-copy
+right-click-action = ignore

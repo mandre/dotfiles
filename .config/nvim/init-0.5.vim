@@ -49,7 +49,7 @@ Plug 'mileszs/ack.vim'
 Plug 'mbbill/undotree',             { 'on': 'UndotreeToggle'   }
 Plug 'whiteinge/diffconflicts'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'ggandor/leap.nvim'
+Plug 'https://codeberg.org/andyg/leap.nvim.git'
 Plug 'numToStr/Navigator.nvim'
 Plug 'terryma/vim-expand-region', { 'on': ['<Plug>(expand_region_expand)', '<Plug>(expand_region_shrink)'] }
 Plug 'AndrewRadev/splitjoin.vim'

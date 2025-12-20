@@ -138,18 +138,18 @@ require("telescope").setup {
 require("telescope").load_extension("ui-select")
 
 require("codecompanion").setup({
-  strategies = {
+  interactions = {
     chat = {
       adapter = "gemini",
-      model = "gemini-2.5-pro",
+      model = "gemini-3-pro-preview",
     },
     inline = {
       adapter = "gemini",
-      model = "gemini-2.5-pro",
+      model = "gemini-3-pro-preview",
     },
     cmd = {
       adapter = "gemini",
-      model = "gemini-2.5-pro",
+      model = "gemini-3-pro-preview",
     }
   },
   adapters = {
@@ -158,6 +158,11 @@ require("codecompanion").setup({
         return require("codecompanion.adapters").extend("gemini", {
           env = {
             api_key = "cmd:pass show gemini/api_key",
+          },
+          schema = {
+            reasoning_effort = {
+              default = "low"
+            },
           },
         })
       end,
@@ -170,42 +175,9 @@ require("codecompanion").setup({
   --     prompt = "Prompt ", -- Prompt used for interactive LLM calls
       provider = "default", -- Can be "default", "telescope", "fzf_lua", "mini_pick" or "snacks". If not specified, the plugin will autodetect installed providers.
       opts = {
-        show_default_actions = true, -- Show the default actions in the action palette?
-        show_default_prompt_library = true, -- Show the default prompt library in the action palette?
+        show_preset_actions = true, -- Show the default actions in the action palette?
+        show_preset_prompts = true, -- Show the default prompt library in the action palette?
   --       title = "CodeCompanion actions", -- The title of the action palette
-      },
-    },
-  },
-  prompt_library = {
-    ["Docusaurus"] = {
-      strategy = "chat",
-      description = "Write documentation for me",
-      opts = {
-        index = 11,
-        is_slash_cmd = false,
-        auto_submit = false,
-        short_name = "docs",
-      },
-      context = {
-        {
-          type = "file",
-          path = {
-            "doc/.vitepress/config.mjs",
-            "lua/codecompanion/config.lua",
-            "README.md",
-          },
-        },
-      },
-      prompts = {
-        {
-          role = "user",
-          content = [[I'm rewriting the documentation for my plugin CodeCompanion.nvim, as I'm moving to a vitepress website. Can you help me rewrite it?
-
-I'm sharing my vitepress config file so you have the context of how the documentation website is structured in the `sidebar` section of that file.
-
-I'm also sharing my `config.lua` file which I'm mapping to the `configuration` section of the sidebar.
-]],
-        },
       },
     },
   },

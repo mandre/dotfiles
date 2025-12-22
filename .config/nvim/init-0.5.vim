@@ -159,11 +159,6 @@ require("codecompanion").setup({
           env = {
             api_key = "cmd:pass show gemini/api_key",
           },
-          schema = {
-            reasoning_effort = {
-              default = "low"
-            },
-          },
         })
       end,
     },

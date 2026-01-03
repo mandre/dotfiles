@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)"
+    ]
+  },
+  "model": "claude-opus-4-5@20251101",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "padding": 0
+  },
+  "alwaysThinkingEnabled": true,
+  "attribution": {
+    "commit": "Assisted-By: Claude Code",
+    "pr": "Assisted-By: Claude Code"
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.message' | xargs -0 notify-send --app-name 'Claude Code' --icon face-monkey-symbolic 'Waiting for your input'"
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.message' | xargs -0 notify-send --app-name 'Claude Code' --icon face-monkey-symbolic 'Waiting for your input'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send --app-name 'Claude Code' --icon=checkbox-checked 'Task Completed' 'Claude finished working'"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -139,23 +139,19 @@ require("telescope").load_extension("ui-select")
 
 require("codecompanion").setup({
   interactions = {
-    chat = {
-      adapter = "gemini",
-      model = "gemini-3-pro-preview",
-    },
-    inline = {
-      adapter = "gemini",
-      model = "gemini-3-pro-preview",
-    },
-    cmd = {
-      adapter = "gemini",
-      model = "gemini-3-pro-preview",
-    }
+    chat = { adapter = "gemini" },
+    inline = { adapter = "gemini" },
+    cmd = { adapter = "gemini" }
   },
   adapters = {
     http ={
       gemini = function()
         return require("codecompanion.adapters").extend("gemini", {
+          schema = {
+            model = {
+              default = "gemini-3.1-pro-preview",
+            },
+          },
           env = {
             api_key = "cmd:pass show gemini/api_key",
           },

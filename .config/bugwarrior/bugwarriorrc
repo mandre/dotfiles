@@ -111,9 +111,9 @@ only_on_new_tasks = True
 ## resolved.
 [jira]
 service = jira
-jira.base_uri = https://issues.redhat.com
-jira.username = mandre
-jira.PAT = @oracle:use_keyring
+jira.base_uri = https://redhat.atlassian.net
+jira.username = maandre@redhat.com
+jira.password = @oracle:use_keyring
 jira.description_template = [{{jiraid}}] {{jirasummary}}
 jira.project_template = Work.Issues
 jira.add_tags = jira
@@ -167,14 +167,14 @@ jira.query = assignee = currentUser() AND resolution is empty AND type != Epic A
 # gmail.query = label:action OR label:readme
 # gmail.login_name = you@example.com
 
-[bugzilla]
-service = bugzilla
-bugzilla.base_uri = bugzilla.redhat.com
-bugzilla.username = m.andre@redhat.com
-bugzilla.api_key = @oracle:use_keyring
-bugzilla.ignore_cc = True
-bugzilla.description_template = [BZ#{{bugzillabugid}}] {{bugzillasummary}}
-bugzilla.open_statuses = NEW,ASSIGNED,ON_DEV,REOPENED,FAILS_QA
-bugzilla.project_template = Work.Issues
-bugzilla.add_tags = bz
-#bugzilla.advanced = yes
+# [bugzilla]
+# service = bugzilla
+# bugzilla.base_uri = bugzilla.redhat.com
+# bugzilla.username = m.andre@redhat.com
+# bugzilla.api_key = @oracle:use_keyring
+# bugzilla.ignore_cc = True
+# bugzilla.description_template = [BZ#{{bugzillabugid}}] {{bugzillasummary}}
+# bugzilla.open_statuses = NEW,ASSIGNED,ON_DEV,REOPENED,FAILS_QA
+# bugzilla.project_template = Work.Issues
+# bugzilla.add_tags = bz
+# #bugzilla.advanced = yes

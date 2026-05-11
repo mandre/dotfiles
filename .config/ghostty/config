@@ -1,6 +1,6 @@
-adjust-cell-height = -3
+adjust-cell-height = 3
 bold-color = bright
-font-family = "Cousine Regular Nerd Font Complete Mono"
+font-family = "Cousine Nerd Font"
 font-size = 11
 theme = mandre
 gtk-titlebar = false

@@ -1,0 +1,17 @@
+{
+  "lastChangelogVersion": "0.74.0",
+  "packages": [
+    "npm:@twogiants/pi-anthropic-vertex"
+  ],
+  "theme": "mandre",
+  "defaultProvider": "anthropic-vertex",
+  "defaultModel": "claude-opus-4-6",
+  "defaultThinkingLevel": "high",
+  "enabledModels": [
+    "anthropic-vertex/claude-opus-4-6",
+    "anthropic-vertex/claude-sonnet-4-6"
+  ],
+  "extensions": [
+    "+extensions/code-review.ts"
+  ]
+}

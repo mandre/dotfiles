@@ -113,6 +113,47 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		},
 	});
 
+	pi.registerCommand("done", {
+		description: "Mark a plan step as completed (e.g. /done 3)",
+		handler: async (args, ctx) => {
+			if (!executionMode || todoItems.length === 0) {
+				ctx.ui.notify("No active plan execution.", "warning");
+				return;
+			}
+			const stepNum = Number(args?.trim());
+			if (!Number.isFinite(stepNum) || stepNum < 1) {
+				ctx.ui.notify("Usage: /done <step number>", "warning");
+				return;
+			}
+			const item = todoItems.find((t) => t.step === stepNum);
+			if (!item) {
+				ctx.ui.notify(`Step ${stepNum} not found.`, "warning");
+				return;
+			}
+			if (item.completed) {
+				ctx.ui.notify(`Step ${stepNum} already completed.`, "info");
+				return;
+			}
+			item.completed = true;
+			updateStatus(ctx);
+			persistState();
+			ctx.ui.notify(`Step ${stepNum} marked as done.`, "success");
+
+			if (todoItems.every((t) => t.completed)) {
+				const completedList = todoItems.map((t) => `~~${t.text}~~`).join("\n");
+				pi.sendMessage(
+					{ customType: "plan-complete", content: `**Plan Complete!** ✓\n\n${completedList}`, display: true },
+					{ triggerTurn: false },
+				);
+				executionMode = false;
+				todoItems = [];
+				pi.setActiveTools(NORMAL_MODE_TOOLS);
+				updateStatus(ctx);
+				persistState();
+			}
+		},
+	});
+
 	pi.registerShortcut("alt+p", {
 		description: "Toggle plan mode",
 		handler: async (ctx) => togglePlanMode(ctx),
@@ -131,28 +172,45 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		}
 	});
 
-	// Filter out stale plan mode context when not in plan mode
+	// Filter out stale plan mode context when not in plan mode,
+	// and inject per-turn step reminders during execution.
 	pi.on("context", async (event) => {
 		if (planModeEnabled) return;
 
-		return {
-			messages: event.messages.filter((m) => {
-				const msg = m as AgentMessage & { customType?: string };
-				if (msg.customType === "plan-mode-context") return false;
-				if (msg.role !== "user") return true;
+		let messages = event.messages.filter((m) => {
+			const msg = m as AgentMessage & { customType?: string };
+			if (msg.customType === "plan-mode-context") return false;
+			if (msg.role !== "user") return true;
 
-				const content = msg.content;
-				if (typeof content === "string") {
-					return !content.includes("[PLAN MODE ACTIVE]");
-				}
-				if (Array.isArray(content)) {
-					return !content.some(
-						(c) => c.type === "text" && (c as TextContent).text?.includes("[PLAN MODE ACTIVE]"),
-					);
-				}
-				return true;
-			}),
-		};
+			const content = msg.content;
+			if (typeof content === "string") {
+				return !content.includes("[PLAN MODE ACTIVE]");
+			}
+			if (Array.isArray(content)) {
+				return !content.some(
+					(c) => c.type === "text" && (c as TextContent).text?.includes("[PLAN MODE ACTIVE]"),
+				);
+			}
+			return true;
+		});
+
+		// During execution, append a brief per-turn reminder of remaining steps
+		if (executionMode && todoItems.length > 0) {
+			const remaining = todoItems.filter((t) => !t.completed);
+			if (remaining.length > 0) {
+				const stepList = remaining.map((t) => `${t.step}. ${t.text}`).join(", ");
+				messages = [
+					...messages,
+					{
+						role: "user" as const,
+						content: `[Remaining plan steps: ${stepList}. Mark each completed step with [DONE:n].]`,
+						timestamp: Date.now(),
+					},
+				];
+			}
+		}
+
+		return { messages };
 	});
 
 	// Inject plan/execution context before agent starts
@@ -197,7 +255,8 @@ Remaining steps:
 ${todoList}
 
 Execute each step in order.
-After completing a step, include a [DONE:n] tag in your response.`,
+
+IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in your response text, where n is the step number. For example, after finishing step 2, write [DONE:2]. This updates the progress tracker widget. Do not skip this marker.`,
 					display: false,
 				},
 			};
@@ -210,9 +269,23 @@ After completing a step, include a [DONE:n] tag in your response.`,
 		if (!isAssistantMessage(event.message)) return;
 
 		const text = getTextContent(event.message);
-		if (markCompletedSteps(text, todoItems) > 0) {
-			updateStatus(ctx);
+		const marked = markCompletedSteps(text, todoItems);
+
+		// Fallback heuristic: if no explicit markers were detected but
+		// mutating tools (edit, write) were used, mark the first uncompleted step.
+		if (marked === 0 && event.toolResults && event.toolResults.length > 0) {
+			const hasMutatingWork = event.toolResults.some(
+				(tr: { toolName?: string }) => tr.toolName === "edit" || tr.toolName === "write",
+			);
+			if (hasMutatingWork) {
+				const firstIncomplete = todoItems.find((t) => !t.completed);
+				if (firstIncomplete) {
+					firstIncomplete.completed = true;
+				}
+			}
 		}
+
+		updateStatus(ctx);
 		persistState();
 	});
 

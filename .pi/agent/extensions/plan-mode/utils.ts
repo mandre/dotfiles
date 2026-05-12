@@ -168,7 +168,7 @@ export function extractTodoItems(message: string): TodoItem[] {
 		if (text.length > 5 && !text.startsWith("`") && !text.startsWith("/") && !text.startsWith("-")) {
 			const cleaned = cleanStepText(text);
 			if (cleaned.length > 3) {
-				items.push({ step: items.length + 1, text: cleaned, completed: false });
+				items.push({ step: Number(match[1]), text: cleaned, completed: false });
 			}
 		}
 	}
@@ -184,11 +184,41 @@ export function extractDoneSteps(message: string): number[] {
 	return steps;
 }
 
-export function markCompletedSteps(text: string, items: TodoItem[]): number {
-	const doneSteps = extractDoneSteps(text);
-	for (const step of doneSteps) {
-		const item = items.find((t) => t.step === step);
-		if (item) item.completed = true;
+/**
+ * Detect step completion from natural-language patterns in assistant text.
+ * Matches phrases like "Step 3 is done", "completed step 2", "✅ Step 1", etc.
+ */
+export function extractNaturalDoneSteps(message: string): number[] {
+	const steps: number[] = [];
+	const patterns = [
+		/✅\s*(?:step\s*)?(\d+)/gi,
+		/step\s+(\d+)\s+(?:is\s+)?(?:done|completed|finished|complete)/gi,
+		/(?:completed|finished|done with|done:?)\s+step\s+(\d+)/gi,
+		/^\s*(?:#{1,3}\s+)?step\s+(\d+)\s*[:\-–—]/gim,
+	];
+	for (const pattern of patterns) {
+		for (const match of message.matchAll(pattern)) {
+			const step = Number(match[1]);
+			if (Number.isFinite(step) && !steps.includes(step)) steps.push(step);
+		}
 	}
-	return doneSteps.length;
+	return steps;
+}
+
+export function markCompletedSteps(text: string, items: TodoItem[]): number {
+	// Explicit [DONE:n] markers (highest priority)
+	const doneSteps = extractDoneSteps(text);
+	// Natural-language detection as fallback
+	const naturalSteps = extractNaturalDoneSteps(text);
+
+	const allSteps = [...new Set([...doneSteps, ...naturalSteps])];
+	let marked = 0;
+	for (const step of allSteps) {
+		const item = items.find((t) => t.step === step && !t.completed);
+		if (item) {
+			item.completed = true;
+			marked++;
+		}
+	}
+	return marked;
 }

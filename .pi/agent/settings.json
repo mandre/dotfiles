@@ -13,5 +13,6 @@
   ],
   "extensions": [
     "+extensions/code-review.ts"
-  ]
+  ],
+  "enableInstallTelemetry": false
 }

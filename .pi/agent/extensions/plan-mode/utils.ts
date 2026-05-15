@@ -51,6 +51,9 @@ const DESTRUCTIVE_PATTERNS = [
 	/\bacli\s+jira\s+sprint\s+(create|update|delete)\b/i,
 	/\bacli\s+jira\s+filter\s+(update|add-favourite|change-owner|reset-columns)\b/i,
 	/\bacli\s+jira\s+field\s+(create|update|delete|cancel-delete)\b/i,
+	// gws (Google Workspace) destructive operations
+	/\bgws\s+\S+\s+(\S+\s+)?(create|batchUpdate|update|delete|copy|modifyLabels|resolve|hide|unhide|stop)\b/i,
+	/\bgws\s+\S+\s+\+(write|append|upload)\b/i,
 ];
 
 // Safe read-only commands allowed in plan mode
@@ -118,6 +121,12 @@ const SAFE_PATTERNS = [
 	/^\s*acli\s+jira\s+filter\s+(get|get-columns|list|search)\b/i,
 	/^\s*acli\s+jira\s+dashboard\s+search\b/i,
 	/^\s*acli\b.*--help\b/i,
+	// gws (Google Workspace) read-only operations
+	/^\s*gws\s+(--help|-h)\b/i,
+	/^\s*gws\s+\S+\s+(--help|-h)\b/i,
+	/^\s*gws\s+schema\b/i,
+	/^\s*gws\s+\S+\s+\+read\b/i,
+	/^\s*gws\s+\S+\s+(\S+\s+)?(get|list|export|download|listLabels|generateIds|getByDataFilter|getStartPageToken)\b/i,
 ];
 
 export function isSafeCommand(command: string): boolean {

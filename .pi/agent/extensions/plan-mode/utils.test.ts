@@ -1,4 +1,4 @@
-import { extractDoneSteps, extractNaturalDoneSteps, extractTodoItems, markCompletedSteps, cleanStepText, type TodoItem } from "./utils.js";
+import { extractDoneSteps, extractNaturalDoneSteps, extractTodoItems, markCompletedSteps, cleanStepText, isSafeCommand, type TodoItem } from "./utils.js";
 
 // Simple test runner
 let passed = 0;
@@ -132,6 +132,46 @@ assert(
 	cleanStepText("A very long step description that exceeds the fifty character limit by quite a bit").length === 50,
 	"cleanStepText: truncates to 50 chars"
 );
+
+// --- isSafeCommand: gws read-only commands ---
+
+// Safe gws commands
+assert(isSafeCommand("gws --help"), "gws: top-level --help is safe");
+assert(isSafeCommand("gws sheets --help"), "gws: service-level --help is safe");
+assert(isSafeCommand("gws drive -h"), "gws: service-level -h is safe");
+assert(isSafeCommand("gws schema docs.documents.get"), "gws: schema introspection is safe");
+assert(isSafeCommand("gws sheets +read --spreadsheet ID --range \"Sheet1!A1:D10\""), "gws: sheets +read is safe");
+assert(isSafeCommand('gws docs documents get --params \'{"documentId":"abc"}\''), "gws: docs documents get is safe");
+assert(isSafeCommand('gws drive files list --params \'{"pageSize": 5}\''), "gws: drive files list is safe");
+assert(isSafeCommand("gws drive files export --params '{\"fileId\":\"abc\"}'"), "gws: drive files export is safe");
+assert(isSafeCommand("gws drive files download --params '{\"fileId\":\"abc\"}'"), "gws: drive files download is safe");
+assert(isSafeCommand("gws sheets spreadsheets get --params '{\"spreadsheetId\":\"abc\"}'"), "gws: sheets spreadsheets get is safe");
+assert(isSafeCommand("gws slides presentations get --params '{\"presentationId\":\"abc\"}'"), "gws: slides presentations get is safe");
+assert(isSafeCommand("gws drive about get --params '{\"fields\":\"*\"}'"), "gws: drive about get is safe");
+assert(isSafeCommand("gws drive drives list"), "gws: drive drives list is safe");
+assert(isSafeCommand("gws drive files listLabels --params '{\"fileId\":\"abc\"}'"), "gws: drive files listLabels is safe");
+assert(isSafeCommand("gws drive files generateIds"), "gws: drive files generateIds is safe");
+assert(isSafeCommand("gws sheets spreadsheets getByDataFilter --params '{\"spreadsheetId\":\"abc\"}'"), "gws: sheets getByDataFilter is safe");
+assert(isSafeCommand("gws drive changes getStartPageToken"), "gws: drive changes getStartPageToken is safe");
+assert(isSafeCommand("gws drive permissions list --params '{\"fileId\":\"abc\"}'"), "gws: drive permissions list is safe");
+assert(isSafeCommand("gws drive comments list --params '{\"fileId\":\"abc\",\"fields\":\"*\"}'"), "gws: drive comments list is safe");
+
+// Destructive gws commands (must be blocked)
+assert(!isSafeCommand("gws sheets +append --spreadsheet ID --range Sheet1 --json '{\"values\": [[\"a\"]]}'"), "gws: sheets +append is blocked");
+assert(!isSafeCommand("gws docs +write --document ID --text 'hello'"), "gws: docs +write is blocked");
+assert(!isSafeCommand("gws docs documents create --json '{\"title\":\"New Doc\"}'"), "gws: docs documents create is blocked");
+assert(!isSafeCommand("gws sheets spreadsheets batchUpdate --params '{\"spreadsheetId\":\"abc\"}'"), "gws: sheets batchUpdate is blocked");
+assert(!isSafeCommand("gws drive files update --params '{\"fileId\":\"abc\"}'"), "gws: drive files update is blocked");
+assert(!isSafeCommand("gws drive files delete --params '{\"fileId\":\"abc\"}'"), "gws: drive files delete is blocked");
+assert(!isSafeCommand("gws drive files copy --params '{\"fileId\":\"abc\"}'"), "gws: drive files copy is blocked");
+assert(!isSafeCommand("gws drive files modifyLabels --params '{\"fileId\":\"abc\"}'"), "gws: drive files modifyLabels is blocked");
+assert(!isSafeCommand("gws drive accessproposals resolve --params '{\"fileId\":\"abc\"}'"), "gws: drive accessproposals resolve is blocked");
+assert(!isSafeCommand("gws slides presentations create --json '{\"title\":\"New\"}'"), "gws: slides presentations create is blocked");
+assert(!isSafeCommand("gws docs documents batchUpdate --params '{\"documentId\":\"abc\"}'"), "gws: docs batchUpdate is blocked");
+assert(!isSafeCommand("gws drive drives create --params '{\"requestId\":\"abc\"}'"), "gws: drive drives create is blocked");
+assert(!isSafeCommand("gws drive permissions delete --params '{\"fileId\":\"abc\"}'"), "gws: drive permissions delete is blocked");
+assert(!isSafeCommand("gws drive drives hide --params '{\"driveId\":\"abc\"}'"), "gws: drive drives hide is blocked");
+assert(!isSafeCommand("gws drive channels stop --json '{\"id\":\"abc\"}'"), "gws: drive channels stop is blocked");
 
 // --- Summary ---
 

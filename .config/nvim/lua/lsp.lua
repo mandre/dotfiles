@@ -4,8 +4,8 @@ vim.lsp.inlay_hint.enable()
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
+vim.keymap.set('n', '[d', function() vim.diagnostic.jump({ count = -1 }) end)
+vim.keymap.set('n', ']d', function() vim.diagnostic.jump({ count = 1 }) end)
 vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
 
 
@@ -78,14 +78,14 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 function go_org_imports(wait_ms)
-  local params = vim.lsp.util.make_range_params()
-  params.context = {only = {"source.organizeImports"}}
-  local result = vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, wait_ms)
-  for cid, res in pairs(result or {}) do
-    for _, r in pairs(res.result or {}) do
+  local clients = vim.lsp.get_clients({ bufnr = 0, method = "textDocument/codeAction" })
+  for _, client in ipairs(clients) do
+    local params = vim.lsp.util.make_range_params(0, client.offset_encoding)
+    params.context = {only = {"source.organizeImports"}}
+    local result = client:request_sync("textDocument/codeAction", params, wait_ms, 0)
+    for _, r in pairs((result or {}).result or {}) do
       if r.edit then
-        local enc = (vim.lsp.get_client_by_id(cid) or {}).offset_encoding or "utf-16"
-        vim.lsp.util.apply_workspace_edit(r.edit, enc)
+        vim.lsp.util.apply_workspace_edit(r.edit, { offset_encoding = client.offset_encoding })
       end
     end
   end

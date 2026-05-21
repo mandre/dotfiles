@@ -89,12 +89,6 @@ if (has("termguicolors"))
 endif
 
 lua << EOF
-require'nvim-treesitter.configs'.setup {
-  highlight = {
-    enable = true
-  },
-}
-
 require('neo-tree').setup({
   window = {
     position = "float",
@@ -339,7 +333,7 @@ if has("autocmd")
     autocmd bufwritepost .config/nvim/init-0.5.vim source %
 
     " Highlight yanked text
-    autocmd TextYankPost * lua vim.highlight.on_yank {higroup="IncSearch", timeout=150, on_visual=true}
+    autocmd TextYankPost * lua vim.hl.on_yank {higroup="IncSearch", timeout=150, on_visual=true}
   augroup END
   " }}}
 endif

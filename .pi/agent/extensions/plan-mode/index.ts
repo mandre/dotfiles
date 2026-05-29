@@ -154,6 +154,29 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		},
 	});
 
+	pi.registerCommand("execute", {
+		description: "Execute the current plan (exit plan mode, start tracking)",
+		handler: async (_args, ctx) => {
+			if (todoItems.length === 0) {
+				ctx.ui.notify("No plan extracted yet. Ask the agent to create a plan first.", "warning");
+				return;
+			}
+			planModeEnabled = false;
+			executionMode = true;
+			pi.setActiveTools(NORMAL_MODE_TOOLS);
+			updateStatus(ctx);
+			persistState();
+			pi.sendMessage(
+				{
+					customType: "plan-mode-execute",
+					content: `Execute the plan. Start with: ${todoItems[0].text}`,
+					display: true,
+				},
+				{ triggerTurn: true },
+			);
+		},
+	});
+
 	pi.registerShortcut("alt+p", {
 		description: "Toggle plan mode",
 		handler: async (ctx) => togglePlanMode(ctx),
@@ -316,45 +339,15 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 			const extracted = extractTodoItems(getTextContent(lastAssistant));
 			if (extracted.length > 0) {
 				todoItems = extracted;
+				updateStatus(ctx);
+				persistState();
+				ctx.ui.notify(
+					`Plan extracted (${todoItems.length} steps). Use /execute to run, or keep exploring.`,
+					"info",
+				);
 			}
 		}
-
-		// Only prompt for next action when a plan was actually extracted
-		if (todoItems.length === 0) return;
-
-		// Show plan steps and prompt for next action
-		const todoListText = todoItems.map((t, i) => `${i + 1}. ☐ ${t.text}`).join("\n");
-		pi.sendMessage(
-			{
-				customType: "plan-todo-list",
-				content: `**Plan Steps (${todoItems.length}):**\n\n${todoListText}`,
-				display: true,
-			},
-			{ triggerTurn: false },
-		);
-
-		const choice = await ctx.ui.select("Plan mode - what next?", [
-			"Execute the plan (track progress)",
-			"Stay in plan mode",
-			"Refine the plan",
-		]);
-
-		if (choice?.startsWith("Execute")) {
-			planModeEnabled = false;
-			executionMode = true;
-			pi.setActiveTools(NORMAL_MODE_TOOLS);
-			updateStatus(ctx);
-
-			pi.sendMessage(
-				{ customType: "plan-mode-execute", content: `Execute the plan. Start with: ${todoItems[0].text}`, display: true },
-				{ triggerTurn: true },
-			);
-		} else if (choice === "Refine the plan") {
-			const refinement = await ctx.ui.editor("Refine the plan:", "");
-			if (refinement?.trim()) {
-				pi.sendUserMessage(refinement.trim());
-			}
-		}
+		// Plan mode stays active until manually toggled off via /plan, Alt+P, or /execute
 	});
 
 	// Restore state on session start/resume

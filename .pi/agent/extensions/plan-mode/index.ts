@@ -7,9 +7,33 @@
  * Features:
  * - /plan command or Alt+P to toggle
  * - Bash restricted to allowlisted read-only commands
+ * - Command normalization: `cd <path> &&` prefixes, leading `# comments`,
+ *   and absolute binary paths (e.g. /usr/bin/curl) are stripped before matching
+ * - `--help` on any command is always allowed (help output never modifies anything)
  * - Extracts numbered plan steps from "Plan:" sections
  * - [DONE:n] markers to complete steps during execution
  * - Progress tracking widget during execution
+ *
+ * Safe command allowlist includes:
+ *   File inspection: cat, head, tail, less, more, strings, hexdump, xxd
+ *   Search: grep, find, rg, fd
+ *   Directory: ls, pwd, tree, basename, dirname, realpath, readlink
+ *   Text processing: wc, sort, uniq, diff, tr, cut, tac, column, xargs,
+ *     awk, sed -n, jq
+ *   Git (read-only): status, log, diff, show, branch, remote, ls-files
+ *     (supports -C <path> and --no-pager flags)
+ *   GitHub CLI (read-only): pr/issue view/list/diff/checks/status/search,
+ *     auth status
+ *   Jira CLI (acli): workitem view/search, component list, auth status,
+ *     project list/view, and all --help invocations
+ *   Google Workspace (gws): +read, get, list, schema, export, download
+ *   Python: python3 (for data processing / calculations)
+ *   Go: list, version, doc, env, mod graph/verify/why
+ *   Web: curl, brave-search
+ *   Package info: npm list/outdated, yarn info/audit
+ *   System info: uname, whoami, date, uptime, ps, free, df, du
+ *   Checksums: sha256sum, md5sum
+ *   Cloud storage: gsutil ls/cat/stat/du
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";

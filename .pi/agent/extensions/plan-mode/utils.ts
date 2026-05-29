@@ -54,6 +54,10 @@ const DESTRUCTIVE_PATTERNS = [
 	// gws (Google Workspace) destructive operations
 	/\bgws\s+\S+\s+(\S+\s+)?(create|batchUpdate|update|delete|copy|modifyLabels|resolve|hide|unhide|stop)\b/i,
 	/\bgws\s+\S+\s+\+(write|append|upload)\b/i,
+	// gh (GitHub CLI) destructive operations
+	/\bgh\s+(pr|issue)\s+(create|close|merge|delete|edit|reopen)\b/i,
+	/\bgh\s+repo\s+(create|delete|fork|rename|archive)\b/i,
+	/\bgh\s+release\s+(create|delete|edit)\b/i,
 ];
 
 // Safe read-only commands allowed in plan mode
@@ -93,8 +97,8 @@ const SAFE_PATTERNS = [
 	/^\s*top\b/,
 	/^\s*htop\b/,
 	/^\s*free\b/,
-	/^\s*git\s+(status|log|diff|show|branch|remote|config\s+--get)/i,
-	/^\s*git\s+ls-/i,
+	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*(status|log|diff|show|branch|remote|config\s+--get)/i,
+	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*ls-/i,
 	/^\s*npm\s+(list|ls|view|info|search|outdated|audit)/i,
 	/^\s*yarn\s+(list|info|why|audit)/i,
 	/^\s*node\s+--version/i,
@@ -108,6 +112,33 @@ const SAFE_PATTERNS = [
 	/^\s*fd\b/,
 	/^\s*bat\b/,
 	/^\s*eza\b/,
+	// Python (data processing, calculations)
+	/^\s*python3?\s/i,
+	// GitHub CLI (read-only operations)
+	/^\s*gh\s+(pr|issue|repo|run|workflow|release)\s+(view|list|diff|checks|status|search)\b/i,
+	/^\s*gh\s+auth\s+status\b/i,
+	// Binary inspection
+	/^\s*strings\b/,
+	// Web search
+	/^\s*brave-search\b/,
+	// Go toolchain (read-only)
+	/^\s*go\s+(list|version|doc|env|mod\s+(graph|verify|why))\b/i,
+	// Google Cloud Storage (read-only)
+	/^\s*gsutil\s+(ls|cat|stat|du)\b/i,
+	// Path / text utilities
+	/^\s*basename\b/,
+	/^\s*dirname\b/,
+	/^\s*tr\b/,
+	/^\s*cut\b/,
+	/^\s*tac\b/,
+	/^\s*column\b/,
+	/^\s*xargs\b/,
+	/^\s*realpath\b/,
+	/^\s*readlink\b/,
+	/^\s*sha256sum\b/,
+	/^\s*md5sum\b/,
+	/^\s*hexdump\b/,
+	/^\s*xxd\b/,
 	/^\s*acli\s+(jira\s+)?(--action\s+)?(getIssue|getIssueList|getFieldValue|getComments|getAttachmentList|getProjectList|getComponentList|getVersionList|getWorkflowList|getFilterList|getFilter|getBoardList|getSprintList|getStatusList|getLinkTypeList|getSecurityLevelList|run)\b/i,
 	// acli jira positional subcommands (read-only)
 	/^\s*acli\s+jira\s+project\s+(list|view)\b/i,
@@ -120,6 +151,9 @@ const SAFE_PATTERNS = [
 	/^\s*acli\s+jira\s+sprint\s+(view|list-workitems)\b/i,
 	/^\s*acli\s+jira\s+filter\s+(get|get-columns|list|search)\b/i,
 	/^\s*acli\s+jira\s+dashboard\s+search\b/i,
+	/^\s*acli\s+jira\s+component\s+(list|get)\b/i,
+	/^\s*acli\s+jira\s+auth\s+status\b/i,
+	/^\s*acli\s+jira\s+version\s+list\b/i,
 	/^\s*acli\b.*--help\b/i,
 	// gws (Google Workspace) read-only operations
 	/^\s*gws\s+(--help|-h)\b/i,
@@ -129,9 +163,39 @@ const SAFE_PATTERNS = [
 	/^\s*gws\s+\S+\s+(\S+\s+)?(get|list|export|download|listLabels|generateIds|getByDataFilter|getStartPageToken)\b/i,
 ];
 
+/**
+ * Normalize a command for safe-pattern matching.
+ * - Strip leading comment lines (# ...)
+ * - Strip leading `cd <path> &&` or `cd <path>;` prefixes
+ * - Normalize absolute binary paths to bare command names
+ */
+export function normalizeCommand(command: string): string {
+	let cmd = command;
+	// Strip leading comment lines
+	cmd = cmd.replace(/^(\s*#[^\n]*\n)+/, "");
+	cmd = cmd.trimStart();
+	// Strip leading `cd <path> &&` or `cd <path>;` prefixes (repeated)
+	let prev = "";
+	while (prev !== cmd) {
+		prev = cmd;
+		cmd = cmd.replace(/^\s*cd\s+(?:"[^"]*"|'[^']*'|\S+)\s*(&&|;)\s*/, "");
+	}
+	// Normalize absolute paths to common binaries (e.g., /usr/bin/curl -> curl)
+	cmd = cmd.replace(/^\s*\/(?:usr\/(?:local\/)?)?(?:s?bin)\/(\w+)/, "$1");
+	return cmd;
+}
+
 export function isSafeCommand(command: string): boolean {
+	// --help is always safe (help output never modifies anything)
+	if (/(?:^|\s)--help(?:\s|$)/.test(command)) return true;
+
+	// Normalize: strip cd prefixes, comments, absolute paths for safe matching
+	const normalized = normalizeCommand(command);
+
+	// Destructive check runs against the ORIGINAL command to catch
+	// things like `cd /tmp && rm -rf /`
 	const isDestructive = DESTRUCTIVE_PATTERNS.some((p) => p.test(command));
-	const isSafe = SAFE_PATTERNS.some((p) => p.test(command));
+	const isSafe = SAFE_PATTERNS.some((p) => p.test(normalized));
 	return !isDestructive && isSafe;
 }
 

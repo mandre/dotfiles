@@ -1,4 +1,4 @@
-import { extractDoneSteps, extractNaturalDoneSteps, extractTodoItems, markCompletedSteps, cleanStepText, isSafeCommand, type TodoItem } from "./utils.js";
+import { extractDoneSteps, extractNaturalDoneSteps, extractTodoItems, markCompletedSteps, cleanStepText, isSafeCommand, normalizeCommand, type TodoItem } from "./utils.js";
 
 // Simple test runner
 let passed = 0;
@@ -129,8 +129,8 @@ assert(cleanStepText("**Bold text**") === "Bold text", "cleanStepText: removes b
 assert(cleanStepText("`code`") === "Code", "cleanStepText: removes backticks, capitalizes");
 assert(cleanStepText("Update the configuration file") === "Configuration file", "cleanStepText: strips action prefix");
 assert(
-	cleanStepText("A very long step description that exceeds the fifty character limit by quite a bit").length === 50,
-	"cleanStepText: truncates to 50 chars"
+	cleanStepText("A very long step description that exceeds the character limit by quite a bit and keeps going on and on to make absolutely sure we exceed the one hundred and twenty character truncation threshold").length === 120,
+	"cleanStepText: truncates to 120 chars"
 );
 
 // --- isSafeCommand: gws read-only commands ---
@@ -172,6 +172,132 @@ assert(!isSafeCommand("gws drive drives create --params '{\"requestId\":\"abc\"}
 assert(!isSafeCommand("gws drive permissions delete --params '{\"fileId\":\"abc\"}'"), "gws: drive permissions delete is blocked");
 assert(!isSafeCommand("gws drive drives hide --params '{\"driveId\":\"abc\"}'"), "gws: drive drives hide is blocked");
 assert(!isSafeCommand("gws drive channels stop --json '{\"id\":\"abc\"}'"), "gws: drive channels stop is blocked");
+
+// --- normalizeCommand ---
+
+assert(normalizeCommand("git log") === "git log", "normalize: no-op for simple command");
+assert(normalizeCommand("cd /path && git log") === "git log", "normalize: strips cd prefix");
+assert(normalizeCommand("cd /path && cd /other && git log") === "git log", "normalize: strips multiple cd prefixes");
+assert(normalizeCommand('cd "/path with spaces" && git log') === "git log", "normalize: strips quoted cd path");
+assert(normalizeCommand("cd /path; git log") === "git log", "normalize: strips cd with semicolon");
+assert(normalizeCommand("# comment\ngit log") === "git log", "normalize: strips comment lines");
+assert(normalizeCommand("# comment 1\n# comment 2\ngit log") === "git log", "normalize: strips multiple comment lines");
+assert(normalizeCommand("/usr/bin/curl -s https://example.com") === "curl -s https://example.com", "normalize: strips /usr/bin/ prefix");
+assert(normalizeCommand("/usr/local/bin/python3 -c 'print(1)'") === "python3 -c 'print(1)'", "normalize: strips /usr/local/bin/ prefix");
+assert(normalizeCommand("/usr/sbin/ip addr") === "ip addr", "normalize: strips /usr/sbin/ prefix");
+
+// --- isSafeCommand: --help override ---
+
+assert(isSafeCommand("acli jira workitem create --help"), "help: acli destructive with --help is safe");
+assert(isSafeCommand("acli jira workitem edit --help 2>&1"), "help: acli edit --help is safe");
+assert(isSafeCommand("acli jira workitem delete --help"), "help: acli delete --help is safe");
+assert(isSafeCommand("acli jira workitem transition --help"), "help: acli transition --help is safe");
+assert(isSafeCommand("acli jira workitem comment create --help"), "help: acli comment create --help is safe");
+assert(isSafeCommand("acli jira workitem link create --help"), "help: acli link create --help is safe");
+assert(isSafeCommand("acli jira workitem clone --help"), "help: acli clone --help is safe");
+assert(isSafeCommand("acli jira workitem assign --help"), "help: acli assign --help is safe");
+assert(isSafeCommand("gh pr merge --help"), "help: gh pr merge --help is safe");
+assert(isSafeCommand("gh repo delete --help"), "help: gh repo delete --help is safe");
+assert(isSafeCommand("rm --help"), "help: rm --help is safe");
+
+// --- isSafeCommand: cd prefix normalization ---
+
+assert(isSafeCommand("cd /home/user/project && git log --oneline -5"), "cd: git log with cd prefix");
+assert(isSafeCommand("cd /home/user/project && git diff --name-only HEAD~1"), "cd: git diff with cd prefix");
+assert(isSafeCommand("cd /home/user/project && git branch --show-current"), "cd: git branch with cd prefix");
+assert(isSafeCommand("cd /home/user/project && git remote -v"), "cd: git remote with cd prefix");
+assert(isSafeCommand("cd /home/user/project && grep -r 'pattern' src/"), "cd: grep with cd prefix");
+assert(isSafeCommand("cd /home/user/project && ls -la"), "cd: ls with cd prefix");
+assert(isSafeCommand("cd /home/user/project && curl -s https://example.com"), "cd: curl with cd prefix");
+assert(isSafeCommand("cd /home/user/project && acli jira workitem search --jql 'project = FOO'"), "cd: acli search with cd prefix");
+assert(isSafeCommand("cd /home/user/project && gws sheets +read --spreadsheet ID --range Sheet1"), "cd: gws +read with cd prefix");
+assert(!isSafeCommand("cd /tmp && rm -rf /"), "cd: destructive command with cd prefix still blocked");
+assert(!isSafeCommand("cd /path && git push origin main"), "cd: git push with cd prefix still blocked");
+
+// --- isSafeCommand: comment prefix ---
+
+assert(isSafeCommand("# Check something\ncurl -s https://example.com"), "comment: curl with comment prefix");
+assert(isSafeCommand("# First comment\n# Second comment\ngit log --oneline"), "comment: multiple comment lines");
+assert(isSafeCommand("# Would tier 1 find it?\nacli jira workitem search --jql 'project = FOO'"), "comment: acli with comment prefix");
+
+// --- isSafeCommand: absolute paths ---
+
+assert(isSafeCommand("/usr/bin/curl -s https://example.com"), "abspath: /usr/bin/curl");
+assert(isSafeCommand("/usr/local/bin/python3 --version"), "abspath: /usr/local/bin/python3");
+
+// --- isSafeCommand: git -C / --no-pager ---
+
+assert(isSafeCommand("git -C /home/user/project log --oneline -20"), "git: -C with log");
+assert(isSafeCommand("git -C /path diff --stat"), "git: -C with diff");
+assert(isSafeCommand("git --no-pager log --oneline"), "git: --no-pager with log");
+assert(isSafeCommand("git -C /path --no-pager log --oneline"), "git: -C and --no-pager");
+assert(isSafeCommand("git -C /path branch --show-current"), "git: -C with branch");
+assert(isSafeCommand("git -C /path ls-files"), "git: -C with ls-files");
+assert(isSafeCommand("git --no-pager diff HEAD~1"), "git: --no-pager with diff");
+assert(!isSafeCommand("git -C /path push origin main"), "git: -C with push still blocked");
+
+// --- isSafeCommand: new safe commands ---
+
+assert(isSafeCommand("python3 -c 'print(1+1)'"), "new: python3 -c");
+assert(isSafeCommand("python3 script.py --builds 5"), "new: python3 script");
+assert(isSafeCommand("python3 --version"), "new: python3 --version");
+assert(isSafeCommand("gh pr view 790 --json title,state"), "new: gh pr view");
+assert(isSafeCommand("gh issue list --label bug"), "new: gh issue list");
+assert(isSafeCommand("gh pr diff 123"), "new: gh pr diff");
+assert(isSafeCommand("gh pr checks 123"), "new: gh pr checks");
+assert(isSafeCommand("gh pr status"), "new: gh pr status");
+assert(isSafeCommand("gh run view 12345"), "new: gh run view");
+assert(isSafeCommand("gh auth status"), "new: gh auth status");
+assert(isSafeCommand("strings /usr/bin/acli"), "new: strings");
+assert(isSafeCommand("brave-search 'kudobuilder kuttl'"), "new: brave-search");
+assert(isSafeCommand("go list -m -versions github.com/foo/bar"), "new: go list");
+assert(isSafeCommand("go version"), "new: go version");
+assert(isSafeCommand("go doc fmt.Println"), "new: go doc");
+assert(isSafeCommand("go env GOPATH"), "new: go env");
+assert(isSafeCommand("go mod graph"), "new: go mod graph");
+assert(isSafeCommand("gsutil ls gs://bucket/path"), "new: gsutil ls");
+assert(isSafeCommand("gsutil cat gs://bucket/file.txt"), "new: gsutil cat");
+assert(isSafeCommand("basename /path/to/file.txt"), "new: basename");
+assert(isSafeCommand("dirname /path/to/file.txt"), "new: dirname");
+assert(isSafeCommand("tr '[:upper:]' '[:lower:]'"), "new: tr");
+assert(isSafeCommand("cut -d: -f1 /etc/passwd"), "new: cut");
+assert(isSafeCommand("tac file.txt"), "new: tac");
+assert(isSafeCommand("xargs grep -l pattern"), "new: xargs");
+assert(isSafeCommand("realpath ./relative/path"), "new: realpath");
+assert(isSafeCommand("readlink -f /path/to/link"), "new: readlink");
+assert(isSafeCommand("sha256sum file.bin"), "new: sha256sum");
+assert(isSafeCommand("md5sum file.bin"), "new: md5sum");
+assert(isSafeCommand("hexdump -C file.bin | head"), "new: hexdump");
+assert(isSafeCommand("xxd file.bin | head"), "new: xxd");
+assert(isSafeCommand("column -t data.txt"), "new: column");
+
+// --- isSafeCommand: acli new subcommands ---
+
+assert(isSafeCommand("acli jira component list -p OCPBUGS"), "acli: component list");
+assert(isSafeCommand("acli jira component list -p OCPBUGS --query openstack 2>/dev/null | head -30"), "acli: component list with query and pipe");
+assert(isSafeCommand("acli jira auth status"), "acli: auth status");
+assert(isSafeCommand("acli jira auth status 2>&1 | head -5"), "acli: auth status with pipe");
+assert(isSafeCommand("acli jira version list -p OCPBUGS"), "acli: version list");
+
+// --- isSafeCommand: gh destructive (blocked) ---
+
+assert(!isSafeCommand("gh pr create --title 'test'"), "gh: pr create blocked");
+assert(!isSafeCommand("gh pr merge 123"), "gh: pr merge blocked");
+assert(!isSafeCommand("gh pr close 123"), "gh: pr close blocked");
+assert(!isSafeCommand("gh issue create --title 'bug'"), "gh: issue create blocked");
+assert(!isSafeCommand("gh issue close 456"), "gh: issue close blocked");
+assert(!isSafeCommand("gh issue edit 456 --add-label fix"), "gh: issue edit blocked");
+assert(!isSafeCommand("gh repo delete foo/bar"), "gh: repo delete blocked");
+assert(!isSafeCommand("gh repo create my-repo"), "gh: repo create blocked");
+assert(!isSafeCommand("gh release create v1.0"), "gh: release create blocked");
+assert(!isSafeCommand("gh release delete v1.0"), "gh: release delete blocked");
+
+// --- isSafeCommand: combined normalization scenarios ---
+
+assert(isSafeCommand("cd /path && python3 -c 'import json; print(json.dumps({}))'" ), "combined: cd + python3");
+assert(isSafeCommand("# Check versions\ncd /path && go version"), "combined: comment + cd + go");
+assert(isSafeCommand("/usr/bin/git -C /path log --oneline -5"), "combined: abspath + git -C");
+assert(!isSafeCommand("cd /path && gh pr merge 123"), "combined: cd + gh destructive still blocked");
 
 // --- Summary ---
 

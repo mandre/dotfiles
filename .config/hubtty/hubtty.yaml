@@ -12,6 +12,7 @@ servers:
     # api-url: https://api.github.com/
     git-url: ssh://git@github.com
     additional-repositories:
+      - gophercloud/devstack-action
       - gophercloud/gophercloud
       - gophercloud/gophercloud.github.io
       - gophercloud/utils
@@ -223,6 +224,10 @@ pr-list-options:
 # of the default side-by-side:
 # diff-view: unified
 
+# Syntax highlighting is enabled by default in diff views.
+# To disable it, uncomment the following line:
+# syntax-highlighting: false
+
 # Times are displayed in the local timezone by default.  To display
 # them in UTC instead, uncomment the following line:
 # display-times-in-utc: true
@@ -248,6 +253,14 @@ hide-comments:
   - author: "k8s-ci-robot"
   - author: "theopenlab-ci.*$"
   - author: "netlify.*$"
+
+# Hubtty re-polls CI checks while any check is still "pending".
+# Some status contexts (like "tide") remain pending indefinitely
+# because they reflect merge-gate conditions (labels, approvals)
+# rather than CI jobs.  List their names here to exclude them from
+# pending-check polling decisions.
+ignore-pending-checks:
+  - tide
 
 # This section defines customized dashboards.  You can supply any
 # Hubtty search string and bind them to any key.  They will appear in
@@ -277,7 +290,7 @@ dashboards:
     query: "repo:openshift/release state:open file:openstack or file:shiftstack"
     key: "f6"
   - name: "Team originated PRs"
-    query: "state:open not org:hubtty author:mandre or author:mdbooth or author:EmilienM or author:stephenfin or author:pierreprinetti or author:MaysaMacedo or author:gryf or author:MiguelCarpio or author:dkokkino"
+    query: "state:open not org:hubtty author:mandre or author:stephenfin or author:gryf or author:dlaw4608 or author:eshulman2 or author:danchild"
     # sort-by: "repository"
     key: "f7"
   - name: "Backports"

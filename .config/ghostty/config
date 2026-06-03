@@ -11,3 +11,5 @@ mouse-hide-while-typing = true
 mouse-scroll-multiplier = 0.5
 app-notifications = no-clipboard-copy
 right-click-action = ignore
+
+keybind = alt+backspace=text:\x1b\x7f

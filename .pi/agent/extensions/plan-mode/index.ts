@@ -30,7 +30,8 @@
  *   Python: python3 (for data processing / calculations)
  *   Go: list, version, doc, env, mod graph/verify/why
  *   Web: curl, brave-search
- *   Package info: npm list/outdated, yarn info/audit
+ *   Package info: npm list/outdated, yarn info/audit, pip list/show/freeze,
+ *     uv pip list/show/tree, uv lock --dry-run
  *   System info: uname, whoami, date, uptime, ps, free, df, du
  *   Checksums: sha256sum, md5sum
  *   Cloud storage: gsutil ls/cat/stat/du
@@ -310,7 +311,7 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 		}
 	});
 
-	// Track progress after each turn
+	// Track progress after each turn (tools have completed)
 	pi.on("turn_end", async (event, ctx) => {
 		if (!executionMode || todoItems.length === 0) return;
 		if (!isAssistantMessage(event.message)) return;

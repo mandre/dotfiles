@@ -292,12 +292,161 @@ assert(!isSafeCommand("gh repo create my-repo"), "gh: repo create blocked");
 assert(!isSafeCommand("gh release create v1.0"), "gh: release create blocked");
 assert(!isSafeCommand("gh release delete v1.0"), "gh: release delete blocked");
 
+// --- isSafeCommand: pip/uv read-only commands ---
+
+assert(isSafeCommand("pip list --outdated"), "pip: list --outdated");
+assert(isSafeCommand("pip show requests"), "pip: show");
+assert(isSafeCommand("pip freeze"), "pip: freeze");
+assert(isSafeCommand("pip index versions alembic"), "pip: index versions");
+assert(isSafeCommand("pip check"), "pip: check");
+assert(isSafeCommand("pip debug"), "pip: debug");
+assert(!isSafeCommand("pip install requests"), "pip: install is blocked");
+assert(!isSafeCommand("pip uninstall requests"), "pip: uninstall is blocked");
+
+assert(isSafeCommand("uv pip list --outdated"), "uv: pip list --outdated");
+assert(isSafeCommand("uv pip show requests"), "uv: pip show");
+assert(isSafeCommand("uv pip tree"), "uv: pip tree");
+assert(isSafeCommand("uv version"), "uv: version");
+assert(isSafeCommand("uv lock --dry-run --upgrade"), "uv: lock --dry-run");
+assert(isSafeCommand("uv list"), "uv: list");
+assert(isSafeCommand("uv show sqlalchemy"), "uv: show");
+assert(isSafeCommand("cd /home/user/project && uv pip list --outdated 2>/dev/null"), "uv: with cd prefix");
+
+// --- isSafeCommand: curl with piped -o flag (bug fix) ---
+
+assert(isSafeCommand("curl -s https://pypi.org/pypi/alembic/json 2>/dev/null | grep -o '\"version\"' | head -1"), "curl: piped grep -o should not trigger curl destructive");
+assert(!isSafeCommand("curl -o /home/user/file.txt https://example.com"), "curl: own -o flag is still blocked");
+assert(!isSafeCommand("curl --output /home/user/file.txt https://example.com"), "curl: own --output flag is still blocked");
+assert(isSafeCommand("curl -o /tmp/test.txt https://example.com"), "curl: -o to /tmp/ is allowed");
+
+// --- isSafeCommand: arrow -> in text should not trigger redirect detection ---
+
+assert(isSafeCommand("python3 -c \"print(f'{a} -> {b}')\" "), "python3: arrow -> in string is not a redirect");
+
 // --- isSafeCommand: combined normalization scenarios ---
 
 assert(isSafeCommand("cd /path && python3 -c 'import json; print(json.dumps({}))'" ), "combined: cd + python3");
 assert(isSafeCommand("# Check versions\ncd /path && go version"), "combined: comment + cd + go");
 assert(isSafeCommand("/usr/bin/git -C /path log --oneline -5"), "combined: abspath + git -C");
 assert(!isSafeCommand("cd /path && gh pr merge 123"), "combined: cd + gh destructive still blocked");
+
+// --- isSafeCommand: sed broadened (safe without -i, blocked with -i) ---
+
+assert(isSafeCommand("sed 's/^var //' /tmp/prowjobs.js"), "sed: substitution to stdout is safe");
+assert(isSafeCommand("sed -n '130,170p' /tmp/file.go"), "sed: -n still safe");
+assert(isSafeCommand("sed 's/foo/bar/' file.txt | head"), "sed: piped substitution is safe");
+assert(!isSafeCommand("sed -i 's/foo/bar/' file.txt"), "sed: -i is blocked");
+assert(!isSafeCommand("sed --in-place 's/foo/bar/' file.txt"), "sed: --in-place is blocked");
+assert(!isSafeCommand("sed -ni 's/foo/bar/p' file.txt"), "sed: combined -ni is blocked");
+assert(!isSafeCommand("sed -Ei 's/foo/bar/' file.txt"), "sed: combined -Ei is blocked");
+
+// --- isSafeCommand: uv run specific tools ---
+
+assert(isSafeCommand("uv run pytest tests/ -v"), "uv run: pytest is safe");
+assert(isSafeCommand("uv run flake8 src/"), "uv run: flake8 is safe");
+assert(isSafeCommand("uv run mypy src/"), "uv run: mypy is safe");
+assert(isSafeCommand("uv run ruff check ."), "uv run: ruff is safe");
+assert(isSafeCommand("uv run pylint src/"), "uv run: pylint is safe");
+assert(isSafeCommand("uv run black --check src/"), "uv run: black --check is safe");
+assert(isSafeCommand("uv run isort --check src/"), "uv run: isort --check is safe");
+assert(isSafeCommand("cd /home/user/project && uv run pytest -q 2>&1"), "uv run: pytest with cd prefix");
+assert(isSafeCommand("cd /home/user/project && uv run flake8 && uv run pytest -v 2>&1"), "uv run: flake8 && pytest with cd prefix");
+assert(!isSafeCommand("uv run python3 -c 'import os; os.remove(\"f\")'" ), "uv run: arbitrary python3 is blocked");
+assert(!isSafeCommand("uv run bash -c 'rm -rf /'"), "uv run: arbitrary bash is blocked");
+assert(!isSafeCommand("uv run some-random-tool"), "uv run: unknown tool is blocked");
+
+// --- isSafeCommand: uv package management (destructive) ---
+
+assert(!isSafeCommand("uv sync --dev"), "uv: sync is blocked");
+assert(!isSafeCommand("uv add requests"), "uv: add is blocked");
+assert(!isSafeCommand("uv remove requests"), "uv: remove is blocked");
+assert(!isSafeCommand("uv init"), "uv: init is blocked");
+assert(!isSafeCommand("uv lock"), "uv: lock is blocked");
+assert(isSafeCommand("uv lock --dry-run"), "uv: lock --dry-run is still safe");
+
+// --- isSafeCommand: npx tsx ---
+
+assert(isSafeCommand("npx tsx utils.test.ts"), "npx: tsx is safe");
+assert(isSafeCommand("npx tsx utils.test.ts 2>&1"), "npx: tsx with redirect is safe");
+assert(!isSafeCommand("npx some-random-package"), "npx: arbitrary package is blocked");
+assert(!isSafeCommand("npx rimraf dist/"), "npx: rimraf is blocked");
+
+// --- isSafeCommand: pdftotext ---
+
+assert(isSafeCommand("pdftotext /path/to/doc.pdf -"), "pdftotext: to stdout is safe");
+assert(isSafeCommand("pdftotext /path/to/doc.pdf /tmp/out.txt"), "pdftotext: to file is safe");
+
+// --- isSafeCommand: bash -n ---
+
+assert(isSafeCommand("bash -n script.sh"), "bash -n: syntax check is safe");
+assert(isSafeCommand("bash -n /path/to/script.sh 2>&1"), "bash -n: with redirect is safe");
+assert(!isSafeCommand("bash -c 'rm -rf /'"), "bash -c: arbitrary command is blocked");
+assert(!isSafeCommand("bash script.sh"), "bash: running script is blocked");
+
+// --- isSafeCommand: fc-list ---
+
+assert(isSafeCommand("fc-list : family style"), "fc-list: listing fonts is safe");
+assert(isSafeCommand("fc-list : family style | grep -i mono"), "fc-list: piped is safe");
+
+// --- isSafeCommand: for loops ---
+
+assert(isSafeCommand("for f in *.yaml; do grep 'pattern' \"$f\"; done"), "for: read-only loop is safe");
+assert(isSafeCommand("for d in /path/*/tests/; do ls \"$d\"; done"), "for: ls loop is safe");
+assert(!isSafeCommand("for f in *.txt; do rm \"$f\"; done"), "for: destructive body is blocked");
+assert(!isSafeCommand("for f in *.txt; do mv \"$f\" /tmp/; done"), "for: mv in body is blocked");
+
+// --- isSafeCommand: oc/kubectl read-only ---
+
+assert(isSafeCommand("oc get pods -n openshift-machine-api"), "oc: get is safe");
+assert(isSafeCommand("oc describe node worker-0"), "oc: describe is safe");
+assert(isSafeCommand("oc logs pod/api-server -n openshift-kube-apiserver"), "oc: logs is safe");
+assert(isSafeCommand("oc version"), "oc: version is safe");
+assert(isSafeCommand("oc whoami"), "oc: whoami is safe");
+assert(isSafeCommand("oc api-resources"), "oc: api-resources is safe");
+assert(isSafeCommand("oc config view"), "oc: config view is safe");
+assert(isSafeCommand("oc config get-contexts"), "oc: config get-contexts is safe");
+assert(isSafeCommand("kubectl get pods"), "kubectl: get is safe");
+assert(isSafeCommand("kubectl describe svc my-service"), "kubectl: describe is safe");
+assert(isSafeCommand("kubectl logs deploy/my-app"), "kubectl: logs is safe");
+assert(isSafeCommand("kubectl explain pod.spec"), "kubectl: explain is safe");
+assert(isSafeCommand("kubectl config current-context"), "kubectl: config current-context is safe");
+
+// --- isSafeCommand: oc/kubectl destructive ---
+
+assert(!isSafeCommand("oc create -f manifest.yaml"), "oc: create is blocked");
+assert(!isSafeCommand("oc delete pod my-pod"), "oc: delete is blocked");
+assert(!isSafeCommand("oc apply -f manifest.yaml"), "oc: apply is blocked");
+assert(!isSafeCommand("oc edit deployment my-app"), "oc: edit is blocked");
+assert(!isSafeCommand("oc patch node worker-0 -p '{}'"), "oc: patch is blocked");
+assert(!isSafeCommand("oc scale deployment my-app --replicas=3"), "oc: scale is blocked");
+assert(!isSafeCommand("oc adm drain worker-0"), "oc: adm is blocked");
+assert(!isSafeCommand("oc new-app nodejs~https://github.com/example/app"), "oc: new-app is blocked");
+assert(!isSafeCommand("kubectl delete pod my-pod"), "kubectl: delete is blocked");
+assert(!isSafeCommand("kubectl apply -f manifest.yaml"), "kubectl: apply is blocked");
+assert(!isSafeCommand("kubectl drain node-1"), "kubectl: drain is blocked");
+assert(!isSafeCommand("kubectl cordon node-1"), "kubectl: cordon is blocked");
+assert(!isSafeCommand("kubectl taint node node-1 key=value:NoSchedule"), "kubectl: taint is blocked");
+assert(!isSafeCommand("kubectl rollout restart deployment my-app"), "kubectl: rollout is blocked");
+
+// --- isSafeCommand: podman/docker destructive ---
+
+assert(!isSafeCommand("podman run --rm alpine echo hello"), "podman: run is blocked");
+assert(!isSafeCommand("podman build -t my-image ."), "podman: build is blocked");
+assert(!isSafeCommand("podman push my-image:latest"), "podman: push is blocked");
+assert(!isSafeCommand("podman rm container-id"), "podman: rm is blocked");
+assert(!isSafeCommand("podman rmi image-id"), "podman: rmi is blocked");
+assert(!isSafeCommand("podman stop container-id"), "podman: stop is blocked");
+assert(!isSafeCommand("podman kill container-id"), "podman: kill is blocked");
+assert(!isSafeCommand("podman exec container-id ls"), "podman: exec is blocked");
+assert(!isSafeCommand("docker run --rm alpine echo hello"), "docker: run is blocked");
+assert(!isSafeCommand("docker build -t my-image ."), "docker: build is blocked");
+assert(!isSafeCommand("docker push my-image:latest"), "docker: push is blocked");
+assert(!isSafeCommand("docker rm container-id"), "docker: rm is blocked");
+
+// --- isSafeCommand: dot (graphviz) ---
+
+assert(!isSafeCommand("dot -Tpng -Gdpi=150 /tmp/diagram.dot -o /path/to/output.png"), "dot: -o writes file is blocked");
+assert(!isSafeCommand("dot -Tsvg input.dot -o output.svg 2>&1"), "dot: svg output is blocked");
 
 // --- Summary ---
 

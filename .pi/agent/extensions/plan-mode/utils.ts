@@ -19,7 +19,7 @@ const DESTRUCTIVE_PATTERNS = [
 	/\btruncate\b/i,
 	/\bdd\b/i,
 	/\bshred\b/i,
-	/(^|[^<2])>(?!>)(?!&?\s*(\/dev\/null|\/tmp\/))/,
+	/(^|[^<2\-])>(?!>)(?!&?\s*(\/dev\/null|\/tmp\/))/,
 	/>>(?!\s*(\/dev\/null|\/tmp\/))/,
 	/\bnpm\s+(install|uninstall|update|ci|link|publish)/i,
 	/\byarn\s+(add|remove|install|publish)/i,
@@ -28,7 +28,7 @@ const DESTRUCTIVE_PATTERNS = [
 	/\bapt(-get)?\s+(install|remove|purge|update|upgrade)/i,
 	/\bbrew\s+(install|uninstall|upgrade)/i,
 	/\bgit\s+(add|commit|push|pull|merge|rebase|reset|checkout|branch\s+-[dD]|stash|cherry-pick|revert|tag|init|clone)/i,
-	/\bcurl\b.*(-o|--output)\s+(?!\/tmp\/)\S+/i,
+	/\bcurl\b[^|]*(-o|--output)\s+(?!\/tmp\/)\S+/i,
 	/\bsudo\b/i,
 	/\bsu\b/i,
 	/\bkill\b/i,
@@ -58,6 +58,16 @@ const DESTRUCTIVE_PATTERNS = [
 	/\bgh\s+(pr|issue)\s+(create|close|merge|delete|edit|reopen)\b/i,
 	/\bgh\s+repo\s+(create|delete|fork|rename|archive)\b/i,
 	/\bgh\s+release\s+(create|delete|edit)\b/i,
+	// sed in-place editing
+	/\bsed\s+(-[a-zA-Z]*i|--in-place)\b/i,
+	// OpenShift / Kubernetes CLI destructive operations
+	/\b(oc|kubectl)\s+(create|delete|apply|edit|patch|scale|set|rollout|adm|drain|cordon|uncordon|taint|new-app|new-project)\b/i,
+	// Container runtimes (destructive)
+	/\b(podman|docker)\s+(run|rm|rmi|build|push|pull|stop|kill|exec|tag|create|commit)\b/i,
+	// uv package management (not uv run)
+	/\buv\s+(sync|add|remove|init|lock)\b(?!.*--dry-run)/i,
+	// Graphviz output (writes files)
+	/\bdot\b.*-o\b/i,
 ];
 
 // Safe read-only commands allowed in plan mode
@@ -101,12 +111,16 @@ const SAFE_PATTERNS = [
 	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*ls-/i,
 	/^\s*npm\s+(list|ls|view|info|search|outdated|audit)/i,
 	/^\s*yarn\s+(list|info|why|audit)/i,
+	// Python package managers (read-only)
+	/^\s*pip\s+(list|show|freeze|index|check|debug)/i,
+	/^\s*uv\s+(pip\s+)?(list|show|tree|version)/i,
+	/^\s*uv\s+lock\s+--dry-run/i,
 	/^\s*node\s+--version/i,
 	/^\s*python\s+--version/i,
 	/^\s*curl\s/i,
 	/^\s*wget\s+-O\s*-/i,
 	/^\s*jq\b/,
-	/^\s*sed\s+-n/i,
+	/^\s*sed\b/,
 	/^\s*awk\b/,
 	/^\s*rg\b/,
 	/^\s*fd\b/,
@@ -121,10 +135,24 @@ const SAFE_PATTERNS = [
 	/^\s*strings\b/,
 	// Web search
 	/^\s*brave-search\b/,
+	// uv run (specific test/lint tools only)
+	/^\s*uv\s+run\s+(pytest|flake8|mypy|ruff|pylint|black\s+--check|isort\s+--check)\b/i,
+	// npx tsx (TypeScript runner for tests)
+	/^\s*npx\s+tsx\b/,
+	// PDF text extraction
+	/^\s*pdftotext\b/,
+	// Shell syntax checking
+	/^\s*bash\s+-n\b/,
+	// Font listing
+	/^\s*fc-list\b/,
+	// Shell loops (destructive body still caught by DESTRUCTIVE_PATTERNS)
+	/^\s*for\b/,
 	// Go toolchain (read-only)
 	/^\s*go\s+(list|version|doc|env|mod\s+(graph|verify|why))\b/i,
 	// Google Cloud Storage (read-only)
 	/^\s*gsutil\s+(ls|cat|stat|du)\b/i,
+	// OpenShift / Kubernetes CLI (read-only)
+	/^\s*(oc|kubectl)\s+(get|describe|logs|status|explain|version|whoami|project|api-resources|api-versions|config\s+(view|get-contexts|current-context))\b/i,
 	// Path / text utilities
 	/^\s*basename\b/,
 	/^\s*dirname\b/,

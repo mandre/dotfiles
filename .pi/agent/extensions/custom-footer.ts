@@ -66,16 +66,20 @@ export default function (pi: ExtensionAPI) {
 					}
 					const tokens = usagePct + theme.fg("dim", ` ↑${fmt(input)} ↓${fmt(output)} $${cost.toFixed(3)}`);
 
-					// ── Line 2 right: plan mode ──
+					// ── Line 2 right: extension statuses ──
 					const statuses = footerData.getExtensionStatuses();
-					const planStatus = statuses.get("plan-mode") || "";
+					const statusParts: string[] = [];
+					for (const [key, value] of statuses) {
+						if (value) statusParts.push(value);
+					}
+					const statusStr = statusParts.join(theme.fg("dim", " │ "));
 
 					// ── Layout ──
 					const line1pad = " ".repeat(Math.max(1, width - visibleWidth(pathStr) - visibleWidth(modelStr)));
 					const line1 = truncateToWidth(pathStr + line1pad + modelStr, width);
 
-					const line2pad = " ".repeat(Math.max(1, width - visibleWidth(tokens) - visibleWidth(planStatus)));
-					const line2 = truncateToWidth(tokens + line2pad + planStatus, width);
+					const line2pad = " ".repeat(Math.max(1, width - visibleWidth(tokens) - visibleWidth(statusStr)));
+					const line2 = truncateToWidth(tokens + line2pad + statusStr, width);
 
 					return [line1, line2];
 				},

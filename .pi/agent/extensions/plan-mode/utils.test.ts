@@ -123,6 +123,54 @@ assertDeepEqual(
 	assert(items[1].completed === false, "markCompletedSteps mismatch: step 3 unchanged");
 }
 
+// --- extractTodoItems (markdown heading formats) ---
+
+{
+	const plan = "## Plan:\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems heading: ## Plan: with plain steps");
+	assertDeepEqual(items.map((i) => i.step), [1, 2], "extractTodoItems heading: step numbers");
+}
+
+{
+	const plan = "# Plan:\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems heading: # Plan: single heading");
+}
+
+{
+	const plan = "### **Plan:**\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems heading: ### **Plan:** heading with bold");
+}
+
+{
+	const plan = "Plan:\n### 1. First step here\n### 2. Second step here\n### 3. Third step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 3, "extractTodoItems heading: ### numbered steps");
+	assertDeepEqual(items.map((i) => i.step), [1, 2, 3], "extractTodoItems heading: ### step numbers");
+}
+
+{
+	const plan = "Plan:\n**1.** First step here\n**2.** Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems heading: **N.** bold-numbered steps");
+}
+
+{
+	const plan = "## Plan:\n### 1. First step here\n### 2. Second step here\n### 3. Third step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 3, "extractTodoItems heading: ## Plan: with ### numbered steps");
+	assertDeepEqual(items.map((i) => i.step), [1, 2, 3], "extractTodoItems heading: combined heading step numbers");
+}
+
+{
+	// Ensure ## Plan: works when preceded by other content
+	const plan = "Some intro text\n\nMore analysis here\n\n## Plan:\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems heading: ## Plan: after preamble");
+}
+
 // --- cleanStepText ---
 
 assert(cleanStepText("**Bold text**") === "Bold text", "cleanStepText: removes bold");

@@ -40,7 +40,7 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, TextContent } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { Key } from "@earendil-works/pi-tui";
+import { type AutocompleteItem, Key } from "@earendil-works/pi-tui";
 import { extractTodoItems, isSafeCommand, markCompletedSteps, type TodoItem } from "./utils.js";
 
 // Tools
@@ -140,6 +140,17 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 	pi.registerCommand("done", {
 		description: "Mark a plan step as completed (e.g. /done 3)",
+		getArgumentCompletions: (prefix: string): AutocompleteItem[] | null => {
+			const items = todoItems
+				.filter((t) => !t.completed)
+				.map((t) => ({
+					value: String(t.step),
+					label: `Step ${t.step}`,
+					description: t.text,
+				}));
+			const filtered = items.filter((i) => i.value.startsWith(prefix));
+			return filtered.length > 0 ? filtered : null;
+		},
 		handler: async (args, ctx) => {
 			if (!executionMode || todoItems.length === 0) {
 				ctx.ui.notify("No active plan execution.", "warning");
@@ -191,6 +202,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			pi.setActiveTools(NORMAL_MODE_TOOLS);
 			updateStatus(ctx);
 			persistState();
+			const leafId = ctx.sessionManager.getLeafId();
+			if (leafId) {
+				pi.setLabel(leafId, "plan-execution-start");
+			}
 			pi.sendMessage(
 				{
 					customType: "plan-mode-execute",
@@ -262,8 +277,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	});
 
 	// Inject plan/execution context before agent starts
-	pi.on("before_agent_start", async () => {
+	pi.on("before_agent_start", async (event) => {
 		if (planModeEnabled) {
+			const tools = event.systemPromptOptions.selectedTools ?? [];
+			const toolList = tools.length > 0 ? tools.join(", ") : "none";
 			return {
 				message: {
 					customType: "plan-mode-context",
@@ -271,8 +288,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 You are in plan mode - a read-only exploration mode for safe code analysis.
 
 Restrictions:
-- You can only use: read, bash, grep, find, ls, questionnaire
-- You CANNOT use: edit, write (file modifications are disabled)
+- Available tools: ${toolList}
+- File modifications are disabled (edit and write are not available)
 - Bash is restricted to an allowlist of read-only commands
 
 Ask clarifying questions using the questionnaire tool.
@@ -311,6 +328,15 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 		}
 	});
 
+	// Set contextual working message during execution
+	pi.on("turn_start", async (_event, ctx) => {
+		if (!executionMode || todoItems.length === 0) return;
+		const nextStep = todoItems.find((t) => !t.completed);
+		if (nextStep) {
+			ctx.ui.setWorkingMessage(`Executing step ${nextStep.step}: ${nextStep.text}…`);
+		}
+	});
+
 	// Track progress after each turn (tools have completed)
 	pi.on("turn_end", async (event, ctx) => {
 		if (!executionMode || todoItems.length === 0) return;
@@ -335,6 +361,7 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 
 		updateStatus(ctx);
 		persistState();
+		ctx.ui.setWorkingMessage(); // Restore default
 	});
 
 	// Handle plan completion and plan mode UI

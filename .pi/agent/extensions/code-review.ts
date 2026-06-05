@@ -26,7 +26,7 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { DynamicBorder, getMarkdownTheme } from "@earendil-works/pi-coding-agent";
-import { Container, Markdown, Text } from "@earendil-works/pi-tui";
+import { type AutocompleteItem, Container, Markdown, Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
 // ---------------------------------------------------------------------------
@@ -49,12 +49,13 @@ async function getPrDiff(
 	repo: string,
 	prNumber: number,
 	cwd: string,
+	signal?: AbortSignal,
 ): Promise<{ ok: true; diff: string; title: string } | { ok: false; error: string }> {
 	// Get PR title for display
 	const infoResult = await pi.exec(
 		"gh",
 		["pr", "view", String(prNumber), "--repo", repo, "--json", "title", "--jq", ".title"],
-		{ cwd, timeout: 15_000 },
+		{ cwd, timeout: 15_000, signal },
 	);
 	const title = infoResult.code === 0 ? infoResult.stdout.trim() : `PR #${prNumber}`;
 
@@ -62,7 +63,7 @@ async function getPrDiff(
 	const result = await pi.exec(
 		"gh",
 		["pr", "diff", String(prNumber), "--repo", repo],
-		{ cwd, timeout: 30_000 },
+		{ cwd, timeout: 30_000, signal },
 	);
 
 	if (result.code !== 0) {
@@ -83,6 +84,7 @@ async function getLocalDiff(
 	scope: "staged" | "unstaged" | "all",
 	path: string | undefined,
 	cwd: string,
+	signal?: AbortSignal,
 ): Promise<{ ok: true; diff: string } | { ok: false; error: string }> {
 	const args: string[] = ["diff"];
 
@@ -98,7 +100,7 @@ async function getLocalDiff(
 		args.push("--", path);
 	}
 
-	const result = await pi.exec("git", args, { cwd, timeout: 15_000 });
+	const result = await pi.exec("git", args, { cwd, timeout: 15_000, signal });
 	if (result.code !== 0) {
 		const detail = result.stderr.trim() || `exit code ${result.code}`;
 		return { ok: false, error: `git diff failed: ${detail}` };
@@ -112,8 +114,9 @@ async function getRangeDiff(
 	pi: ExtensionAPI,
 	range: string,
 	cwd: string,
+	signal?: AbortSignal,
 ): Promise<{ ok: true; diff: string } | { ok: false; error: string }> {
-	const result = await pi.exec("git", ["diff", range], { cwd, timeout: 15_000 });
+	const result = await pi.exec("git", ["diff", range], { cwd, timeout: 15_000, signal });
 	if (result.code !== 0) {
 		const detail = result.stderr.trim() || `exit code ${result.code}`;
 		return { ok: false, error: `git diff failed: ${detail}` };
@@ -166,6 +169,7 @@ async function performReview(
 	focus: string | undefined,
 	prTitle: string | undefined,
 	ctx: ExtensionContext,
+	signal?: AbortSignal,
 ): Promise<{ ok: true; review: string } | { ok: false; error: string }> {
 	const model = ctx.model ?? getModel("anthropic", "claude-sonnet-4-20250514");
 	if (!model) {
@@ -197,6 +201,7 @@ async function performReview(
 			apiKey: auth.apiKey,
 			headers: auth.headers,
 			reasoningEffort: "high",
+			signal,
 		},
 	);
 
@@ -308,6 +313,15 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 	pi.registerCommand("review", {
 		description:
 			"Review code changes (/review [staged|unstaged|all|<range>|<path>|<PR URL>])",
+		getArgumentCompletions: (prefix: string): AutocompleteItem[] | null => {
+			const items: AutocompleteItem[] = [
+				{ value: "staged", label: "staged", description: "Review staged changes" },
+				{ value: "unstaged", label: "unstaged", description: "Review unstaged changes" },
+				{ value: "all", label: "all", description: "Review all changes (staged + unstaged)" },
+			];
+			const filtered = items.filter((i) => i.value.startsWith(prefix));
+			return filtered.length > 0 ? filtered : null;
+		},
 		handler: async (args, ctx) => {
 			const parsed = parseReviewArgs(args ?? "");
 
@@ -318,7 +332,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			let prTitle: string | undefined;
 
 			if (parsed.mode === "pr") {
-				const result = await getPrDiff(pi, parsed.repo, parsed.prNumber, ctx.cwd);
+				const result = await getPrDiff(pi, parsed.repo, parsed.prNumber, ctx.cwd, ctx.signal);
 				if (!result.ok) {
 					ctx.ui.notify(result.error, "error");
 					return;
@@ -327,7 +341,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				prTitle = result.title;
 				heading = `Code Review — ${parsed.repo}#${parsed.prNumber}: ${prTitle}`;
 			} else if (parsed.mode === "range") {
-				const result = await getRangeDiff(pi, parsed.range, ctx.cwd);
+				const result = await getRangeDiff(pi, parsed.range, ctx.cwd, ctx.signal);
 				if (!result.ok) {
 					ctx.ui.notify(result.error, "error");
 					return;
@@ -336,14 +350,14 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				heading = `Code Review — ${parsed.range}`;
 			} else {
 				// Local diff — try staged first, fall back to unstaged if empty
-				let result = await getLocalDiff(pi, parsed.scope, parsed.path, ctx.cwd);
+				let result = await getLocalDiff(pi, parsed.scope, parsed.path, ctx.cwd, ctx.signal);
 				if (!result.ok) {
 					ctx.ui.notify(result.error, "error");
 					return;
 				}
 				if (!result.diff.trim() && parsed.scope === "staged" && !parsed.path) {
 					// Nothing staged, try unstaged
-					result = await getLocalDiff(pi, "unstaged", undefined, ctx.cwd);
+					result = await getLocalDiff(pi, "unstaged", undefined, ctx.cwd, ctx.signal);
 					if (!result.ok) {
 						ctx.ui.notify(result.error, "error");
 						return;
@@ -368,7 +382,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				"info",
 			);
 
-			const reviewResult = await performReview(pi, diff, undefined, prTitle, ctx);
+			const reviewResult = await performReview(pi, diff, undefined, prTitle, ctx, ctx.signal);
 			if (!reviewResult.ok) {
 				ctx.ui.notify(reviewResult.error, "error");
 				return;
@@ -431,7 +445,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				onUpdate?.({
 					content: [{ type: "text", text: `Fetching PR #${pr.number} from ${pr.repo}…` }],
 				});
-				const result = await getPrDiff(pi, pr.repo, pr.number, ctx.cwd);
+				const result = await getPrDiff(pi, pr.repo, pr.number, ctx.cwd, signal);
 				if (!result.ok) throw new Error(result.error);
 				diff = result.diff;
 				prTitle = result.title;
@@ -440,7 +454,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				onUpdate?.({
 					content: [{ type: "text", text: `Getting diff for ${params.range}…` }],
 				});
-				const result = await getRangeDiff(pi, params.range, ctx.cwd);
+				const result = await getRangeDiff(pi, params.range, ctx.cwd, signal);
 				if (!result.ok) throw new Error(result.error);
 				diff = result.diff;
 				label = params.range;
@@ -449,12 +463,12 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				onUpdate?.({
 					content: [{ type: "text", text: `Getting ${scope} diff…` }],
 				});
-				let result = await getLocalDiff(pi, scope, params.path, ctx.cwd);
+				let result = await getLocalDiff(pi, scope, params.path, ctx.cwd, signal);
 				if (!result.ok) throw new Error(result.error);
 
 				// Fall back to unstaged when staged is empty
 				if (!result.diff.trim() && scope === "staged" && !params.path) {
-					result = await getLocalDiff(pi, "unstaged", undefined, ctx.cwd);
+					result = await getLocalDiff(pi, "unstaged", undefined, ctx.cwd, signal);
 					if (!result.ok) throw new Error(result.error);
 					if (!result.diff.trim()) {
 						return {
@@ -488,7 +502,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				],
 			});
 
-			const reviewResult = await performReview(pi, diff, params.focus, prTitle, ctx);
+			const reviewResult = await performReview(pi, diff, params.focus, prTitle, ctx, signal);
 			if (!reviewResult.ok) throw new Error(reviewResult.error);
 
 			return {

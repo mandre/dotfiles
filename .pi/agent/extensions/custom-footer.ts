@@ -11,12 +11,22 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 export default function (pi: ExtensionAPI) {
+	let requestRender: (() => void) | undefined;
+
+	pi.on("thinking_level_select", async () => {
+		requestRender?.();
+	});
+
 	pi.on("session_start", async (_event, ctx) => {
 		ctx.ui.setFooter((tui, theme, footerData) => {
+			requestRender = () => tui.requestRender();
 			const unsub = footerData.onBranchChange(() => tui.requestRender());
 
 			return {
-				dispose: unsub,
+				dispose() {
+					unsub();
+					requestRender = undefined;
+				},
 				invalidate() {},
                 render(width: number): string[] {
 					// ── Shared data ──

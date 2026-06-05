@@ -5,7 +5,7 @@
  * Multiple questions: tab bar navigation between questions
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { keyHint, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
@@ -99,7 +99,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 			const isMulti = questions.length > 1;
 			const totalTabs = questions.length + 1; // questions + Submit
 
-			const result = await ctx.ui.custom<QuestionnaireResult>((tui, theme, _kb, done) => {
+			const result = await ctx.ui.custom<QuestionnaireResult>((tui, theme, keybindings, done) => {
 				// State
 				let currentTab = 0;
 				let optionIndex = 0;
@@ -323,7 +323,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 							add(` ${line}`);
 						}
 						lines.push("");
-						add(theme.fg("dim", " Enter to submit • Esc to cancel"));
+						add(` ${keyHint("tui.select.confirm", "submit")}${theme.fg("dim", " • ")}${keyHint("tui.select.cancel", "cancel")}`);
 					} else if (currentTab === questions.length) {
 						add(theme.fg("accent", theme.bold(" Ready to submit")));
 						lines.push("");
@@ -352,10 +352,20 @@ export default function questionnaire(pi: ExtensionAPI) {
 
 					lines.push("");
 					if (!inputMode) {
-						const help = isMulti
-							? " Tab/←→ navigate • ↑↓ select • Enter confirm • Esc cancel"
-							: " ↑↓ navigate • Enter select • Esc cancel";
-						add(theme.fg("dim", help));
+						const dimSep = theme.fg("dim", " • ");
+						const helpParts = isMulti
+							? [
+								theme.fg("dim", "Tab/←→ navigate"),
+								theme.fg("dim", "↑↓ select"),
+								keyHint("tui.select.confirm", "confirm"),
+								keyHint("tui.select.cancel", "cancel"),
+							]
+							: [
+								theme.fg("dim", "↑↓ navigate"),
+								keyHint("tui.select.confirm", "select"),
+								keyHint("tui.select.cancel", "cancel"),
+							];
+						add(` ${helpParts.join(dimSep)}`);
 					}
 					add(theme.fg("accent", "─".repeat(width)));
 

@@ -1,7 +1,8 @@
 {
-  "lastChangelogVersion": "0.74.0",
+  "lastChangelogVersion": "0.78.1",
   "packages": [
-    "npm:@twogiants/pi-anthropic-vertex"
+    "npm:@twogiants/pi-anthropic-vertex",
+    "npm:@juicesharp/rpiv-web-tools"
   ],
   "theme": "mandre",
   "defaultProvider": "anthropic-vertex",

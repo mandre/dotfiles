@@ -6,7 +6,7 @@
  */
 
 import { keyHint, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth } from "@earendil-works/pi-tui";
+import { Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
 // Types
@@ -262,8 +262,14 @@ export default function questionnaire(pi: ExtensionAPI) {
 					const q = currentQuestion();
 					const opts = currentOptions();
 
-					// Helper to add truncated line
+					// Helper to add truncated line (borders, tab bar, help text)
 					const add = (s: string) => lines.push(truncateToWidth(s, width));
+					// Helper to add word-wrapped lines (prompts, options, descriptions)
+					const addWrapped = (s: string) => {
+						for (const line of wrapTextWithAnsi(s, width)) {
+							lines.push(line);
+						}
+					};
 
 					add(theme.fg("accent", "─".repeat(width)));
 
@@ -293,6 +299,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 
 					// Helper to render options list
 					function renderOptions() {
+						const descIndent = "     ";
 						for (let i = 0; i < opts.length; i++) {
 							const opt = opts[i];
 							const selected = i === optionIndex;
@@ -301,19 +308,21 @@ export default function questionnaire(pi: ExtensionAPI) {
 							const color = selected ? "accent" : "text";
 							// Mark "Type something" differently when in input mode
 							if (isOther && inputMode) {
-								add(prefix + theme.fg("accent", `${i + 1}. ${opt.label} ✎`));
+								addWrapped(prefix + theme.fg("accent", `${i + 1}. ${opt.label} ✎`));
 							} else {
-								add(prefix + theme.fg(color, `${i + 1}. ${opt.label}`));
+								addWrapped(prefix + theme.fg(color, `${i + 1}. ${opt.label}`));
 							}
 							if (opt.description) {
-								add(`     ${theme.fg("muted", opt.description)}`);
+								for (const line of wrapTextWithAnsi(theme.fg("muted", opt.description), width - descIndent.length)) {
+									lines.push(descIndent + line);
+								}
 							}
 						}
 					}
 
 					// Content
 					if (inputMode && q) {
-						add(theme.fg("text", ` ${q.prompt}`));
+						addWrapped(theme.fg("text", ` ${q.prompt}`));
 						lines.push("");
 						// Show options for reference
 						renderOptions();
@@ -331,7 +340,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 							const answer = answers.get(question.id);
 							if (answer) {
 								const prefix = answer.wasCustom ? "(wrote) " : "";
-								add(`${theme.fg("muted", ` ${question.label}: `)}${theme.fg("text", prefix + answer.label)}`);
+								addWrapped(`${theme.fg("muted", ` ${question.label}: `)}${theme.fg("text", prefix + answer.label)}`);
 							}
 						}
 						lines.push("");
@@ -342,10 +351,10 @@ export default function questionnaire(pi: ExtensionAPI) {
 								.filter((q) => !answers.has(q.id))
 								.map((q) => q.label)
 								.join(", ");
-							add(theme.fg("warning", ` Unanswered: ${missing}`));
+							addWrapped(theme.fg("warning", ` Unanswered: ${missing}`));
 						}
 					} else if (q) {
-						add(theme.fg("text", ` ${q.prompt}`));
+						addWrapped(theme.fg("text", ` ${q.prompt}`));
 						lines.push("");
 						renderOptions();
 					}

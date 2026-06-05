@@ -247,9 +247,6 @@ export function cleanStepText(text: string): string {
 	if (cleaned.length > 0) {
 		cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 	}
-	if (cleaned.length > 120) {
-		cleaned = `${cleaned.slice(0, 117)}...`;
-	}
 	return cleaned;
 }
 

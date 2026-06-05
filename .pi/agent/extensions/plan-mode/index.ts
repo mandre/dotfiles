@@ -40,7 +40,7 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, TextContent } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { type AutocompleteItem, Key } from "@earendil-works/pi-tui";
+import { type AutocompleteItem, Key, truncateToWidth } from "@earendil-works/pi-tui";
 import { extractTodoItems, isSafeCommand, markCompletedSteps, type TodoItem } from "./utils.js";
 
 // Tools
@@ -84,15 +84,20 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 		// Widget showing todo list
 		if (executionMode && todoItems.length > 0) {
-			const lines = todoItems.map((item) => {
-				if (item.completed) {
-					return (
-						ctx.ui.theme.fg("success", " ") + ctx.ui.theme.fg("muted", ctx.ui.theme.strikethrough(item.text))
-					);
-				}
-				return `${ctx.ui.theme.fg("muted", "󰄱 ")}${item.text}`;
-			});
-			ctx.ui.setWidget("plan-todos", lines);
+			ctx.ui.setWidget("plan-todos", (_tui, theme) => ({
+				render(width: number): string[] {
+					return todoItems.map((item) => {
+						if (item.completed) {
+							return truncateToWidth(
+								theme.fg("success", " ") + theme.fg("muted", theme.strikethrough(item.text)),
+								width,
+							);
+						}
+						return truncateToWidth(`${theme.fg("muted", "󰄱 ")}${item.text}`, width);
+					});
+				},
+				invalidate() {},
+			}));
 		} else {
 			ctx.ui.setWidget("plan-todos", undefined);
 		}

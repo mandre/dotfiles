@@ -177,8 +177,8 @@ assert(cleanStepText("**Bold text**") === "Bold text", "cleanStepText: removes b
 assert(cleanStepText("`code`") === "Code", "cleanStepText: removes backticks, capitalizes");
 assert(cleanStepText("Update the configuration file") === "Configuration file", "cleanStepText: strips action prefix");
 assert(
-	cleanStepText("A very long step description that exceeds the character limit by quite a bit and keeps going on and on to make absolutely sure we exceed the one hundred and twenty character truncation threshold").length === 120,
-	"cleanStepText: truncates to 120 chars"
+	cleanStepText("A very long step description that exceeds the character limit by quite a bit and keeps going on and on to make absolutely sure we exceed the one hundred and twenty character truncation threshold").length > 120,
+	"cleanStepText: preserves full text without truncation"
 );
 
 // --- isSafeCommand: gws read-only commands ---

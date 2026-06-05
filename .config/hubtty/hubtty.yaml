@@ -318,6 +318,44 @@ reviewkeys:
     approval: 'COMMENT'
     message: "/retest"
 
+# Custom commands allow binding keys to run shell commands with context
+# variable interpolation from the current screen.
+#
+# Available contexts and their variables:
+#   repository-list:   {repository}
+#   pull-request-list: {repository}, {number}, {branch}, {author}, {sha}
+#   pull-request:      {repository}, {number}, {branch}, {author}, {sha},
+#                      {title}, {url}
+#   diff:              {repository}, {sha}
+#
+# If 'context' is omitted, the command is available on all screens
+# (but interpolation will fail if a variable is not available).
+#
+# Variable values are automatically shell-quoted for safety.
+# To pass unquoted values, use command wrappers or scripts.
+# custom-commands:
+#   - key: 'meta 1'
+#     command: 'xdg-open https://github.com/{repository}/pull/{number}'
+#     description: 'Open PR in browser'
+#     context:
+#       - pull-request
+#       - pull-request-list
+#   - key: 'meta 2'
+#     command: 'gh pr checkout {number} --repo {repository}'
+#     description: 'Checkout PR with gh CLI'
+#     context:
+#       - pull-request
+#   - key: 'meta 3'
+#     command: 'notify-send Hubtty {repository}'
+#     description: 'Desktop notification for repository'
+custom-commands:
+  - key: 'meta r'
+    command: 'tmux split-window -v "cd ~/hubtty/{repository} && git checkout origin/HEAD && pi \"/review https://github.com/{repository}/pull/{number}\""'
+    description: 'Review PR with pi'
+    context:
+      - pull-request
+      - pull-request-list
+
 # 'size-column' is a set of customize parameters for the 'Size' column
 # on your dashboard.
 # 'type' must be 'graph', 'split-graph' or 'number'. Default is 'graph'.

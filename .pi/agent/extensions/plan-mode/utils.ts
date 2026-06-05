@@ -252,7 +252,7 @@ export function cleanStepText(text: string): string {
 
 export function extractTodoItems(message: string): TodoItem[] {
 	const items: TodoItem[] = [];
-	const headerMatch = message.match(/^#{0,6}\s*\*{0,2}Plan:\*{0,2}\s*\n/im);
+	const headerMatch = message.match(/^#{0,6}\s*\*{0,2}Plan:?\*{0,2}\s*\n/im);
 	if (!headerMatch) return items;
 
 	const planSection = message.slice(message.indexOf(headerMatch[0]) + headerMatch[0].length);

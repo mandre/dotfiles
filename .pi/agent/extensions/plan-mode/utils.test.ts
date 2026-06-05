@@ -171,6 +171,21 @@ assertDeepEqual(
 	assert(items.length === 2, "extractTodoItems heading: ## Plan: after preamble");
 }
 
+{
+	// ## Plan without colon should also work
+	const plan = "## Plan\n1. First step here\n2. Second step here\n3. Third step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 3, "extractTodoItems heading: ## Plan without colon");
+	assertDeepEqual(items.map((i) => i.step), [1, 2, 3], "extractTodoItems heading: ## Plan without colon step numbers");
+}
+
+{
+	// Plain Plan without colon should also work
+	const plan = "Plan\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems heading: bare Plan without colon");
+}
+
 // --- cleanStepText ---
 
 assert(cleanStepText("**Bold text**") === "Bold text", "cleanStepText: removes bold");

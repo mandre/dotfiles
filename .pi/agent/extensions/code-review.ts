@@ -354,6 +354,81 @@ function diffStats(diff: string): { files: number; additions: number; deletions:
 	return { files, additions, deletions };
 }
 
+/** Maximum diff excerpt size to include in review context for follow-up discussion. */
+const DIFF_EXCERPT_MAX_LINES = 200;
+const DIFF_EXCERPT_MAX_BYTES = 8_000;
+
+/** Truncate a diff to a reasonable excerpt for inclusion in conversation context. */
+function truncateDiff(diff: string): string {
+	const lines = diff.split("\n");
+	if (lines.length <= DIFF_EXCERPT_MAX_LINES && Buffer.byteLength(diff, "utf8") <= DIFF_EXCERPT_MAX_BYTES) {
+		return diff;
+	}
+
+	const selected: string[] = [];
+	let bytes = 0;
+	for (const line of lines) {
+		if (selected.length >= DIFF_EXCERPT_MAX_LINES) break;
+		const lineBytes = Buffer.byteLength(line, "utf8") + 1;
+		if (bytes + lineBytes > DIFF_EXCERPT_MAX_BYTES && selected.length > 0) break;
+		selected.push(line);
+		bytes += lineBytes;
+	}
+
+	const remaining = lines.length - selected.length;
+	if (remaining > 0) {
+		selected.push(`\n… (${remaining} more lines truncated)`);
+	}
+	return selected.join("\n");
+}
+
+/** Build enriched review content with context for follow-up discussion.
+ *  The full content goes into `content` (visible to LLM), while the raw
+ *  review text is stored separately in `details.review` for TUI display. */
+function buildReviewContent(
+	review: string,
+	heading: string,
+	stats: { files: number; additions: number; deletions: number },
+	diff: string,
+	prMetadata?: {
+		repo: string;
+		prNumber: number;
+		metadata: PrMetadata;
+	},
+): string {
+	const parts: string[] = [];
+
+	parts.push(`## ${heading}`);
+	parts.push(`${stats.files} file(s) changed, +${stats.additions}/-${stats.deletions} lines`);
+	parts.push("");
+
+	if (prMetadata) {
+		const { repo, prNumber, metadata } = prMetadata;
+		parts.push(`- **PR:** ${repo}#${prNumber}`);
+		parts.push(`- **Author:** ${metadata.author}`);
+		parts.push(`- **Base branch:** ${metadata.baseRefName}`);
+		if (metadata.labels.length > 0) {
+			parts.push(`- **Labels:** ${metadata.labels.join(", ")}`);
+		}
+		parts.push("");
+		parts.push("**Changed files:**");
+		for (const f of metadata.files) {
+			parts.push(`- \`${f}\``);
+		}
+		parts.push("");
+	}
+
+	parts.push(review);
+	parts.push("");
+	parts.push("---");
+	parts.push("### Reviewed Diff");
+	parts.push("<diff>");
+	parts.push(truncateDiff(diff));
+	parts.push("</diff>");
+
+	return parts.join("\n");
+}
+
 // ---------------------------------------------------------------------------
 // Sub-agent infrastructure for /pr-review
 // ---------------------------------------------------------------------------
@@ -627,6 +702,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 		const details = message.details as {
 			heading?: string;
 			stats?: { files: number; additions: number; deletions: number };
+			review?: string;
 		} | undefined;
 
 		const container = new Container();
@@ -639,7 +715,11 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				new Text(theme.fg("accent", theme.bold(details.heading)), 1, 0),
 			);
 		}
-		container.addChild(new Markdown(message.content, 1, 1, mdTheme));
+		// Use details.review for display (clean review without diff excerpt),
+		// falling back to content for legacy messages.
+		const displayContent = details?.review
+			?? (typeof message.content === "string" ? message.content : "");
+		container.addChild(new Markdown(displayContent, 1, 1, mdTheme));
 		container.addChild(border);
 
 		return container;
@@ -778,9 +858,12 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 
 					pi.sendMessage({
 						customType: "code-review",
-						content: result.review,
+						content: buildReviewContent(
+							result.review, heading, stats, diffResult.diff,
+							{ repo, prNumber, metadata },
+						),
 						display: true,
-						details: { heading, stats },
+						details: { heading, stats, review: result.review },
 					});
 
 					ctx.ui.notify(`Review complete${usageSuffix}`, "info");
@@ -846,9 +929,9 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 
 			pi.sendMessage({
 				customType: "code-review",
-				content: reviewResult.review,
+				content: buildReviewContent(reviewResult.review, heading, stats, diff),
 				display: true,
-				details: { heading, stats },
+				details: { heading, stats, review: reviewResult.review },
 			});
 		},
 	});
@@ -961,8 +1044,9 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			const reviewResult = await performReview(pi, diff, params.focus, prTitle, ctx, signal);
 			if (!reviewResult.ok) throw new Error(reviewResult.error);
 
+			const diffExcerpt = truncateDiff(diff);
 			return {
-				content: [{ type: "text", text: reviewResult.review }],
+				content: [{ type: "text", text: `${reviewResult.review}\n\n---\n### Reviewed Diff\n<diff>\n${diffExcerpt}\n</diff>` }],
 				details: { label, stats, prTitle },
 			};
 		},

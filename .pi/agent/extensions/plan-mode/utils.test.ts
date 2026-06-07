@@ -76,12 +76,46 @@ assertDeepEqual(
 5. Fifth step description
 `;
 	const items = extractTodoItems(plan);
-	// Items 2 and 4 should be filtered (backtick, dash, too short)
+	// Items 2 and 4 should be filtered (too short, dash)
 	assert(items.length === 3, `extractTodoItems filtered: expected 3 items, got ${items.length}`);
 	assertDeepEqual(
 		items.map((i) => i.step),
 		[1, 3, 5],
 		"extractTodoItems filtered: preserves original step numbers [1, 3, 5]"
+	);
+}
+
+{
+	// Steps starting with inline code references should be extracted
+	const plan = `Plan:
+1. \`hubtty/gitrepo.py\` — Simplify kwargs pattern in _highlight
+2. \`hubtty/syntax.py\` — Normalize CRLF line endings before lexing
+3. Update tests for new behavior
+`;
+	const items = extractTodoItems(plan);
+	assert(items.length === 3, `extractTodoItems inline-code: expected 3 items, got ${items.length}`);
+	assertDeepEqual(
+		items.map((i) => i.step),
+		[1, 2, 3],
+		"extractTodoItems inline-code: preserves step numbers [1, 2, 3]"
+	);
+	// Verify backticks are stripped from step text
+	assert(!items[0].text.includes("`"), "extractTodoItems inline-code: backticks stripped from text");
+}
+
+{
+	// Steps starting with code fences should still be filtered
+	const plan = `Plan:
+1. First real step here
+2. \`\`\`python should be blocked
+3. Third step description
+`;
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, `extractTodoItems code-fence: expected 2 items, got ${items.length}`);
+	assertDeepEqual(
+		items.map((i) => i.step),
+		[1, 3],
+		"extractTodoItems code-fence: filters code fence steps"
 	);
 }
 

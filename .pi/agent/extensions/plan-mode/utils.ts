@@ -263,7 +263,7 @@ export function extractTodoItems(message: string): TodoItem[] {
 			.trim()
 			.replace(/\*{1,2}$/, "")
 			.trim();
-		if (text.length > 5 && !text.startsWith("`") && !text.startsWith("/") && !text.startsWith("-")) {
+		if (text.length > 5 && !text.startsWith("```") && !text.startsWith("/") && !text.startsWith("-")) {
 			const cleaned = cleanStepText(text);
 			if (cleaned.length > 3) {
 				items.push({ step: Number(match[1]), text: cleaned, completed: false });

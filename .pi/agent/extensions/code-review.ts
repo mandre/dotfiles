@@ -1,20 +1,28 @@
 /**
  * Code Review Extension
  *
- * Provides a /review command and a code_review tool for reviewing code changes.
+ * Provides /review and /review-diff commands plus a code_review tool.
  *
  * Usage:
- *   /review                          — review staged changes (falls back to unstaged)
- *   /review staged                   — review only staged changes
- *   /review unstaged                 — review only unstaged changes
- *   /review HEAD~3..HEAD             — review a commit range
- *   /review src/utils.ts             — review changes in a specific file
+ *   /review                          — deep review of current branch changes (sub-agent)
+ *   /review staged                   — deep review of staged changes
+ *   /review unstaged                 — deep review of unstaged changes
+ *   /review all                      — deep review of all local changes
+ *   /review HEAD~3..HEAD             — deep review of a commit range
+ *   /review src/utils.ts             — deep review of changes in a specific file
  *   /review https://github.com/owner/repo/pull/123
  *                                    — deep PR review in isolated sub-agent with
  *                                      code exploration tools and project context
  *
- * Local diffs get a fast single-call review. PR URLs get a deep multi-turn
- * sub-agent review with codebase exploration.
+ *   /review-diff                     — quick review of staged changes (falls back to unstaged)
+ *   /review-diff staged|unstaged|all — quick review of specified changes
+ *   /review-diff HEAD~3..HEAD        — quick review of a commit range
+ *   /review-diff src/utils.ts        — quick review of changes in a specific file
+ *   /review-diff <PR URL>            — quick review of PR diff (single-call)
+ *
+ * Both commands accept the same arguments. /review runs a deep multi-turn
+ * sub-agent review with codebase exploration. /review-diff runs a fast
+ * single-call LLM review.
  *
  * The code_review tool lets the LLM proactively review changes when asked.
  *
@@ -136,6 +144,220 @@ async function getPrMetadata(
 	} catch {
 		return { ok: false, error: "Failed to parse PR metadata" };
 	}
+}
+
+/** Detect the default branch of the repository (main, master, etc.). */
+async function getDefaultBranch(
+	pi: ExtensionAPI,
+	cwd: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	// Try symbolic-ref first (works when origin is configured)
+	const symRef = await pi.exec(
+		"git", ["symbolic-ref", "refs/remotes/origin/HEAD", "--short"],
+		{ cwd, timeout: 5_000, signal },
+	);
+	if (symRef.code === 0 && symRef.stdout.trim()) {
+		// Returns e.g. "origin/main" — strip the remote prefix
+		const ref = symRef.stdout.trim();
+		return ref.replace(/^origin\//, "");
+	}
+
+	// Fall back: check if main or master exists
+	for (const candidate of ["main", "master"]) {
+		const check = await pi.exec(
+			"git", ["rev-parse", "--verify", `refs/heads/${candidate}`],
+			{ cwd, timeout: 5_000, signal },
+		);
+		if (check.code === 0) return candidate;
+	}
+
+	return "main"; // last resort default
+}
+
+/** Get the diff of the current branch relative to the default branch. */
+async function getBranchDiff(
+	pi: ExtensionAPI,
+	cwd: string,
+	signal?: AbortSignal,
+): Promise<{ ok: true; diff: string; branch: string; baseBranch: string; mergeBase: string } | { ok: false; error: string }> {
+	// Get current branch name
+	const branchResult = await pi.exec(
+		"git", ["rev-parse", "--abbrev-ref", "HEAD"],
+		{ cwd, timeout: 5_000, signal },
+	);
+	if (branchResult.code !== 0) {
+		return { ok: false, error: "Failed to determine current branch" };
+	}
+	const branch = branchResult.stdout.trim();
+
+	const baseBranch = await getDefaultBranch(pi, cwd, signal);
+
+	if (branch === baseBranch) {
+		return { ok: false, error: `Already on ${baseBranch} — use /review-diff for local changes` };
+	}
+
+	// Find merge-base
+	const mbResult = await pi.exec(
+		"git", ["merge-base", baseBranch, "HEAD"],
+		{ cwd, timeout: 5_000, signal },
+	);
+	if (mbResult.code !== 0) {
+		return { ok: false, error: `Failed to find merge-base between ${baseBranch} and HEAD` };
+	}
+	const mergeBase = mbResult.stdout.trim();
+
+	// Get the diff
+	const diffResult = await pi.exec(
+		"git", ["diff", `${mergeBase}..HEAD`],
+		{ cwd, timeout: 30_000, signal },
+	);
+	if (diffResult.code !== 0) {
+		const detail = diffResult.stderr.trim() || `exit code ${diffResult.code}`;
+		return { ok: false, error: `git diff failed: ${detail}` };
+	}
+	if (!diffResult.stdout.trim()) {
+		return { ok: false, error: `No changes on ${branch} relative to ${baseBranch}` };
+	}
+
+	return { ok: true, diff: diffResult.stdout, branch, baseBranch, mergeBase };
+}
+
+/** Structured metadata for the current branch. */
+interface BranchMetadata {
+	branch: string;
+	baseBranch: string;
+	mergeBase: string;
+	files: string[];
+	commitLog: string;
+	commitCount: number;
+}
+
+/** Fetch structured metadata for the current branch vs the default branch. */
+async function getBranchMetadata(
+	pi: ExtensionAPI,
+	branch: string,
+	baseBranch: string,
+	mergeBase: string,
+	cwd: string,
+	signal?: AbortSignal,
+): Promise<{ ok: true; metadata: BranchMetadata } | { ok: false; error: string }> {
+	// Get changed file list
+	const filesResult = await pi.exec(
+		"git", ["diff", "--name-only", `${mergeBase}..HEAD`],
+		{ cwd, timeout: 10_000, signal },
+	);
+	const files = filesResult.code === 0
+		? filesResult.stdout.trim().split("\n").filter(Boolean)
+		: [];
+
+	// Get commit log
+	const logResult = await pi.exec(
+		"git", ["log", "--oneline", `${mergeBase}..HEAD`],
+		{ cwd, timeout: 10_000, signal },
+	);
+	const commitLog = logResult.code === 0 ? logResult.stdout.trim() : "";
+	const commitCount = commitLog ? commitLog.split("\n").length : 0;
+
+	return {
+		ok: true,
+		metadata: { branch, baseBranch, mergeBase, files, commitLog, commitCount },
+	};
+}
+
+/** Build the contextual review prompt for the sub-agent (branch review). */
+function buildBranchReviewPrompt(
+	metadata: BranchMetadata,
+	diff: string,
+	stats: { files: number; additions: number; deletions: number },
+): string {
+	const lines: string[] = [];
+
+	lines.push("Review the changes on this branch in detail.");
+	lines.push("");
+
+	lines.push("## Branch Info");
+	lines.push(`- **Branch:** ${metadata.branch}`);
+	lines.push(`- **Base branch:** ${metadata.baseBranch}`);
+	lines.push(`- **Merge base:** \`${metadata.mergeBase.slice(0, 10)}\``);
+	lines.push(`- **Commits:** ${metadata.commitCount}`);
+	lines.push(`- **Files changed:** ${stats.files} (+${stats.additions}/-${stats.deletions})`);
+	lines.push("");
+
+	if (metadata.commitLog) {
+		lines.push("## Commit Log");
+		lines.push("```");
+		lines.push(metadata.commitLog);
+		lines.push("```");
+		lines.push("");
+	}
+
+	lines.push("## Changed Files");
+	for (const f of metadata.files) {
+		lines.push(`- \`${f}\``);
+	}
+	lines.push("");
+
+	const diffBytes = Buffer.byteLength(diff, "utf8");
+	if (diffBytes <= PR_REVIEW_MAX_DIFF_BYTES) {
+		lines.push("<diff>");
+		lines.push(diff);
+		lines.push("</diff>");
+	} else {
+		const truncated = diff.slice(0, PR_REVIEW_MAX_DIFF_BYTES);
+		const lastNewline = truncated.lastIndexOf("\n");
+		const clean = lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated;
+		lines.push(
+			`> The full diff is ${Math.round(diffBytes / 1024)}KB — only the first ` +
+			`~${Math.round(PR_REVIEW_MAX_DIFF_BYTES / 1024)}KB is shown below. ` +
+			`Use \`git diff ${metadata.mergeBase.slice(0, 10)}..HEAD -- <file>\` to view the full diff for specific files.`,
+		);
+		lines.push("");
+		lines.push("<diff>");
+		lines.push(clean);
+		lines.push("</diff>");
+	}
+
+	return lines.join("\n");
+}
+
+/** Build the contextual review prompt for the sub-agent (local diff review). */
+function buildLocalDeepReviewPrompt(
+	diff: string,
+	stats: { files: number; additions: number; deletions: number },
+	heading: string,
+): string {
+	const lines: string[] = [];
+
+	lines.push("Review the following local changes in detail.");
+	lines.push("");
+
+	lines.push("## Change Info");
+	lines.push(`- **Scope:** ${heading}`);
+	lines.push(`- **Files changed:** ${stats.files} (+${stats.additions}/-${stats.deletions})`);
+	lines.push("");
+
+	const diffBytes = Buffer.byteLength(diff, "utf8");
+	if (diffBytes <= PR_REVIEW_MAX_DIFF_BYTES) {
+		lines.push("<diff>");
+		lines.push(diff);
+		lines.push("</diff>");
+	} else {
+		const truncated = diff.slice(0, PR_REVIEW_MAX_DIFF_BYTES);
+		const lastNewline = truncated.lastIndexOf("\n");
+		const clean = lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated;
+		lines.push(
+			`> The full diff is ${Math.round(diffBytes / 1024)}KB \u2014 only the first ` +
+			`~${Math.round(PR_REVIEW_MAX_DIFF_BYTES / 1024)}KB is shown below. ` +
+			`Use \`git diff\` variants to view the full diff for specific files.`,
+		);
+		lines.push("");
+		lines.push("<diff>");
+		lines.push(clean);
+		lines.push("</diff>");
+	}
+
+	return lines.join("\n");
 }
 
 /** Get a local git diff based on scope and optional path filter. */
@@ -646,13 +868,15 @@ async function runPrReviewSubagent(
 }
 
 // ---------------------------------------------------------------------------
-// Parse /review arguments
+// Parse command arguments
 // ---------------------------------------------------------------------------
 
-type ParsedArgs = {
+type ReviewArgs = {
 	mode: "pr";
 	repo: string;
 	prNumber: number;
+} | {
+	mode: "branch";
 } | {
 	mode: "range";
 	range: string;
@@ -662,19 +886,24 @@ type ParsedArgs = {
 	path?: string;
 };
 
-function parseReviewArgs(raw: string): ParsedArgs {
+/**
+ * Parse review arguments.
+ * @param defaultMode What to return when no arguments are given:
+ *   - "branch" for /review (deep review of current branch)
+ *   - "staged" for /review-diff (quick review of staged changes)
+ */
+function parseReviewArgs(raw: string, defaultMode: "branch" | "staged"): ReviewArgs {
 	const trimmed = raw.trim();
 
 	if (!trimmed) {
-		// Default: staged, fall back to unstaged handled at call site
-		return { mode: "local", scope: "staged" };
+		return defaultMode === "branch"
+			? { mode: "branch" }
+			: { mode: "local", scope: "staged" };
 	}
 
 	// Check for PR URL
 	const pr = parsePrUrl(trimmed);
-	if (pr) {
-		return { mode: "pr", repo: pr.repo, prNumber: pr.number };
-	}
+	if (pr) return { mode: "pr", repo: pr.repo, prNumber: pr.number };
 
 	// Check for scope keywords
 	if (trimmed === "staged") return { mode: "local", scope: "staged" };
@@ -682,9 +911,7 @@ function parseReviewArgs(raw: string): ParsedArgs {
 	if (trimmed === "all") return { mode: "local", scope: "all" };
 
 	// Check for commit range (contains ..)
-	if (trimmed.includes("..")) {
-		return { mode: "range", range: trimmed };
-	}
+	if (trimmed.includes("..")) return { mode: "range", range: trimmed };
 
 	// Otherwise treat as a file path
 	return { mode: "local", scope: "staged", path: trimmed };
@@ -755,30 +982,141 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 	});
 
 	// ------------------------------------------------------------------
-	// /review command (unified)
+	// Shared autocomplete for both /review and /review-diff
+	// ------------------------------------------------------------------
+	const getSharedCompletions = (prefix: string): AutocompleteItem[] | null => {
+		const localItems: AutocompleteItem[] = [
+			{ value: "staged", label: "staged", description: "Review staged changes" },
+			{ value: "unstaged", label: "unstaged", description: "Review unstaged changes" },
+			{ value: "all", label: "all", description: "Review all changes (staged + unstaged)" },
+		];
+		const allItems = [...localItems, ...cachedPrs];
+		if (!prefix) return allItems.length > 0 ? allItems : null;
+		const filtered = allItems.filter(
+			(i) =>
+				i.value.startsWith(prefix) ||
+				i.value.includes(prefix) ||
+				i.label.includes(prefix) ||
+				(i.description?.includes(prefix) ?? false),
+		);
+		return filtered.length > 0 ? filtered : null;
+	};
+
+	// ------------------------------------------------------------------
+	// Shared diff fetcher — resolves ReviewArgs to a diff + heading
+	// ------------------------------------------------------------------
+	const fetchDiff = async (
+		parsed: ReviewArgs,
+		cwd: string,
+		signal?: AbortSignal,
+	): Promise<{ ok: true; diff: string; heading: string; prTitle?: string } | { ok: false; error: string }> => {
+		if (parsed.mode === "pr") {
+			const result = await getPrDiff(pi, parsed.repo, parsed.prNumber, cwd, signal);
+			if (!result.ok) return result;
+			return { ok: true, diff: result.diff, heading: `Code Review — ${parsed.repo}#${parsed.prNumber}: ${result.title}`, prTitle: result.title };
+		}
+
+		if (parsed.mode === "branch") {
+			const result = await getBranchDiff(pi, cwd, signal);
+			if (!result.ok) return result;
+			return { ok: true, diff: result.diff, heading: `Code Review — branch ${result.branch}` };
+		}
+
+		if (parsed.mode === "range") {
+			const result = await getRangeDiff(pi, parsed.range, cwd, signal);
+			if (!result.ok) return result;
+			return { ok: true, diff: result.diff, heading: `Code Review — ${parsed.range}` };
+		}
+
+		// Local diff — try staged first, fall back to unstaged if empty
+		let result = await getLocalDiff(pi, parsed.scope, parsed.path, cwd, signal);
+		if (!result.ok) return result;
+		if (!result.diff.trim() && parsed.scope === "staged" && !parsed.path) {
+			result = await getLocalDiff(pi, "unstaged", undefined, cwd, signal);
+			if (!result.ok) return result;
+			if (!result.diff.trim()) {
+				return { ok: false, error: "No changes to review (nothing staged or unstaged)" };
+			}
+			return { ok: true, diff: result.diff, heading: "Code Review — unstaged changes" };
+		}
+		if (!result.diff.trim()) {
+			return { ok: false, error: `No changes to review (${parsed.scope}${parsed.path ? ` in ${parsed.path}` : ""})` };
+		}
+		return { ok: true, diff: result.diff, heading: `Code Review — ${parsed.scope} changes${parsed.path ? ` in ${parsed.path}` : ""}` };
+	};
+
+	// ------------------------------------------------------------------
+	// /review command (deep sub-agent review)
 	// ------------------------------------------------------------------
 	pi.registerCommand("review", {
 		description:
-			"Review code changes (/review [staged|unstaged|all|<range>|<path>|<PR URL>])",
-		getArgumentCompletions: (prefix: string): AutocompleteItem[] | null => {
-			const localItems: AutocompleteItem[] = [
-				{ value: "staged", label: "staged", description: "Review staged changes" },
-				{ value: "unstaged", label: "unstaged", description: "Review unstaged changes" },
-				{ value: "all", label: "all", description: "Review all changes (staged + unstaged)" },
-			];
-			const allItems = [...localItems, ...cachedPrs];
-			if (!prefix) return allItems.length > 0 ? allItems : null;
-			const filtered = allItems.filter(
-				(i) =>
-					i.value.startsWith(prefix) ||
-					i.value.includes(prefix) ||
-					i.label.includes(prefix) ||
-					(i.description?.includes(prefix) ?? false),
-			);
-			return filtered.length > 0 ? filtered : null;
-		},
+			"Deep code review (/review [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = current branch)",
+		getArgumentCompletions: getSharedCompletions,
 		handler: async (args, ctx) => {
-			const parsed = parseReviewArgs(args ?? "");
+			const parsed = parseReviewArgs(args ?? "", "branch");
+
+			// Shared sub-agent runner
+			const runDeepReview = async (
+				task: string,
+				heading: string,
+				stats: { files: number; additions: number; deletions: number },
+				diff: string,
+				widgetTitle: string,
+				reviewContent: (review: string) => string,
+			) => {
+				const activityLog: string[] = [];
+				const MAX_LOG_LINES = 8;
+				const ac = new AbortController();
+				pi.registerCommand("cancel-review", {
+					description: "Cancel the running review",
+					handler: async () => { ac.abort(); },
+				});
+				ctx.ui.setStatus("review", "Sub-agent starting… (/cancel-review to abort)");
+
+				try {
+					const result = await runPrReviewSubagent(
+						task,
+						ctx.cwd,
+						ac.signal,
+						({ status, activity }) => {
+							ctx.ui.setStatus("review", `Review: ${status}`);
+							if (activity) {
+								activityLog.push(activity);
+								if (activityLog.length > MAX_LOG_LINES) activityLog.shift();
+								ctx.ui.setWidget("review", [
+									widgetTitle,
+									...activityLog,
+								]);
+							}
+						},
+					);
+
+					if (!result.ok) {
+						ctx.ui.notify(result.error ?? "Sub-agent failed", "error");
+						return;
+					}
+
+					const usageParts: string[] = [];
+					if (result.usage.turns) usageParts.push(`${result.usage.turns} turns`);
+					if (result.usage.input) usageParts.push(`↑${formatTokens(result.usage.input)}`);
+					if (result.usage.output) usageParts.push(`↓${formatTokens(result.usage.output)}`);
+					if (result.usage.cost) usageParts.push(`$${result.usage.cost.toFixed(4)}`);
+					if (result.model) usageParts.push(result.model);
+					const usageSuffix = usageParts.length > 0 ? ` (${usageParts.join(", ")})` : "";
+
+					pi.sendMessage({
+						customType: "code-review",
+						content: reviewContent(result.review),
+						display: true,
+						details: { heading, stats, review: result.review },
+					});
+
+					ctx.ui.notify(`Review complete${usageSuffix}`, "info");
+				} finally {
+					ctx.ui.setStatus("review", undefined);
+					ctx.ui.setWidget("review", undefined);
+				}
+			};
 
 			// ── PR URL: deep sub-agent review ──
 			if (parsed.mode === "pr") {
@@ -808,120 +1146,115 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 					`(${stats.files} files, +${stats.additions}/-${stats.deletions})`,
 					"info",
 				);
-				const activityLog: string[] = [];
-				const MAX_LOG_LINES = 8;
-				const ac = new AbortController();
-				pi.registerCommand("cancel-review", {
-					description: "Cancel the running PR review",
-					handler: async () => { ac.abort(); },
-				});
-				ctx.ui.setStatus("pr-review", "Sub-agent starting… (/cancel-review to abort)");
 
 				const task = buildPrReviewPrompt(
-					metadata,
-					diffResult.diff,
-					stats,
-					repo,
-					prNumber,
+					metadata, diffResult.diff, stats, repo, prNumber,
 				);
 
-				try {
-					const result = await runPrReviewSubagent(
-						task,
-						ctx.cwd,
-						ac.signal,
-						({ status, activity }) => {
-							ctx.ui.setStatus("pr-review", `PR review: ${status}`);
-							if (activity) {
-								activityLog.push(activity);
-								if (activityLog.length > MAX_LOG_LINES) activityLog.shift();
-								ctx.ui.setWidget("pr-review", [
-									`PR Review — ${repo}#${prNumber}`,
-									...activityLog,
-								]);
-							}
-						},
-					);
-
-					if (!result.ok) {
-						ctx.ui.notify(result.error ?? "Sub-agent failed", "error");
-						return;
-					}
-
-					const usageParts: string[] = [];
-					if (result.usage.turns) usageParts.push(`${result.usage.turns} turns`);
-					if (result.usage.input) usageParts.push(`↑${formatTokens(result.usage.input)}`);
-					if (result.usage.output) usageParts.push(`↓${formatTokens(result.usage.output)}`);
-					if (result.usage.cost) usageParts.push(`$${result.usage.cost.toFixed(4)}`);
-					if (result.model) usageParts.push(result.model);
-					const usageSuffix = usageParts.length > 0 ? ` (${usageParts.join(", ")})` : "";
-
-					pi.sendMessage({
-						customType: "code-review",
-						content: buildReviewContent(
-							result.review, heading, stats, diffResult.diff,
-							{ repo, prNumber, metadata },
-						),
-						display: true,
-						details: { heading, stats, review: result.review },
-					});
-
-					ctx.ui.notify(`Review complete${usageSuffix}`, "info");
-				} finally {
-					ctx.ui.setStatus("pr-review", undefined);
-					ctx.ui.setWidget("pr-review", undefined);
-				}
+				await runDeepReview(
+					task, heading, stats, diffResult.diff,
+					`PR Review — ${repo}#${prNumber}`,
+					(review) => buildReviewContent(
+						review, heading, stats, diffResult.diff,
+						{ repo, prNumber, metadata },
+					),
+				);
 				return;
 			}
 
-			// ── Local diff: fast single-call review ──
-			ctx.ui.notify("Fetching diff…", "info");
+			// ── Branch: deep sub-agent review of current branch ──
+			if (parsed.mode === "branch") {
+				ctx.ui.notify("Analysing branch changes…", "info");
 
-			let diff: string;
-			let heading = "Code Review";
+				const branchDiff = await getBranchDiff(pi, ctx.cwd, ctx.signal);
+				if (!branchDiff.ok) {
+					ctx.ui.notify(branchDiff.error, "error");
+					return;
+				}
 
-			if (parsed.mode === "range") {
-				const result = await getRangeDiff(pi, parsed.range, ctx.cwd, ctx.signal);
-				if (!result.ok) {
-					ctx.ui.notify(result.error, "error");
+				const metaResult = await getBranchMetadata(
+					pi, branchDiff.branch, branchDiff.baseBranch,
+					branchDiff.mergeBase, ctx.cwd, ctx.signal,
+				);
+				if (!metaResult.ok) {
+					ctx.ui.notify(metaResult.error, "error");
 					return;
 				}
-				diff = result.diff;
-				heading = `Code Review — ${parsed.range}`;
-			} else {
-				// Local diff — try staged first, fall back to unstaged if empty
-				let result = await getLocalDiff(pi, parsed.scope, parsed.path, ctx.cwd, ctx.signal);
-				if (!result.ok) {
-					ctx.ui.notify(result.error, "error");
-					return;
-				}
-				if (!result.diff.trim() && parsed.scope === "staged" && !parsed.path) {
-					result = await getLocalDiff(pi, "unstaged", undefined, ctx.cwd, ctx.signal);
-					if (!result.ok) {
-						ctx.ui.notify(result.error, "error");
-						return;
-					}
-					if (!result.diff.trim()) {
-						ctx.ui.notify("No changes to review (nothing staged or unstaged)", "warning");
-						return;
-					}
-					heading = "Code Review — unstaged changes";
-				} else if (!result.diff.trim()) {
-					ctx.ui.notify(`No changes to review (${parsed.scope}${parsed.path ? ` in ${parsed.path}` : ""})`, "warning");
-					return;
-				} else {
-					heading = `Code Review — ${parsed.scope} changes${parsed.path ? ` in ${parsed.path}` : ""}`;
-				}
-				diff = result.diff;
+
+				const { metadata } = metaResult;
+				const stats = diffStats(branchDiff.diff);
+				const heading = `Branch Review — ${metadata.branch} (${metadata.commitCount} commits)`;
+
+				ctx.ui.notify(
+					`Reviewing branch ${metadata.branch} vs ${metadata.baseBranch} ` +
+					`(${stats.files} files, +${stats.additions}/-${stats.deletions})`,
+					"info",
+				);
+
+				const task = buildBranchReviewPrompt(metadata, branchDiff.diff, stats);
+
+				await runDeepReview(
+					task, heading, stats, branchDiff.diff,
+					`Branch Review — ${metadata.branch}`,
+					(review) => buildReviewContent(review, heading, stats, branchDiff.diff),
+				);
+				return;
 			}
 
-			const stats = diffStats(diff);
+			// ── Local / range: deep sub-agent review of local diff ──
+			ctx.ui.notify("Fetching diff…", "info");
+
+			const diffResult = await fetchDiff(parsed, ctx.cwd, ctx.signal);
+			if (!diffResult.ok) {
+				ctx.ui.notify(diffResult.error, "error");
+				return;
+			}
+
+			const stats = diffStats(diffResult.diff);
+			const heading = diffResult.heading.replace("Code Review", "Deep Review");
+
 			ctx.ui.notify(
 				`Reviewing ${stats.files} file(s), +${stats.additions}/-${stats.deletions} lines…`,
 				"info",
 			);
 
-			const reviewResult = await performReview(pi, diff, undefined, undefined, ctx, ctx.signal);
+			const task = buildLocalDeepReviewPrompt(diffResult.diff, stats, heading);
+
+			await runDeepReview(
+				task, heading, stats, diffResult.diff,
+				heading,
+				(review) => buildReviewContent(review, heading, stats, diffResult.diff),
+			);
+		},
+	});
+
+	// ------------------------------------------------------------------
+	// /review-diff command (fast single-call review)
+	// ------------------------------------------------------------------
+	pi.registerCommand("review-diff", {
+		description:
+			"Quick code review (/review-diff [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = staged)",
+		getArgumentCompletions: getSharedCompletions,
+		handler: async (args, ctx) => {
+			const parsed = parseReviewArgs(args ?? "", "staged");
+
+			ctx.ui.notify("Fetching diff…", "info");
+
+			const diffResult = await fetchDiff(parsed, ctx.cwd, ctx.signal);
+			if (!diffResult.ok) {
+				ctx.ui.notify(diffResult.error, "error");
+				return;
+			}
+
+			const stats = diffStats(diffResult.diff);
+			const heading = diffResult.heading;
+
+			ctx.ui.notify(
+				`Reviewing ${stats.files} file(s), +${stats.additions}/-${stats.deletions} lines…`,
+				"info",
+			);
+
+			const reviewResult = await performReview(pi, diffResult.diff, undefined, diffResult.prTitle, ctx, ctx.signal);
 			if (!reviewResult.ok) {
 				ctx.ui.notify(reviewResult.error, "error");
 				return;
@@ -929,7 +1262,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 
 			pi.sendMessage({
 				customType: "code-review",
-				content: buildReviewContent(reviewResult.review, heading, stats, diff),
+				content: buildReviewContent(reviewResult.review, heading, stats, diffResult.diff),
 				display: true,
 				details: { heading, stats, review: reviewResult.review },
 			});

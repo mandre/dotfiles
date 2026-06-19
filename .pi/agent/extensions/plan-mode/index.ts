@@ -333,8 +333,12 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 		}
 	});
 
-	// Set contextual working message during execution
+	// Set contextual working message during planning and execution
 	pi.on("turn_start", async (_event, ctx) => {
+		if (planModeEnabled && !executionMode) {
+			ctx.ui.setWorkingMessage("Planning…");
+			return;
+		}
 		if (!executionMode || todoItems.length === 0) return;
 		const nextStep = todoItems.find((t) => !t.completed);
 		if (nextStep) {
@@ -344,6 +348,10 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 
 	// Track progress after each turn (tools have completed)
 	pi.on("turn_end", async (event, ctx) => {
+		// Restore default working message for both plan and execution modes
+		if (planModeEnabled || executionMode) {
+			ctx.ui.setWorkingMessage();
+		}
 		if (!executionMode || todoItems.length === 0) return;
 		if (!isAssistantMessage(event.message)) return;
 
@@ -379,6 +387,10 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 					{ customType: "plan-complete", content: `**Plan Complete!** ✓\n\n${completedList}`, display: true },
 					{ triggerTurn: false },
 				);
+				const leafId = ctx.sessionManager.getLeafId();
+				if (leafId) {
+					pi.setLabel(leafId, "plan-complete");
+				}
 				executionMode = false;
 				todoItems = [];
 				pi.setActiveTools(NORMAL_MODE_TOOLS);
@@ -398,6 +410,10 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 				todoItems = extracted;
 				updateStatus(ctx);
 				persistState();
+				const leafId = ctx.sessionManager.getLeafId();
+				if (leafId) {
+					pi.setLabel(leafId, `plan-${todoItems.length}-steps`);
+				}
 				ctx.ui.notify(
 					`Plan extracted (${todoItems.length} steps). Use /execute to run, or keep exploring.`,
 					"info",

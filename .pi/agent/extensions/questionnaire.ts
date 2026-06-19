@@ -79,7 +79,33 @@ export default function questionnaire(pi: ExtensionAPI) {
 		label: "Questionnaire",
 		description:
 			"Ask the user one or more questions. Use for clarifying requirements, getting preferences, or confirming decisions. For single questions, shows a simple option list. For multiple questions, shows a tab-based interface.",
+		promptSnippet: "Ask the user one or more questions with option lists or free-text input",
+		promptGuidelines: [
+			"Use questionnaire for structured user input when you need to ask one or more questions with predefined options.",
+			"Prefer questionnaire over plain text questions when the answer should be one of a known set of choices.",
+		],
 		parameters: QuestionnaireParams,
+
+		prepareArguments(args) {
+			if (!args || typeof args !== "object") return args;
+			const input = args as Record<string, unknown>;
+
+			// Ensure questions is an array
+			if (!Array.isArray(input.questions)) {
+				return { ...input, questions: [] };
+			}
+
+			// Normalize each question's optional fields
+			input.questions = (input.questions as Record<string, unknown>[]).map((q) => {
+				// Handle allowOther stored as string (edge case from older sessions)
+				if (typeof q.allowOther === "string") {
+					return { ...q, allowOther: q.allowOther === "true" };
+				}
+				return q;
+			});
+
+			return input;
+		},
 
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			if (!ctx.hasUI) {

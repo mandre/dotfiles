@@ -175,11 +175,107 @@ async function getDefaultBranch(
 	return "main"; // last resort default
 }
 
-/** Get the diff of the current branch relative to the default branch. */
+/**
+ * Detect the base branch that the current feature branch was forked from.
+ *
+ * Tries multiple strategies in order of reliability:
+ * 1. Check for an existing GitHub PR — its baseRefName is authoritative
+ * 2. Check the git reflog for "Created from <parent>"
+ * 3. Compute the nearest ancestor among local branches (smallest commit distance)
+ * 4. Fall back to the repo's default branch (main/master)
+ */
+async function detectBaseBranch(
+	pi: ExtensionAPI,
+	cwd: string,
+	currentBranch: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	// Strategy 1: Check for an open PR targeting a base branch
+	const prView = await pi.exec(
+		"gh", ["pr", "view", currentBranch, "--json", "baseRefName", "--jq", ".baseRefName"],
+		{ cwd, timeout: 10_000, signal },
+	);
+	if (prView.code === 0 && prView.stdout.trim()) {
+		const prBase = prView.stdout.trim();
+		// Verify the branch exists locally
+		const verify = await pi.exec(
+			"git", ["rev-parse", "--verify", `refs/heads/${prBase}`],
+			{ cwd, timeout: 5_000, signal },
+		);
+		if (verify.code === 0) return prBase;
+	}
+
+	// Strategy 2: Check reflog for branch creation event
+	const reflog = await pi.exec(
+		"git", ["reflog", "show", currentBranch, "--format=%gs"],
+		{ cwd, timeout: 5_000, signal },
+	);
+	if (reflog.code === 0 && reflog.stdout.trim()) {
+		const entries = reflog.stdout.trim().split("\n");
+		const last = entries[entries.length - 1];
+		// Matches "branch: Created from <name>" (but not commit hashes or HEAD)
+		const m = last.match(/^branch: Created from (.+)$/);
+		if (m) {
+			const parent = m[1];
+			// Skip if it looks like a commit hash or HEAD (not a branch name)
+			if (!/^[0-9a-f]{7,40}$/.test(parent) && parent !== "HEAD") {
+				// Verify the branch still exists
+				const verify = await pi.exec(
+					"git", ["rev-parse", "--verify", `refs/heads/${parent}`],
+					{ cwd, timeout: 5_000, signal },
+				);
+				if (verify.code === 0) return parent;
+			}
+		}
+	}
+
+	// Strategy 3: Find the nearest ancestor branch by commit distance
+	const branchList = await pi.exec(
+		"git", ["branch", "--format=%(refname:short)"],
+		{ cwd, timeout: 5_000, signal },
+	);
+	if (branchList.code === 0 && branchList.stdout.trim()) {
+		const candidates = branchList.stdout.trim().split("\n")
+			.filter((b) => b && b !== currentBranch);
+
+		let bestBranch: string | undefined;
+		let bestDistance = Infinity;
+
+		for (const candidate of candidates) {
+			const mb = await pi.exec(
+				"git", ["merge-base", candidate, "HEAD"],
+				{ cwd, timeout: 5_000, signal },
+			);
+			if (mb.code !== 0) continue;
+
+			const dist = await pi.exec(
+				"git", ["rev-list", "--count", `${mb.stdout.trim()}..HEAD`],
+				{ cwd, timeout: 5_000, signal },
+			);
+			if (dist.code !== 0) continue;
+
+			const count = Number(dist.stdout.trim());
+			if (count > 0 && count < bestDistance) {
+				bestDistance = count;
+				bestBranch = candidate;
+			}
+		}
+
+		if (bestBranch) return bestBranch;
+	}
+
+	// Strategy 4: Fall back to the repo default branch
+	return getDefaultBranch(pi, cwd, signal);
+}
+
+/** Get the diff of the current branch relative to its base branch.
+ *  When baseBranchOverride is given it is used directly; otherwise
+ *  detectBaseBranch() determines the most likely parent. */
 async function getBranchDiff(
 	pi: ExtensionAPI,
 	cwd: string,
 	signal?: AbortSignal,
+	baseBranchOverride?: string,
 ): Promise<{ ok: true; diff: string; branch: string; baseBranch: string; mergeBase: string } | { ok: false; error: string }> {
 	// Get current branch name
 	const branchResult = await pi.exec(
@@ -191,7 +287,7 @@ async function getBranchDiff(
 	}
 	const branch = branchResult.stdout.trim();
 
-	const baseBranch = await getDefaultBranch(pi, cwd, signal);
+	const baseBranch = baseBranchOverride ?? await detectBaseBranch(pi, cwd, branch, signal);
 
 	if (branch === baseBranch) {
 		return { ok: false, error: `Already on ${baseBranch} — use /review-diff for local changes` };
@@ -877,6 +973,7 @@ type ReviewArgs = {
 	prNumber: number;
 } | {
 	mode: "branch";
+	baseBranch?: string;
 } | {
 	mode: "range";
 	range: string;
@@ -895,26 +992,39 @@ type ReviewArgs = {
 function parseReviewArgs(raw: string, defaultMode: "branch" | "staged"): ReviewArgs {
 	const trimmed = raw.trim();
 
-	if (!trimmed) {
+	// Extract --base <branch> flag if present (implies branch mode)
+	let baseBranch: string | undefined;
+	let rest = trimmed;
+	const baseMatch = rest.match(/--base\s+(\S+)/);
+	if (baseMatch) {
+		baseBranch = baseMatch[1];
+		rest = rest.replace(baseMatch[0], "").trim();
+	}
+
+	if (baseBranch) {
+		return { mode: "branch", baseBranch };
+	}
+
+	if (!rest) {
 		return defaultMode === "branch"
 			? { mode: "branch" }
 			: { mode: "local", scope: "staged" };
 	}
 
 	// Check for PR URL
-	const pr = parsePrUrl(trimmed);
+	const pr = parsePrUrl(rest);
 	if (pr) return { mode: "pr", repo: pr.repo, prNumber: pr.number };
 
 	// Check for scope keywords
-	if (trimmed === "staged") return { mode: "local", scope: "staged" };
-	if (trimmed === "unstaged") return { mode: "local", scope: "unstaged" };
-	if (trimmed === "all") return { mode: "local", scope: "all" };
+	if (rest === "staged") return { mode: "local", scope: "staged" };
+	if (rest === "unstaged") return { mode: "local", scope: "unstaged" };
+	if (rest === "all") return { mode: "local", scope: "all" };
 
 	// Check for commit range (contains ..)
-	if (trimmed.includes("..")) return { mode: "range", range: trimmed };
+	if (rest.includes("..")) return { mode: "range", range: rest };
 
 	// Otherwise treat as a file path
-	return { mode: "local", scope: "staged", path: trimmed };
+	return { mode: "local", scope: "staged", path: rest };
 }
 
 // ---------------------------------------------------------------------------
@@ -1017,9 +1127,9 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 		}
 
 		if (parsed.mode === "branch") {
-			const result = await getBranchDiff(pi, cwd, signal);
+			const result = await getBranchDiff(pi, cwd, signal, parsed.baseBranch);
 			if (!result.ok) return result;
-			return { ok: true, diff: result.diff, heading: `Code Review — branch ${result.branch}` };
+			return { ok: true, diff: result.diff, heading: `Code Review — ${result.branch} vs ${result.baseBranch}` };
 		}
 
 		if (parsed.mode === "range") {
@@ -1050,7 +1160,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 	// ------------------------------------------------------------------
 	pi.registerCommand("review", {
 		description:
-			"Deep code review (/review [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = current branch)",
+			"Deep code review (/review [--base <branch>] [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = current branch)",
 		getArgumentCompletions: getSharedCompletions,
 		handler: async (args, ctx) => {
 			const parsed = parseReviewArgs(args ?? "", "branch");
@@ -1166,7 +1276,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			if (parsed.mode === "branch") {
 				ctx.ui.notify("Analysing branch changes…", "info");
 
-				const branchDiff = await getBranchDiff(pi, ctx.cwd, ctx.signal);
+				const branchDiff = await getBranchDiff(pi, ctx.cwd, ctx.signal, parsed.baseBranch);
 				if (!branchDiff.ok) {
 					ctx.ui.notify(branchDiff.error, "error");
 					return;
@@ -1233,7 +1343,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 	// ------------------------------------------------------------------
 	pi.registerCommand("review-diff", {
 		description:
-			"Quick code review (/review-diff [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = staged)",
+			"Quick code review (/review-diff [--base <branch>] [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = staged)",
 		getArgumentCompletions: getSharedCompletions,
 		handler: async (args, ctx) => {
 			const parsed = parseReviewArgs(args ?? "", "staged");

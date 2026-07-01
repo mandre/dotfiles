@@ -262,6 +262,16 @@ hide-comments:
 ignore-pending-checks:
   - tide
 
+generated-files:
+  - "api/v1alpha1/zz_generated.*.go"
+  - "cmd/models-schema/zz_generated.openapi.go"
+  - "internal/controllers/**/zz_generated.*.go"
+  - "internal/osclients/mock/*.go"
+  - "pkg/clients/**/*.go"
+  - "config/crd/bases/*.yaml"
+  - "website/docs/development/godoc/*.md"
+  - "website/docs/crd-reference.md"
+
 # This section defines customized dashboards.  You can supply any
 # Hubtty search string and bind them to any key.  They will appear in
 # the global help text, and pressing the key anywhere in Hubtty will
@@ -350,7 +360,7 @@ reviewkeys:
 #     description: 'Desktop notification for repository'
 custom-commands:
   - key: 'meta r'
-    command: 'tmux split-window -v "cd ~/hubtty/{repository} && git checkout origin/HEAD && pi \"/review https://github.com/{repository}/pull/{number}\""'
+    command: 'tmux split-window -v "cd {repo_path} && git checkout origin/HEAD && pi \"/review https://github.com/{repository}/pull/{number}\""'
     description: 'Review PR with pi'
     context:
       - pull-request

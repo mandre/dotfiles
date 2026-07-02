@@ -303,9 +303,10 @@ async function getBranchDiff(
 	}
 	const mergeBase = mbResult.stdout.trim();
 
-	// Get the diff
+	// Get the diff — compare merge-base against the working tree (not HEAD)
+	// so that staged and unstaged changes are included alongside commits.
 	const diffResult = await pi.exec(
-		"git", ["diff", `${mergeBase}..HEAD`],
+		"git", ["diff", mergeBase],
 		{ cwd, timeout: 30_000, signal },
 	);
 	if (diffResult.code !== 0) {
@@ -313,7 +314,7 @@ async function getBranchDiff(
 		return { ok: false, error: `git diff failed: ${detail}` };
 	}
 	if (!diffResult.stdout.trim()) {
-		return { ok: false, error: `No changes on ${branch} relative to ${baseBranch}` };
+		return { ok: false, error: `No changes on ${branch} relative to ${baseBranch} (committed, staged, or unstaged)` };
 	}
 
 	return { ok: true, diff: diffResult.stdout, branch, baseBranch, mergeBase };
@@ -370,6 +371,7 @@ function buildBranchReviewPrompt(
 	const lines: string[] = [];
 
 	lines.push("Review the changes on this branch in detail.");
+	lines.push("The diff includes committed, staged, and unstaged changes relative to the base branch.");
 	lines.push("");
 
 	lines.push("## Branch Info");
@@ -1088,6 +1090,34 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			} catch {
 				cachedPrs = [];
 			}
+		}
+
+		// Register # autocomplete so typing #123 suggests cached PRs
+		if (ctx.mode === "tui") {
+			ctx.ui.addAutocompleteProvider((current) => ({
+				triggerCharacters: ["#"],
+				async getSuggestions(lines, line, col, options) {
+					const beforeCursor = (lines[line] ?? "").slice(0, col);
+					const match = beforeCursor.match(/(?:^|[\s])#(\d*)$/);
+					if (!match || cachedPrs.length === 0) {
+						return current.getSuggestions(lines, line, col, options);
+					}
+					const typed = match[1] ?? "";
+					const filtered = cachedPrs.filter(
+						(pr) => pr.label.startsWith(`#${typed}`) || (pr.description?.includes(typed) ?? false),
+					);
+					if (filtered.length === 0) {
+						return current.getSuggestions(lines, line, col, options);
+					}
+					return { prefix: `#${typed}`, items: filtered };
+				},
+				applyCompletion(lines, line, col, item, prefix) {
+					return current.applyCompletion(lines, line, col, item, prefix);
+				},
+				shouldTriggerFileCompletion(lines, line, col) {
+					return current.shouldTriggerFileCompletion?.(lines, line, col) ?? true;
+				},
+			}));
 		}
 	});
 

@@ -137,6 +137,8 @@ const SAFE_PATTERNS = [
 	/^\s*brave-search\b/,
 	// uv run (specific test/lint tools only)
 	/^\s*uv\s+run\s+(pytest|flake8|mypy|ruff|pylint|black\s+--check|isort\s+--check)\b/i,
+	// Ansible linting
+	/^\s*ansible-lint\b/,
 	// npx tsx (TypeScript runner for tests)
 	/^\s*npx\s+tsx\b/,
 	// PDF text extraction

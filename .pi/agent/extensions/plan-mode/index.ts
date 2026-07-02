@@ -33,6 +33,7 @@
  *   Package info: npm list/outdated, yarn info/audit, pip list/show/freeze,
  *     uv pip list/show/tree, uv lock --dry-run
  *   System info: uname, whoami, date, uptime, ps, free, df, du
+ *   Ansible: ansible-lint
  *   Checksums: sha256sum, md5sum
  *   Cloud storage: gsutil ls/cat/stat/du
  */
@@ -45,7 +46,6 @@ import { extractTodoItems, isSafeCommand, markCompletedSteps, type TodoItem } fr
 
 // Tools
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire"];
-const NORMAL_MODE_TOOLS = ["read", "bash", "edit", "write"];
 
 // Type guard for assistant messages
 function isAssistantMessage(m: AgentMessage): m is AssistantMessage {
@@ -64,6 +64,14 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	let planModeEnabled = true;
 	let executionMode = false;
 	let todoItems: TodoItem[] = [];
+	let savedActiveTools: string[] | null = null;
+
+	/** Restore the tool set that was active before plan mode was entered. */
+	function restoreActiveTools(): void {
+		const tools = savedActiveTools ?? pi.getAllTools().map((t) => t.name);
+		pi.setActiveTools(tools);
+		savedActiveTools = null;
+	}
 
 	pi.registerFlag("plan", {
 		description: "Start in plan mode (read-only exploration)",
@@ -109,10 +117,11 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		todoItems = [];
 
 		if (planModeEnabled) {
+			savedActiveTools = pi.getActiveTools();
 			pi.setActiveTools(PLAN_MODE_TOOLS);
 			ctx.ui.notify(`Plan mode enabled. Tools: ${PLAN_MODE_TOOLS.join(", ")}`);
 		} else {
-			pi.setActiveTools(NORMAL_MODE_TOOLS);
+			restoreActiveTools();
 			ctx.ui.notify("Plan mode disabled. Full access restored.");
 		}
 		updateStatus(ctx);
@@ -188,7 +197,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 				);
 				executionMode = false;
 				todoItems = [];
-				pi.setActiveTools(NORMAL_MODE_TOOLS);
+				restoreActiveTools();
 				updateStatus(ctx);
 				persistState();
 			}
@@ -204,7 +213,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			}
 			planModeEnabled = false;
 			executionMode = true;
-			pi.setActiveTools(NORMAL_MODE_TOOLS);
+			restoreActiveTools();
 			updateStatus(ctx);
 			persistState();
 			const leafId = ctx.sessionManager.getLeafId();
@@ -393,14 +402,14 @@ IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in you
 				}
 				executionMode = false;
 				todoItems = [];
-				pi.setActiveTools(NORMAL_MODE_TOOLS);
+				restoreActiveTools();
 				updateStatus(ctx);
 				persistState(); // Save cleared state so resume doesn't restore old execution mode
 			}
 			return;
 		}
 
-		if (!planModeEnabled || !ctx.hasUI) return;
+		if (!planModeEnabled || ctx.mode !== "tui") return;
 
 		// Extract todos from last assistant message
 		const lastAssistant = [...event.messages].reverse().find(isAssistantMessage);

@@ -540,6 +540,16 @@ assert(!isSafeCommand("docker build -t my-image ."), "docker: build is blocked")
 assert(!isSafeCommand("docker push my-image:latest"), "docker: push is blocked");
 assert(!isSafeCommand("docker rm container-id"), "docker: rm is blocked");
 
+// --- isSafeCommand: ansible-lint ---
+
+assert(isSafeCommand("ansible-lint"), "ansible-lint: bare invocation is safe");
+assert(isSafeCommand("ansible-lint playbooks/"), "ansible-lint: with path argument is safe");
+assert(isSafeCommand("ansible-lint playbooks/prepare_host.yaml"), "ansible-lint: with specific file is safe");
+assert(isSafeCommand("ansible-lint -p playbooks/"), "ansible-lint: with -p flag is safe");
+assert(isSafeCommand("ansible-lint --parseable"), "ansible-lint: with --parseable is safe");
+assert(isSafeCommand("cd /home/martin/dev/openshift/dev-install && ansible-lint 2>&1 | head -100"), "ansible-lint: with cd prefix and pipe is safe");
+assert(isSafeCommand("ansible-lint --help"), "ansible-lint: --help is safe");
+
 // --- isSafeCommand: dot (graphviz) ---
 
 assert(!isSafeCommand("dot -Tpng -Gdpi=150 /tmp/diagram.dot -o /path/to/output.png"), "dot: -o writes file is blocked");

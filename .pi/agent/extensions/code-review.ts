@@ -402,17 +402,16 @@ function buildBranchReviewPrompt(
 		lines.push(diff);
 		lines.push("</diff>");
 	} else {
-		const truncated = diff.slice(0, PR_REVIEW_MAX_DIFF_BYTES);
-		const lastNewline = truncated.lastIndexOf("\n");
-		const clean = lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated;
+		const result = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES);
 		lines.push(
-			`> The full diff is ${Math.round(diffBytes / 1024)}KB — only the first ` +
-			`~${Math.round(PR_REVIEW_MAX_DIFF_BYTES / 1024)}KB is shown below. ` +
-			`Use \`git diff ${metadata.mergeBase.slice(0, 10)}..HEAD -- <file>\` to view the full diff for specific files.`,
+			`> **Diff truncated**: The full diff is ${Math.round(diffBytes / 1024)}KB. ` +
+			`${result.includedCount} of ${result.totalCount} files are shown below ` +
+			`(generated files like zz_generated.* are deprioritized). ` +
+			`Use \`git diff ${metadata.mergeBase.slice(0, 10)}..HEAD -- <file>\` to view unseen files.`,
 		);
 		lines.push("");
 		lines.push("<diff>");
-		lines.push(clean);
+		lines.push(result.diff);
 		lines.push("</diff>");
 	}
 
@@ -441,17 +440,16 @@ function buildLocalDeepReviewPrompt(
 		lines.push(diff);
 		lines.push("</diff>");
 	} else {
-		const truncated = diff.slice(0, PR_REVIEW_MAX_DIFF_BYTES);
-		const lastNewline = truncated.lastIndexOf("\n");
-		const clean = lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated;
+		const result = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES);
 		lines.push(
-			`> The full diff is ${Math.round(diffBytes / 1024)}KB \u2014 only the first ` +
-			`~${Math.round(PR_REVIEW_MAX_DIFF_BYTES / 1024)}KB is shown below. ` +
-			`Use \`git diff\` variants to view the full diff for specific files.`,
+			`> **Diff truncated**: The full diff is ${Math.round(diffBytes / 1024)}KB. ` +
+			`${result.includedCount} of ${result.totalCount} files are shown below ` +
+			`(generated files like zz_generated.* are deprioritized). ` +
+			`Use \`git diff\` variants to view unseen files.`,
 		);
 		lines.push("");
 		lines.push("<diff>");
-		lines.push(clean);
+		lines.push(result.diff);
 		lines.push("</diff>");
 	}
 
@@ -543,7 +541,7 @@ function buildReviewPrompt(diff: string, focus?: string, prTitle?: string): stri
 }
 
 /** Maximum diff size (bytes) to include inline in the /pr-review prompt. */
-const PR_REVIEW_MAX_DIFF_BYTES = 40_000;
+const PR_REVIEW_MAX_DIFF_BYTES = 120_000;
 
 /** Build the contextual review prompt for the sub-agent. */
 function buildPrReviewPrompt(
@@ -552,6 +550,7 @@ function buildPrReviewPrompt(
 	stats: { files: number; additions: number; deletions: number },
 	repo: string,
 	prNumber: number,
+	prRef?: string,
 ): string {
 	const lines: string[] = [];
 
@@ -587,17 +586,30 @@ function buildPrReviewPrompt(
 		lines.push(diff);
 		lines.push("</diff>");
 	} else {
-		const truncated = diff.slice(0, PR_REVIEW_MAX_DIFF_BYTES);
-		const lastNewline = truncated.lastIndexOf("\n");
-		const clean = lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated;
+		const result = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES);
+
+		const exploreCmd = prRef
+			? `\`git diff ${metadata.baseRefName}...${prRef} -- <file>\` or \`git show ${prRef}:<file>\``
+			: `\`gh pr diff ${prNumber} --repo ${repo}\` (pipe through grep for specific files)`;
+
 		lines.push(
-			`> The full diff is ${Math.round(diffBytes / 1024)}KB — only the first ` +
-			`~${Math.round(PR_REVIEW_MAX_DIFF_BYTES / 1024)}KB is shown below. ` +
-			`Use \`git diff ${metadata.baseRefName}...HEAD -- <file>\` to view the full diff for specific files.`,
+			`> **Diff truncated**: The full diff is ${Math.round(diffBytes / 1024)}KB (${stats.files} files). ` +
+			`${result.includedCount} of ${result.totalCount} files are shown below ` +
+			`(generated files like zz_generated.* are deprioritized). ` +
+			`Use ${exploreCmd} to view unseen files.`,
 		);
+
+		if (result.skippedPaths.length > 0 && result.skippedPaths.length <= 40) {
+			lines.push(">");
+			lines.push("> **Files not shown in diff:**");
+			for (const p of result.skippedPaths) {
+				lines.push(`> - \`${p}\``);
+			}
+		}
+
 		lines.push("");
 		lines.push("<diff>");
-		lines.push(clean);
+		lines.push(result.diff);
 		lines.push("</diff>");
 	}
 
@@ -672,6 +684,106 @@ function diffStats(diff: string): { files: number; additions: number; deletions:
 		else if (line.startsWith("-") && !line.startsWith("---")) deletions++;
 	}
 	return { files, additions, deletions };
+}
+
+/** Split a unified diff into per-file sections. */
+function splitDiffByFile(diff: string): Array<{ path: string; content: string }> {
+	const sections: Array<{ path: string; content: string }> = [];
+	const re = /^diff --git a\/.+? b\/(.+)$/gm;
+	const starts: Array<{ pos: number; path: string }> = [];
+	let m: RegExpExecArray | null;
+	while ((m = re.exec(diff)) !== null) {
+		starts.push({ pos: m.index, path: m[1] });
+	}
+	for (let i = 0; i < starts.length; i++) {
+		const end = i + 1 < starts.length ? starts[i + 1].pos : diff.length;
+		sections.push({ path: starts[i].path, content: diff.slice(starts[i].pos, end) });
+	}
+	return sections;
+}
+
+/** Patterns for generated/low-value files that should be deprioritized in truncated diffs. */
+const GENERATED_FILE_PATTERNS = [
+	/(?:^|\/)zz_generated[._]/,
+	/(?:^|\/)vendor\//,
+	/(?:^|\/)node_modules\//,
+	/\.pb\.go$/,
+	/(?:^|\/)package-lock\.json$/,
+	/(?:^|\/)yarn\.lock$/,
+	/(?:^|\/)pnpm-lock\.yaml$/,
+	/(?:^|\/)go\.sum$/,
+	/\/applyconfiguration\/internal\//,
+	/\/fake\/fake_/,
+];
+
+function isGeneratedFile(filePath: string): boolean {
+	return GENERATED_FILE_PATTERNS.some((p) => p.test(filePath));
+}
+
+/**
+ * Smart diff truncation: prioritize hand-written source files over generated
+ * code. Includes whole files (never truncates mid-file) up to the byte budget,
+ * with source files included before generated ones.
+ */
+function smartTruncateDiff(
+	diff: string,
+	maxBytes: number,
+): { diff: string; includedCount: number; totalCount: number; skippedPaths: string[] } {
+	const totalBytes = Buffer.byteLength(diff, "utf8");
+	const sections = splitDiffByFile(diff);
+	const totalCount = sections.length;
+
+	if (totalBytes <= maxBytes) {
+		return { diff, includedCount: totalCount, totalCount, skippedPaths: [] };
+	}
+
+	const source: typeof sections = [];
+	const generated: typeof sections = [];
+	for (const s of sections) {
+		(isGeneratedFile(s.path) ? generated : source).push(s);
+	}
+
+	const parts: string[] = [];
+	const skippedPaths: string[] = [];
+	let bytes = 0;
+
+	for (const section of [...source, ...generated]) {
+		const sectionBytes = Buffer.byteLength(section.content, "utf8");
+		if (bytes + sectionBytes > maxBytes && parts.length > 0) {
+			skippedPaths.push(section.path);
+		} else {
+			parts.push(section.content);
+			bytes += sectionBytes;
+		}
+	}
+
+	return { diff: parts.join(""), includedCount: parts.length, totalCount, skippedPaths };
+}
+
+/** Ensure the PR ref exists locally for sub-agent exploration. Returns the ref name or undefined. */
+async function ensurePrRef(
+	pi: ExtensionAPI,
+	prNumber: number,
+	cwd: string,
+	signal?: AbortSignal,
+): Promise<string | undefined> {
+	const ref = `pull/${prNumber}/head`;
+
+	// Check if ref already exists locally
+	const check = await pi.exec(
+		"git", ["rev-parse", "--verify", ref],
+		{ cwd, timeout: 5_000, signal },
+	);
+	if (check.code === 0) return ref;
+
+	// Try to fetch it
+	const fetchResult = await pi.exec(
+		"git", ["fetch", "origin", `pull/${prNumber}/head:${ref}`],
+		{ cwd, timeout: 30_000, signal },
+	);
+	if (fetchResult.code === 0) return ref;
+
+	return undefined;
 }
 
 /** Maximum diff excerpt size to include in review context for follow-up discussion. */
@@ -1263,9 +1375,10 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				const { repo, prNumber } = parsed;
 				ctx.ui.notify(`Fetching PR #${prNumber} from ${repo}…`, "info");
 
-				const [metaResult, diffResult] = await Promise.all([
+				const [metaResult, diffResult, prRef] = await Promise.all([
 					getPrMetadata(pi, repo, prNumber, ctx.cwd, ctx.signal),
 					getPrDiff(pi, repo, prNumber, ctx.cwd, ctx.signal),
+					ensurePrRef(pi, prNumber, ctx.cwd, ctx.signal),
 				]);
 
 				if (!metaResult.ok) {
@@ -1288,7 +1401,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				);
 
 				const task = buildPrReviewPrompt(
-					metadata, diffResult.diff, stats, repo, prNumber,
+					metadata, diffResult.diff, stats, repo, prNumber, prRef,
 				);
 
 				await runDeepReview(

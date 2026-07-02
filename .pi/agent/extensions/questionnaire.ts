@@ -108,8 +108,8 @@ export default function questionnaire(pi: ExtensionAPI) {
 		},
 
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			if (!ctx.hasUI) {
-				return errorResult("Error: UI not available (running in non-interactive mode)");
+			if (ctx.mode !== "tui") {
+				return errorResult("Error: UI not available (requires interactive TUI mode)");
 			}
 			if (params.questions.length === 0) {
 				return errorResult("Error: No questions provided");

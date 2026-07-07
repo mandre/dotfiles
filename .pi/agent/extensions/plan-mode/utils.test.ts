@@ -550,6 +550,94 @@ assert(isSafeCommand("ansible-lint --parseable"), "ansible-lint: with --parseabl
 assert(isSafeCommand("cd /home/martin/dev/openshift/dev-install && ansible-lint 2>&1 | head -100"), "ansible-lint: with cd prefix and pipe is safe");
 assert(isSafeCommand("ansible-lint --help"), "ansible-lint: --help is safe");
 
+// --- BUG FIX: destructive check on comments ---
+// Previously, words like "code" in comment lines triggered the VS Code editor
+// destructive pattern \b(vim?|nano|emacs|code|subl)\b, blocking safe commands.
+
+assert(isSafeCommand("# no ORC code changed\ngh run list --repo foo/bar --json status"), "comment-bug: 'code' in comment does not block gh run list");
+assert(isSafeCommand("# Check AGENTS.md patterns vs actual code\ngrep -n 'GetResourceReconcilers' file.go"), "comment-bug: 'code' in comment does not block grep");
+assert(isSafeCommand("# The @-notation is Claude Code specific\nls -la"), "comment-bug: 'Code' in comment does not block ls");
+assert(isSafeCommand("# vim would be nice here\ncat file.txt"), "comment-bug: 'vim' in comment does not block cat");
+assert(!isSafeCommand("# safe comment\ncode file.txt"), "comment-bug: 'code' as actual command is still blocked");
+assert(!isSafeCommand("# safe comment\nvim file.txt"), "comment-bug: 'vim' as actual command is still blocked");
+
+// --- isSafeCommand: git merge-base, for-each-ref, rev-parse ---
+
+assert(isSafeCommand("git merge-base main HEAD"), "git: merge-base is safe");
+assert(isSafeCommand("git merge-base origin/main pull/774/head"), "git: merge-base with refs is safe");
+assert(isSafeCommand("git -C /path merge-base main HEAD"), "git: -C with merge-base is safe");
+assert(isSafeCommand("git --no-pager merge-base main HEAD"), "git: --no-pager with merge-base is safe");
+assert(isSafeCommand("git for-each-ref --format='%(refname:short)' refs/heads/"), "git: for-each-ref is safe");
+assert(isSafeCommand("git -C /path for-each-ref --format=short refs/heads/pull/"), "git: -C with for-each-ref is safe");
+assert(isSafeCommand("git rev-parse HEAD"), "git: rev-parse is safe");
+assert(isSafeCommand("git rev-parse --show-toplevel"), "git: rev-parse --show-toplevel is safe");
+assert(isSafeCommand("git -C /path rev-parse --abbrev-ref HEAD"), "git: -C with rev-parse is safe");
+
+// --- isSafeCommand: git stash list/show (was false positive) ---
+
+assert(isSafeCommand("git stash list"), "git: stash list is safe");
+assert(isSafeCommand("git stash show -p stash@{0}"), "git: stash show is safe");
+assert(isSafeCommand("git -C /path stash list"), "git: -C with stash list is safe");
+assert(!isSafeCommand("git stash"), "git: bare stash is blocked");
+assert(!isSafeCommand("git stash drop stash@{0}"), "git: stash drop is blocked");
+assert(!isSafeCommand("git stash pop"), "git: stash pop is blocked");
+assert(!isSafeCommand("git stash apply"), "git: stash apply is blocked");
+assert(!isSafeCommand("git stash clear"), "git: stash clear is blocked");
+assert(!isSafeCommand("git stash push -m 'wip'"), "git: stash push is blocked");
+
+// --- isSafeCommand: gh api ---
+
+assert(isSafeCommand("gh api repos/foo/bar/pulls/1/comments --jq '.[].body'"), "gh: api GET is safe");
+assert(isSafeCommand("gh api repos/foo/bar/actions/jobs/123/logs"), "gh: api logs is safe");
+assert(isSafeCommand("gh api repos/foo/bar/contents/action.yml --jq '.download_url'"), "gh: api contents is safe");
+assert(!isSafeCommand("gh api repos/foo/bar/pulls/1/reviews -X POST -f body='LGTM'"), "gh: api -X POST is blocked");
+assert(!isSafeCommand("gh api repos/foo/bar/issues -X POST -f title='bug'"), "gh: api POST is blocked");
+assert(!isSafeCommand("gh api repos/foo/bar/pulls/1 --method PATCH -f state=closed"), "gh: api --method PATCH is blocked");
+assert(!isSafeCommand("gh api repos/foo/bar/issues/1 -X DELETE"), "gh: api -X DELETE is blocked");
+
+// --- isSafeCommand: gh pr review (read-only) ---
+
+assert(isSafeCommand("gh pr review 123"), "gh: pr review is safe");
+assert(isSafeCommand("gh pr review 123 --json state,body"), "gh: pr review --json is safe");
+
+// --- isSafeCommand: gh run download ---
+
+assert(isSafeCommand("gh run download 12345 --repo foo/bar --name artifacts --dir /tmp/ci"), "gh: run download is safe");
+assert(isSafeCommand("gh run download 12345 --dir /tmp/artifacts"), "gh: run download to /tmp is safe");
+
+// --- isSafeCommand: go vet ---
+
+assert(isSafeCommand("go vet ./..."), "go: vet is safe");
+assert(isSafeCommand("go vet -v ./internal/..."), "go: vet with flags is safe");
+assert(isSafeCommand("cd /path && go vet ./... 2>&1 | tail -100"), "go: vet with cd prefix is safe");
+
+// --- isSafeCommand: getconf ---
+
+assert(isSafeCommand("getconf ARG_MAX"), "getconf: ARG_MAX is safe");
+assert(isSafeCommand("getconf PAGE_SIZE"), "getconf: PAGE_SIZE is safe");
+assert(isSafeCommand("getconf ARG_MAX 2>/dev/null; getconf PAGE_SIZE 2>/dev/null"), "getconf: multiple with redirects is safe");
+
+// --- isSafeCommand: openssl ---
+
+assert(isSafeCommand("openssl x509 -in cert.pem -noout -subject -issuer -dates"), "openssl: x509 inspect is safe");
+assert(isSafeCommand("openssl s_client -connect example.com:443 -brief"), "openssl: s_client is safe");
+assert(isSafeCommand("openssl version"), "openssl: version is safe");
+assert(isSafeCommand("openssl verify cert.pem"), "openssl: verify is safe");
+
+// --- isSafeCommand: pip3 ---
+
+assert(isSafeCommand("pip3 show requests"), "pip3: show is safe");
+assert(isSafeCommand("pip3 list --outdated"), "pip3: list is safe");
+assert(isSafeCommand("pip3 freeze"), "pip3: freeze is safe");
+assert(!isSafeCommand("pip3 install requests"), "pip3: install is blocked");
+assert(!isSafeCommand("pip3 uninstall requests"), "pip3: uninstall is blocked");
+
+// --- isSafeCommand: base64 ---
+
+assert(isSafeCommand("base64 -d"), "base64: decode is safe");
+assert(isSafeCommand("base64 file.txt"), "base64: encode is safe");
+assert(isSafeCommand("echo 'dGVzdA==' | base64 -d"), "base64: piped decode is safe");
+
 // --- isSafeCommand: dot (graphviz) ---
 
 assert(!isSafeCommand("dot -Tpng -Gdpi=150 /tmp/diagram.dot -o /path/to/output.png"), "dot: -o writes file is blocked");

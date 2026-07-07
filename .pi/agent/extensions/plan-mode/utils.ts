@@ -24,10 +24,10 @@ const DESTRUCTIVE_PATTERNS = [
 	/\bnpm\s+(install|uninstall|update|ci|link|publish)/i,
 	/\byarn\s+(add|remove|install|publish)/i,
 	/\bpnpm\s+(add|remove|install|publish)/i,
-	/\bpip\s+(install|uninstall)/i,
+	/\bpip3?\s+(install|uninstall)/i,
 	/\bapt(-get)?\s+(install|remove|purge|update|upgrade)/i,
 	/\bbrew\s+(install|uninstall|upgrade)/i,
-	/\bgit\s+(add|commit|push|pull|merge|rebase|reset|checkout|branch\s+-[dD]|stash|cherry-pick|revert|tag|init|clone)/i,
+	/\bgit\s+(add|commit|push|pull|merge(?!-)|rebase|reset|checkout|branch\s+-[dD]|stash(?!\s+(list|show)\b)|cherry-pick|revert|tag|init|clone)/i,
 	/\bcurl\b[^|]*(-o|--output)\s+(?!\/tmp\/)\S+/i,
 	/\bsudo\b/i,
 	/\bsu\b/i,
@@ -58,6 +58,7 @@ const DESTRUCTIVE_PATTERNS = [
 	/\bgh\s+(pr|issue)\s+(create|close|merge|delete|edit|reopen)\b/i,
 	/\bgh\s+repo\s+(create|delete|fork|rename|archive)\b/i,
 	/\bgh\s+release\s+(create|delete|edit)\b/i,
+	/\bgh\s+api\b.*(-X\s*(POST|PUT|PATCH|DELETE)|--method\s*(POST|PUT|PATCH|DELETE))/i,
 	// sed in-place editing
 	/\bsed\s+(-[a-zA-Z]*i|--in-place)\b/i,
 	// OpenShift / Kubernetes CLI destructive operations
@@ -107,12 +108,12 @@ const SAFE_PATTERNS = [
 	/^\s*top\b/,
 	/^\s*htop\b/,
 	/^\s*free\b/,
-	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*(status|log|diff|show|branch|remote|config\s+--get)/i,
+	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*(status|log|diff|show|branch|remote|config\s+--get|merge-base|for-each-ref|rev-parse|stash\s+(list|show))/i,
 	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*ls-/i,
 	/^\s*npm\s+(list|ls|view|info|search|outdated|audit)/i,
 	/^\s*yarn\s+(list|info|why|audit)/i,
 	// Python package managers (read-only)
-	/^\s*pip\s+(list|show|freeze|index|check|debug)/i,
+	/^\s*pip3?\s+(list|show|freeze|index|check|debug)/i,
 	/^\s*uv\s+(pip\s+)?(list|show|tree|version)/i,
 	/^\s*uv\s+lock\s+--dry-run/i,
 	/^\s*node\s+--version/i,
@@ -129,8 +130,10 @@ const SAFE_PATTERNS = [
 	// Python (data processing, calculations)
 	/^\s*python3?\s/i,
 	// GitHub CLI (read-only operations)
-	/^\s*gh\s+(pr|issue|repo|run|workflow|release)\s+(view|list|diff|checks|status|search)\b/i,
+	/^\s*gh\s+(pr|issue|repo|run|workflow|release)\s+(view|list|diff|checks|status|search|review)\b/i,
 	/^\s*gh\s+auth\s+status\b/i,
+	/^\s*gh\s+api\b/i,
+	/^\s*gh\s+run\s+download\b/i,
 	// Binary inspection
 	/^\s*strings\b/,
 	// Web search
@@ -150,7 +153,7 @@ const SAFE_PATTERNS = [
 	// Shell loops (destructive body still caught by DESTRUCTIVE_PATTERNS)
 	/^\s*for\b/,
 	// Go toolchain (read-only)
-	/^\s*go\s+(list|version|doc|env|mod\s+(graph|verify|why))\b/i,
+	/^\s*go\s+(list|version|doc|env|vet|mod\s+(graph|verify|why))\b/i,
 	// Google Cloud Storage (read-only)
 	/^\s*gsutil\s+(ls|cat|stat|du)\b/i,
 	// OpenShift / Kubernetes CLI (read-only)
@@ -165,6 +168,9 @@ const SAFE_PATTERNS = [
 	/^\s*xargs\b/,
 	/^\s*realpath\b/,
 	/^\s*readlink\b/,
+	/^\s*getconf\b/,
+	/^\s*openssl\b/,
+	/^\s*base64\b/,
 	/^\s*sha256sum\b/,
 	/^\s*md5sum\b/,
 	/^\s*hexdump\b/,
@@ -222,9 +228,11 @@ export function isSafeCommand(command: string): boolean {
 	// Normalize: strip cd prefixes, comments, absolute paths for safe matching
 	const normalized = normalizeCommand(command);
 
-	// Destructive check runs against the ORIGINAL command to catch
-	// things like `cd /tmp && rm -rf /`
-	const isDestructive = DESTRUCTIVE_PATTERNS.some((p) => p.test(command));
+	// Destructive check runs against the NORMALIZED command so that
+	// words in stripped comment lines (e.g. "code" matching the VS Code
+	// editor pattern) don't cause false positives. cd-stripping is safe
+	// because destructive patterns use \b word boundaries, not ^ anchors.
+	const isDestructive = DESTRUCTIVE_PATTERNS.some((p) => p.test(normalized));
 	const isSafe = SAFE_PATTERNS.some((p) => p.test(normalized));
 	return !isDestructive && isSafe;
 }

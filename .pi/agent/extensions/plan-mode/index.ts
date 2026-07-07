@@ -20,21 +20,22 @@
  *   Directory: ls, pwd, tree, basename, dirname, realpath, readlink
  *   Text processing: wc, sort, uniq, diff, tr, cut, tac, column, xargs,
  *     awk, sed -n, jq
- *   Git (read-only): status, log, diff, show, branch, remote, ls-files
+ *   Git (read-only): status, log, diff, show, branch, remote, ls-files,
+ *     merge-base, for-each-ref, rev-parse, stash list/show
  *     (supports -C <path> and --no-pager flags)
- *   GitHub CLI (read-only): pr/issue view/list/diff/checks/status/search,
- *     auth status
+ *   GitHub CLI (read-only): pr/issue view/list/diff/checks/status/search/review,
+ *     auth status, api (GET only), run download
  *   Jira CLI (acli): workitem view/search, component list, auth status,
  *     project list/view, and all --help invocations
  *   Google Workspace (gws): +read, get, list, schema, export, download
  *   Python: python3 (for data processing / calculations)
- *   Go: list, version, doc, env, mod graph/verify/why
+ *   Go: list, version, doc, env, vet, mod graph/verify/why
  *   Web: curl, brave-search
  *   Package info: npm list/outdated, yarn info/audit, pip list/show/freeze,
  *     uv pip list/show/tree, uv lock --dry-run
- *   System info: uname, whoami, date, uptime, ps, free, df, du
+ *   System info: uname, whoami, date, uptime, ps, free, df, du, getconf
  *   Ansible: ansible-lint
- *   Checksums: sha256sum, md5sum
+ *   Crypto/encoding: openssl, base64, sha256sum, md5sum
  *   Cloud storage: gsutil ls/cat/stat/du
  */
 

@@ -339,9 +339,11 @@ async function getBranchMetadata(
 	cwd: string,
 	signal?: AbortSignal,
 ): Promise<{ ok: true; metadata: BranchMetadata } | { ok: false; error: string }> {
-	// Get changed file list
+	// Get changed file list — use mergeBase (not mergeBase..HEAD) to match
+	// getBranchDiff() which compares merge-base against the working tree,
+	// including staged and unstaged changes alongside commits.
 	const filesResult = await pi.exec(
-		"git", ["diff", "--name-only", `${mergeBase}..HEAD`],
+		"git", ["diff", "--name-only", mergeBase],
 		{ cwd, timeout: 10_000, signal },
 	);
 	const files = filesResult.code === 0
@@ -403,12 +405,23 @@ function buildBranchReviewPrompt(
 		lines.push("</diff>");
 	} else {
 		const result = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES);
+
+		if (result.skippedPaths.length > 0) {
+			lines.push("## Files NOT Included in Diff (must use tools to review)");
+			for (const p of result.skippedPaths) {
+				lines.push(`- \`${p}\``);
+			}
+			lines.push("");
+		}
+
 		lines.push(
 			`> **Diff truncated**: The full diff is ${Math.round(diffBytes / 1024)}KB. ` +
 			`${result.includedCount} of ${result.totalCount} files are shown below ` +
 			`(generated files like zz_generated.* are deprioritized). ` +
-			`Use \`git diff ${metadata.mergeBase.slice(0, 10)}..HEAD -- <file>\` to view unseen files.`,
+			`Use \`git diff ${metadata.mergeBase.slice(0, 10)} -- <file>\` to view unseen files.`,
 		);
+		lines.push(">");
+		lines.push("> ⚠️ **Do NOT comment on files whose diff you have not seen.** Use tools to read unseen diffs, or explicitly skip them.");
 		lines.push("");
 		lines.push("<diff>");
 		lines.push(result.diff);
@@ -434,19 +447,46 @@ function buildLocalDeepReviewPrompt(
 	lines.push(`- **Files changed:** ${stats.files} (+${stats.additions}/-${stats.deletions})`);
 	lines.push("");
 
+	// Extract file list from the full diff before any truncation
+	const allPaths = [...diff.matchAll(/^diff --git a\/.+? b\/(.+)$/gm)].map(m => m[1]);
+
 	const diffBytes = Buffer.byteLength(diff, "utf8");
 	if (diffBytes <= PR_REVIEW_MAX_DIFF_BYTES) {
+		if (allPaths.length > 0) {
+			lines.push("## Changed Files");
+			for (const f of allPaths) {
+				lines.push(`- \`${f}\``);
+			}
+			lines.push("");
+		}
 		lines.push("<diff>");
 		lines.push(diff);
 		lines.push("</diff>");
 	} else {
 		const result = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES);
+
+		lines.push("## Changed Files");
+		for (const f of allPaths) {
+			lines.push(`- \`${f}\``);
+		}
+		lines.push("");
+
+		if (result.skippedPaths.length > 0) {
+			lines.push("## Files NOT Included in Diff (must use tools to review)");
+			for (const p of result.skippedPaths) {
+				lines.push(`- \`${p}\``);
+			}
+			lines.push("");
+		}
+
 		lines.push(
 			`> **Diff truncated**: The full diff is ${Math.round(diffBytes / 1024)}KB. ` +
 			`${result.includedCount} of ${result.totalCount} files are shown below ` +
 			`(generated files like zz_generated.* are deprioritized). ` +
 			`Use \`git diff\` variants to view unseen files.`,
 		);
+		lines.push(">");
+		lines.push("> ⚠️ **Do NOT comment on files whose diff you have not seen.** Use tools to read unseen diffs, or explicitly skip them.");
 		lines.push("");
 		lines.push("<diff>");
 		lines.push(result.diff);
@@ -588,25 +628,26 @@ function buildPrReviewPrompt(
 	} else {
 		const result = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES);
 
+		if (result.skippedPaths.length > 0) {
+			lines.push("## Files NOT Included in Diff (must use tools to review)");
+			for (const p of result.skippedPaths) {
+				lines.push(`- \`${p}\``);
+			}
+			lines.push("");
+		}
+
 		const exploreCmd = prRef
-			? `\`git diff ${metadata.baseRefName}...${prRef} -- <file>\` or \`git show ${prRef}:<file>\``
-			: `\`gh pr diff ${prNumber} --repo ${repo}\` (pipe through grep for specific files)`;
+			? `Use \`git diff ${metadata.baseRefName}...${prRef} -- <file>\` or \`git show ${prRef}:<file>\` to view unseen files.`
+			: `The PR ref could not be fetched locally. Use \`gh pr diff ${prNumber} --repo ${repo}\` and pipe through grep, or try \`gh api repos/${repo}/pulls/${prNumber}/files --paginate\` for file-level diffs.`;
 
 		lines.push(
 			`> **Diff truncated**: The full diff is ${Math.round(diffBytes / 1024)}KB (${stats.files} files). ` +
 			`${result.includedCount} of ${result.totalCount} files are shown below ` +
 			`(generated files like zz_generated.* are deprioritized). ` +
-			`Use ${exploreCmd} to view unseen files.`,
+			exploreCmd,
 		);
-
-		if (result.skippedPaths.length > 0 && result.skippedPaths.length <= 40) {
-			lines.push(">");
-			lines.push("> **Files not shown in diff:**");
-			for (const p of result.skippedPaths) {
-				lines.push(`> - \`${p}\``);
-			}
-		}
-
+		lines.push(">");
+		lines.push("> ⚠️ **Do NOT comment on files whose diff you have not seen.** Use tools to read unseen diffs, or explicitly skip them.");
 		lines.push("");
 		lines.push("<diff>");
 		lines.push(result.diff);
@@ -742,6 +783,13 @@ function smartTruncateDiff(
 	for (const s of sections) {
 		(isGeneratedFile(s.path) ? generated : source).push(s);
 	}
+
+	// Sort smaller files first within each group to maximize the number
+	// of files included within the byte budget.
+	const bySize = (a: typeof sections[0], b: typeof sections[0]) =>
+		Buffer.byteLength(a.content, "utf8") - Buffer.byteLength(b.content, "utf8");
+	source.sort(bySize);
+	generated.sort(bySize);
 
 	const parts: string[] = [];
 	const skippedPaths: string[] = [];
@@ -942,13 +990,17 @@ async function runPrReviewSubagent(
 	if (agent.model) piArgs.push("--model", agent.model);
 	if (agent.tools && agent.tools.length > 0) piArgs.push("--tools", agent.tools.join(","));
 
-	// Write system prompt to temp file
+	// Write system prompt and task to temp files to avoid E2BIG when
+	// the task (prompt + diff) exceeds Linux's per-argument limit
+	// (MAX_ARG_STRLEN = 128 KB).
 	const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "pi-pr-review-"));
 	const promptFile = path.join(tmpDir, "system-prompt.md");
 	await fs.promises.writeFile(promptFile, agent.systemPrompt, { encoding: "utf-8", mode: 0o600 });
 	piArgs.push("--append-system-prompt", promptFile);
 
-	piArgs.push(task);
+	const taskFile = path.join(tmpDir, "task.md");
+	await fs.promises.writeFile(taskFile, task, { encoding: "utf-8", mode: 0o600 });
+	piArgs.push("@" + taskFile);
 
 	const usage: SubagentUsage = {
 		input: 0, output: 0, cacheRead: 0, cacheWrite: 0,
@@ -1072,6 +1124,7 @@ async function runPrReviewSubagent(
 
 		return { ok: true, review: finalOutput, usage, model };
 	} finally {
+		try { fs.unlinkSync(taskFile); } catch { /* ignore */ }
 		try { fs.unlinkSync(promptFile); } catch { /* ignore */ }
 		try { fs.rmdirSync(tmpDir); } catch { /* ignore */ }
 	}

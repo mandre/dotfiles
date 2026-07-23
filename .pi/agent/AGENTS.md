@@ -12,3 +12,9 @@ When the user presents a checklist with struck-through items followed by "Execut
 - Distinguish verified facts (with file/line citations) from speculation. If you can't verify, say so explicitly.
 - When asked "is this correct?", verify before saying yes.
 - If challenged on a claim, re-examine from first principles rather than constructing a new justification for the same conclusion.
+
+## Git Rules
+
+- Never run `git push` (or any variant like `git push origin`, `git push --force`, etc.) unless the user explicitly asks to push.
+- Never use `git add -A`, `git add --all`, `git add .`, or any other form that stages all changes. Always specify files or paths explicitly (e.g., `git add path/to/file.go path/to/other.go`).
+- Exception: when vendoring or equivalent (e.g., after `go mod vendor`), you may `git add` the entire vendored directory (e.g., `git add vendor/`).

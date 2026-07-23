@@ -36,7 +36,7 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { complete, getModel } from "@earendil-works/pi-ai";
+import { complete } from "@earendil-works/pi-ai";
 import { StringEnum } from "@earendil-works/pi-ai";
 import type {
 	ExtensionAPI,
@@ -666,9 +666,9 @@ async function performReview(
 	ctx: ExtensionContext,
 	signal?: AbortSignal,
 ): Promise<{ ok: true; review: string } | { ok: false; error: string }> {
-	const model = ctx.model ?? getModel("anthropic", "claude-sonnet-4-20250514");
+	const model = ctx.model;
 	if (!model) {
-		return { ok: false, error: "No model available for code review" };
+		return { ok: false, error: "No active model available in current session for code review" };
 	}
 
 	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
@@ -982,12 +982,18 @@ async function runPrReviewSubagent(
 	task: string,
 	cwd: string,
 	signal: AbortSignal | undefined,
+	parentModel: Model<any> | undefined,
 	onProgress: (event: ProgressEvent) => void,
 ): Promise<SubagentResult> {
 	const agent = loadPrReviewerAgent();
 
 	const piArgs: string[] = ["--mode", "json", "-p", "--no-session"];
-	if (agent.model) piArgs.push("--model", agent.model);
+	
+	// Prioritize parent session's current model over the hardcoded agent model
+	const modelArg = parentModel ? `${parentModel.provider}/${parentModel.id}` : agent.model;
+	if (modelArg) {
+		piArgs.push("--model", modelArg);
+	}
 	if (agent.tools && agent.tools.length > 0) piArgs.push("--tools", agent.tools.join(","));
 
 	// Write system prompt and task to temp files to avoid E2BIG when
@@ -1383,6 +1389,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 						task,
 						ctx.cwd,
 						ac.signal,
+						ctx.model,
 						({ status, activity }) => {
 							ctx.ui.setStatus("review", `Review: ${status}`);
 							if (activity) {

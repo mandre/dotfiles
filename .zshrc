@@ -16,7 +16,10 @@ SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
 
 zstyle :prompt:pure:git:stash show yes
 
-# Customize to your needs...
+# Force ghostty shell integration in tmux
+if [[ -n "$TMUX" && -n "$GHOSTTY_RESOURCES_DIR" ]]; then
+    source "$GHOSTTY_RESOURCES_DIR"/shell-integration/zsh/ghostty-integration
+fi
 
 # Custom commands
 openshift() { cd ~/go/src/github.com/openshift/$1; }

@@ -300,7 +300,7 @@ dashboards:
     query: "repo:openshift/release state:open file:openstack or file:shiftstack"
     key: "f6"
   - name: "Team originated PRs"
-    query: "state:open not org:hubtty author:mandre or author:stephenfin or author:gryf or author:dlaw4608 or author:eshulman2 or author:danchild"
+    query: "state:open not org:hubtty author:mandre or author:stephenfin or author:gryf or author:dlaw4608 or author:eshulman2 or author:danchild or author:winiciusallan or author:chenwng or author:IlanZuckerman"
     # sort-by: "repository"
     key: "f7"
   - name: "Backports"

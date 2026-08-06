@@ -36,8 +36,8 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { complete } from "@earendil-works/pi-ai";
 import { StringEnum } from "@earendil-works/pi-ai";
+import type { Model } from "@earendil-works/pi-ai";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
@@ -671,17 +671,9 @@ async function performReview(
 		return { ok: false, error: "No active model available in current session for code review" };
 	}
 
-	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
-	if (!auth.ok) {
-		return { ok: false, error: auth.error };
-	}
-	if (!auth.apiKey) {
-		return { ok: false, error: `No API key for ${model.provider}/${model.id}` };
-	}
-
 	const prompt = buildReviewPrompt(diff, focus, prTitle);
 
-	const response = await complete(
+	const response = await ctx.modelRegistry.complete(
 		model,
 		{
 			messages: [
@@ -693,8 +685,6 @@ async function performReview(
 			],
 		},
 		{
-			apiKey: auth.apiKey,
-			headers: auth.headers,
 			reasoningEffort: "high",
 			signal,
 		},

@@ -250,14 +250,15 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		}
 	});
 
-	// Filter out stale plan mode context when not in plan mode,
-	// and inject per-turn step reminders during execution.
+	// Filter stale persistent messages (backward compat with old sessions) and
+	// inject ephemeral context at the end of the message list (cache-friendly:
+	// the conversation prefix stays unchanged across turns).
 	pi.on("context", async (event) => {
-		if (planModeEnabled) return;
-
+		// Always filter stale persistent plan/execution messages from prior sessions
 		let messages = event.messages.filter((m) => {
 			const msg = m as AgentMessage & { customType?: string };
 			if (msg.customType === "plan-mode-context") return false;
+			if (msg.customType === "plan-execution-context") return false;
 			if (msg.role !== "user") return true;
 
 			const content = msg.content;
@@ -272,16 +273,21 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			return true;
 		});
 
-		// During execution, append a brief per-turn reminder of remaining steps
-		if (executionMode && todoItems.length > 0) {
+		// Execution mode: append ephemeral remaining-steps reminder at the end
+		if (!planModeEnabled && executionMode && todoItems.length > 0) {
 			const remaining = todoItems.filter((t) => !t.completed);
 			if (remaining.length > 0) {
-				const stepList = remaining.map((t) => `${t.step}. ${t.text}`).join(", ");
+				const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
 				messages = [
 					...messages,
 					{
 						role: "user" as const,
-						content: `[Remaining plan steps: ${stepList}. Mark each completed step with [DONE:n].]`,
+						content: `[EXECUTING PLAN - Full tool access enabled]
+
+Remaining steps:
+${todoList}
+
+Execute each step in order. After completing each step, include a [DONE:n] marker in your response (e.g. [DONE:2]). This updates the progress tracker.`,
 						timestamp: Date.now(),
 					},
 				];
@@ -291,15 +297,16 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		return { messages };
 	});
 
-	// Inject plan/execution context before agent starts
+	// Inject stable plan-mode instructions into the system prompt (most cache-
+	// efficient position — identical every turn, no persistent messages created).
 	pi.on("before_agent_start", async (event) => {
-		if (planModeEnabled) {
-			const tools = event.systemPromptOptions.selectedTools ?? [];
-			const toolList = tools.length > 0 ? tools.join(", ") : "none";
-			return {
-				message: {
-					customType: "plan-mode-context",
-					content: `[PLAN MODE ACTIVE]
+		if (!planModeEnabled) return;
+
+		const toolList = PLAN_MODE_TOOLS.join(", ");
+		return {
+			systemPrompt: `${event.systemPrompt}
+
+[PLAN MODE ACTIVE]
 You are in plan mode - a read-only exploration mode for safe code analysis.
 
 Restrictions:
@@ -318,29 +325,7 @@ Plan:
 ...
 
 Do NOT attempt to make changes - just describe what you would do.`,
-					display: false,
-				},
-			};
-		}
-
-		if (executionMode && todoItems.length > 0) {
-			const remaining = todoItems.filter((t) => !t.completed);
-			const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
-			return {
-				message: {
-					customType: "plan-execution-context",
-					content: `[EXECUTING PLAN - Full tool access enabled]
-
-Remaining steps:
-${todoList}
-
-Execute each step in order.
-
-IMPORTANT: After completing each step, you MUST include a [DONE:n] marker in your response text, where n is the step number. For example, after finishing step 2, write [DONE:2]. This updates the progress tracker widget. Do not skip this marker.`,
-					display: false,
-				},
-			};
-		}
+		};
 	});
 
 	// Set contextual working message during planning and execution

@@ -66,6 +66,11 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	let executionMode = false;
 	let todoItems: TodoItem[] = [];
 	let savedActiveTools: string[] | null = null;
+	// Ensures the ephemeral execution reminder (injected in the "context" hook,
+	// which fires before every LLM call in the tool loop) is only added once per
+	// agent run instead of once per tool-call round trip. Reset in
+	// before_agent_start, which fires once per user prompt.
+	let reminderInjectedThisRun = false;
 
 	/** Restore the tool set that was active before plan mode was entered. */
 	function restoreActiveTools(): void {
@@ -273,8 +278,11 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			return true;
 		});
 
-		// Execution mode: append ephemeral remaining-steps reminder at the end
-		if (!planModeEnabled && executionMode && todoItems.length > 0) {
+		// Execution mode: append ephemeral remaining-steps reminder at the end,
+		// but only once per agent run (context fires on every LLM call inside the
+		// tool loop, so without this guard the reminder would repeat after every
+		// tool result within a single run).
+		if (!planModeEnabled && executionMode && todoItems.length > 0 && !reminderInjectedThisRun) {
 			const remaining = todoItems.filter((t) => !t.completed);
 			if (remaining.length > 0) {
 				const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
@@ -282,15 +290,16 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 					...messages,
 					{
 						role: "user" as const,
-						content: `[EXECUTING PLAN - Full tool access enabled]
+						content: `[Plan execution status]
 
 Remaining steps:
 ${todoList}
 
-Execute each step in order. After completing each step, include a [DONE:n] marker in your response (e.g. [DONE:2]). This updates the progress tracker.`,
+Execute each step in order. After completing a step, include a [DONE:n] marker in your response (e.g. [DONE:2]) to update the progress tracker.`,
 						timestamp: Date.now(),
 					},
 				];
+				reminderInjectedThisRun = true;
 			}
 		}
 
@@ -300,6 +309,10 @@ Execute each step in order. After completing each step, include a [DONE:n] marke
 	// Inject stable plan-mode instructions into the system prompt (most cache-
 	// efficient position — identical every turn, no persistent messages created).
 	pi.on("before_agent_start", async (event) => {
+		// Reset once per run (before_agent_start fires once per user prompt,
+		// unlike "context" which fires on every LLM call in the tool loop).
+		reminderInjectedThisRun = false;
+
 		if (!planModeEnabled) return;
 
 		const toolList = PLAN_MODE_TOOLS.join(", ");

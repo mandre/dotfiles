@@ -210,11 +210,13 @@ export function normalizeCommand(command: string): string {
 	// Strip leading comment lines
 	cmd = cmd.replace(/^(\s*#[^\n]*\n)+/, "");
 	cmd = cmd.trimStart();
-	// Strip leading `cd <path> &&` or `cd <path>;` prefixes (repeated)
+	// Strip leading `cd <path> &&`, `cd <path>;`, or `cd <path>\n` prefixes (repeated).
+	// Horizontal whitespace only before the separator so the newline alternative
+	// below isn't pre-consumed by a greedy \s*.
 	let prev = "";
 	while (prev !== cmd) {
 		prev = cmd;
-		cmd = cmd.replace(/^\s*cd\s+(?:"[^"]*"|'[^']*'|\S+)\s*(&&|;)\s*/, "");
+		cmd = cmd.replace(/^[ \t]*cd\s+(?:"[^"]*"|'[^']*'|\S+)[ \t]*(?:&&|;|\n)\s*/, "");
 	}
 	// Normalize absolute paths to common binaries (e.g., /usr/bin/curl -> curl)
 	cmd = cmd.replace(/^\s*\/(?:usr\/(?:local\/)?)?(?:s?bin)\/(\w+)/, "$1");

@@ -71,6 +71,17 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	// agent run instead of once per tool-call round trip. Reset in
 	// before_agent_start, which fires once per user prompt.
 	let reminderInjectedThisRun = false;
+	// Counts consecutive blocked bash calls within the current agent run, so the
+	// block reason can escalate if the model keeps probing for a workaround
+	// instead of stopping. Reset in before_agent_start (once per user prompt).
+	let blockedBashCallsThisRun = 0;
+	// Set by togglePlanMode() when the mode is flipped mid-conversation (not at
+	// session start). Injected once, as an ephemeral message, by the "context"
+	// hook for the very next LLM call, then cleared — this makes the mode
+	// change visible in the recent transcript rather than only in the system
+	// prompt, since models can otherwise discount a system-prompt change against
+	// vivid recent tool-call history from before the toggle.
+	let pendingModeChangeNotice: string | null = null;
 
 	/** Restore the tool set that was active before plan mode was entered. */
 	function restoreActiveTools(): void {
@@ -126,11 +137,15 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			savedActiveTools = pi.getActiveTools();
 			pi.setActiveTools(PLAN_MODE_TOOLS);
 			ctx.ui.notify(`Plan mode enabled. Tools: ${PLAN_MODE_TOOLS.join(", ")}`);
+			pendingModeChangeNotice = `[Mode change] Plan mode has just been enabled by the user. Tool access has changed to read-only: ${PLAN_MODE_TOOLS.join(", ")}. Any file-editing access you had earlier in this conversation (e.g. during a previous plan-execution phase) no longer applies. If a tool call is blocked, do not attempt a workaround — describe it as a plan step instead.`;
 		} else {
 			restoreActiveTools();
 			ctx.ui.notify("Plan mode disabled. Full access restored.");
+			pendingModeChangeNotice =
+				"[Mode change] Plan mode has just been disabled by the user. Full tool access (including edit/write and unrestricted bash) has been restored.";
 		}
 		updateStatus(ctx);
+		persistState();
 	}
 
 	function persistState(): void {
@@ -248,9 +263,18 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 		const command = event.input.command as string;
 		if (!isSafeCommand(command)) {
+			blockedBashCallsThisRun++;
+
+			const baseReason = `Plan mode is active: this command is intentionally blocked (not allowlisted).\nDo not retry with a different command, tool, or indirect approach (e.g. cp/mv tricks, chaining, or switching to another tool) to achieve the same effect — describe this as a step in your Plan output instead. (A human can run /plan to exit plan mode; you cannot.)`;
+
+			const escalation =
+				blockedBashCallsThisRun >= 2
+					? `\n\nYou've now hit this restriction ${blockedBashCallsThisRun} times in this turn. Stop trying different commands or tools — none of them will work. Respond with plan text instead (add/update a numbered step describing the intended action) and wait for the user.`
+					: "";
+
 			return {
 				block: true,
-				reason: `Plan mode: command blocked (not allowlisted). Use /plan to disable plan mode first.\nCommand: ${command}`,
+				reason: `${baseReason}${escalation}\nCommand: ${command}`,
 			};
 		}
 	});
@@ -303,6 +327,16 @@ Execute each step in order. After completing a step, include a [DONE:n] marker i
 			}
 		}
 
+		// Mode was just toggled mid-conversation (via /plan or the shortcut, not at
+		// session start): append an ephemeral, one-shot notice for the next LLM call.
+		if (pendingModeChangeNotice) {
+			messages = [
+				...messages,
+				{ role: "user" as const, content: pendingModeChangeNotice, timestamp: Date.now() },
+			];
+			pendingModeChangeNotice = null;
+		}
+
 		return { messages };
 	});
 
@@ -312,6 +346,7 @@ Execute each step in order. After completing a step, include a [DONE:n] marker i
 		// Reset once per run (before_agent_start fires once per user prompt,
 		// unlike "context" which fires on every LLM call in the tool loop).
 		reminderInjectedThisRun = false;
+		blockedBashCallsThisRun = 0;
 
 		if (!planModeEnabled) return;
 
@@ -326,6 +361,14 @@ Restrictions:
 - Available tools: ${toolList}
 - File modifications are disabled (edit and write are not available)
 - Bash is restricted to an allowlist of read-only commands
+
+This restriction is in effect right now, regardless of what tool access you had earlier in
+this same conversation (e.g. during a previous plan-execution phase). Do not assume write
+access is still available, or has been restored, because it worked in an earlier turn —
+plan mode can be toggled on and off mid-conversation, and the current tool list and any
+"blocked" tool results always take precedence over conversation history. If a tool call is
+blocked, stop immediately: do not retry with a different command, a different tool, or an
+indirect workaround to reach the same effect. Just add or update a step in your plan.
 
 Ask clarifying questions using the questionnaire tool.
 Use brave-search skill via bash for web research.

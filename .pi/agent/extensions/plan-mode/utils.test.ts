@@ -277,6 +277,11 @@ assert(normalizeCommand("cd /path && git log") === "git log", "normalize: strips
 assert(normalizeCommand("cd /path && cd /other && git log") === "git log", "normalize: strips multiple cd prefixes");
 assert(normalizeCommand('cd "/path with spaces" && git log') === "git log", "normalize: strips quoted cd path");
 assert(normalizeCommand("cd /path; git log") === "git log", "normalize: strips cd with semicolon");
+assert(normalizeCommand("cd /path\ngit log") === "git log", "normalize: strips cd with newline separator");
+assert(
+	normalizeCommand("cd /path\ngit status\necho '---'\ngit log --oneline -3") === "git status\necho '---'\ngit log --oneline -3",
+	"normalize: strips cd-newline prefix from a multi-line script",
+);
 assert(normalizeCommand("# comment\ngit log") === "git log", "normalize: strips comment lines");
 assert(normalizeCommand("# comment 1\n# comment 2\ngit log") === "git log", "normalize: strips multiple comment lines");
 assert(normalizeCommand("/usr/bin/curl -s https://example.com") === "curl -s https://example.com", "normalize: strips /usr/bin/ prefix");
@@ -310,6 +315,12 @@ assert(isSafeCommand("cd /home/user/project && acli jira workitem search --jql '
 assert(isSafeCommand("cd /home/user/project && gws sheets +read --spreadsheet ID --range Sheet1"), "cd: gws +read with cd prefix");
 assert(!isSafeCommand("cd /tmp && rm -rf /"), "cd: destructive command with cd prefix still blocked");
 assert(!isSafeCommand("cd /path && git push origin main"), "cd: git push with cd prefix still blocked");
+assert(isSafeCommand("cd /home/user/project\ngit status"), "cd: git status with newline-separated cd prefix");
+assert(
+	isSafeCommand('cd /home/user/project\ngit status\necho "---"\ngit log --oneline -3 -- README.md'),
+	"cd: multi-line git script with newline-separated cd prefix",
+);
+assert(!isSafeCommand("cd /tmp\nrm -rf /"), "cd: destructive command with newline-separated cd prefix still blocked");
 
 // --- isSafeCommand: comment prefix ---
 

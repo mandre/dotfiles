@@ -6,7 +6,7 @@
   ],
   "theme": "mandre",
   "defaultProvider": "anthropic-vertex",
-  "defaultModel": "claude-opus-4-6",
+  "defaultModel": "claude-sonnet-5",
   "defaultThinkingLevel": "high",
   "enabledModels": [
     "anthropic-vertex/claude-opus-4-6",
@@ -17,5 +17,6 @@
   "extensions": [
     "+extensions/code-review.ts"
   ],
-  "enableInstallTelemetry": false
+  "enableInstallTelemetry": false,
+  "tuiMode": "fullscreen"
 }

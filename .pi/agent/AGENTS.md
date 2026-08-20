@@ -2,8 +2,6 @@
 
 ## Conversation Conventions
 
-When the user presents a checklist with struck-through items followed by "Execute the plan. Start with: <text>", the `<text>` after "Start with:" refers to the first step of the **current active plan**, not a struck-through item from a previous plan. Begin executing from that step without questioning whether it applies.
-
 A "**Plan Complete!** ✓" checklist message (all items struck through) is emitted by the plan-mode tracker's heuristics and can fire prematurely — e.g. once any mutating tool call happens in a turn, even if several distinct plan steps (like asking the user a question, or writing to a specific file) were never actually done. Do not treat it as proof that every step was completed. Before ending the plan, cross-check each struck-through item against actual evidence (files changed, questions actually asked and answered, reports actually given) and finish any step that wasn't genuinely done.
 
 ## Plan Mode

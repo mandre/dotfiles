@@ -257,9 +257,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		handler: async (ctx) => togglePlanMode(ctx),
 	});
 
-	// Block destructive bash commands in plan mode
-	pi.on("tool_call", async (event) => {
-		if (!planModeEnabled || event.toolName !== "bash") return;
+	// Block destructive bash commands in plan mode. Never in non-TUI runs (see
+	// session_start): there is no human to toggle plan mode off there.
+	pi.on("tool_call", async (event, ctx) => {
+		if (!planModeEnabled || ctx.mode !== "tui" || event.toolName !== "bash") return;
 
 		const command = event.input.command as string;
 		if (!isSafeCommand(command)) {
@@ -342,13 +343,17 @@ Execute each step in order. After completing a step, include a [DONE:n] marker i
 
 	// Inject stable plan-mode instructions into the system prompt (most cache-
 	// efficient position — identical every turn, no persistent messages created).
-	pi.on("before_agent_start", async (event) => {
+	pi.on("before_agent_start", async (event, ctx) => {
 		// Reset once per run (before_agent_start fires once per user prompt,
 		// unlike "context" which fires on every LLM call in the tool loop).
 		reminderInjectedThisRun = false;
 		blockedBashCallsThisRun = 0;
 
-		if (!planModeEnabled) return;
+		// Never activate in non-TUI runs (see session_start) — there's no human
+		// able to run /execute, /plan, or answer questionnaire prompts, so a
+		// headless sub-agent forced into "just describe a Plan" mode can never
+		// actually finish its task.
+		if (!planModeEnabled || ctx.mode !== "tui") return;
 
 		const toolList = PLAN_MODE_TOOLS.join(", ");
 		return {
@@ -476,6 +481,18 @@ Do NOT attempt to make changes - just describe what you would do.`,
 
 	// Restore state on session start/resume
 	pi.on("session_start", async (_event, ctx) => {
+		// Plan mode is an interactive, human-in-the-loop safety net (/execute,
+		// /done, widgets, notifications, /plan to escape). It has no meaningful
+		// way to be toggled off in non-TUI runs — for example, headless
+		// `--mode json`/`-p` sub-agents spawned by other extensions — so never
+		// activate it there. Those runs always get full tool access.
+		if (ctx.mode !== "tui") {
+			planModeEnabled = false;
+			executionMode = false;
+			todoItems = [];
+			return;
+		}
+
 		if (pi.getFlag("plan") === true) {
 			planModeEnabled = true;
 		}

@@ -220,10 +220,69 @@ assertDeepEqual(
 	assert(items.length === 2, "extractTodoItems heading: bare Plan without colon");
 }
 
+// --- extractTodoItems (tolerant header phrasing, regression for silently-stale plan bug) ---
+
+{
+	// Real failing case from a live session: "Plan (updated, ...)::" was not
+	// recognized as a header, so the plan tracker silently kept showing the
+	// previous plan instead of the user's requested update.
+	const plan = "Plan (updated, reflecting progress so far):\n\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems tolerant header: 'Plan (updated, ...):' phrasing");
+	assertDeepEqual(items.map((i) => i.step), [1, 2], "extractTodoItems tolerant header: step numbers preserved");
+}
+
+{
+	// Real failing case from the same session: "Understood — updated plan:"
+	const plan = "Understood — updated plan:\n\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems tolerant header: 'Understood — updated plan:' phrasing");
+}
+
+{
+	const plan = "## Revised Plan:\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems tolerant header: '## Revised Plan:' phrasing");
+}
+
+{
+	const plan = "Here's my updated plan:\n1. First step here\n2. Second step here\n";
+	const items = extractTodoItems(plan);
+	assert(items.length === 2, "extractTodoItems tolerant header: 'Here's my updated plan:' phrasing");
+}
+
+{
+	// A step mentioning "plan" and ending in a colon must not be mistaken for
+	// a header when there is no real header in the message at all.
+	const noHeader = "6. Update the plan.yaml file:\nSome unrelated follow-up text.\n";
+	const items = extractTodoItems(noHeader);
+	assert(items.length === 0, "extractTodoItems tolerant header: numbered step mentioning 'plan:' is not a false-positive header");
+}
+
+{
+	// A bullet mentioning "plan" and ending in a colon must not be mistaken
+	// for a header either.
+	const noHeader = "- Update the plan config:\nSome unrelated follow-up text.\n";
+	const items = extractTodoItems(noHeader);
+	assert(items.length === 0, "extractTodoItems tolerant header: bullet mentioning 'plan:' is not a false-positive header");
+}
+
+{
+	// Prose that merely mentions "plan" without a header-like colon should not match.
+	const noHeader = "No plan mentioned here in header form, just prose.\n1. Not actually a plan step\n2. Still not a plan\n";
+	const items = extractTodoItems(noHeader);
+	assert(items.length === 0, "extractTodoItems tolerant header: prose mentioning 'plan' without header colon does not match");
+}
+
 // --- cleanStepText ---
 
 assert(cleanStepText("**Bold text**") === "Bold text", "cleanStepText: removes bold");
 assert(cleanStepText("`code`") === "Code", "cleanStepText: removes backticks, capitalizes");
+assert(cleanStepText("~~Struck through step~~") === "Struck through step", "cleanStepText: removes strikethrough");
+assert(
+	cleanStepText("~~Re-confirm current state~~ — **Done**.") === "Re-confirm current state — Done.",
+	"cleanStepText: removes strikethrough combined with bold 'Done' annotation",
+);
 assert(cleanStepText("Update the configuration file") === "Configuration file", "cleanStepText: strips action prefix");
 assert(
 	cleanStepText("A very long step description that exceeds the character limit by quite a bit and keeps going on and on to make absolutely sure we exceed the one hundred and twenty character truncation threshold").length > 120,

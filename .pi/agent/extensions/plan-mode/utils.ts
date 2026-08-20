@@ -247,6 +247,7 @@ export interface TodoItem {
 
 export function cleanStepText(text: string): string {
 	let cleaned = text
+		.replace(/~~([^~]+)~~/g, "$1") // Remove strikethrough
 		.replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1") // Remove bold/italic
 		.replace(/`([^`]+)`/g, "$1") // Remove code
 		.replace(
@@ -264,7 +265,22 @@ export function cleanStepText(text: string): string {
 
 export function extractTodoItems(message: string): TodoItem[] {
 	const items: TodoItem[] = [];
-	const headerMatch = message.match(/^#{0,6}\s*\*{0,2}Plan:?\*{0,2}\s*\n/im);
+	// Header match, tried as two alternatives:
+	//  1) Bare form (backward compatible): the word "Plan" alone on its own
+	//     line, optionally wrapped in heading marks / bold, with or without a
+	//     trailing colon ("Plan", "## Plan", "### **Plan:**", ...).
+	//  2) Loose form: any single line containing the whole word "plan"
+	//     (case-insensitive) with other text around it, as long as it ends in
+	//     a colon — e.g. "Plan (updated, reflecting progress so far):",
+	//     "Understood — updated plan:", "Here's my updated plan:". The colon
+	//     is required here (unlike the bare form) to disambiguate an actual
+	//     header restatement from a step or sentence that merely mentions the
+	//     word "plan" in passing. Numbered-list items and bullets are excluded
+	//     so a step like "6. Update the plan.yaml file:" is never mistaken for
+	//     a header.
+	const headerMatch = message.match(
+		/^(?:#{0,6}\s*\*{0,2}Plan:?\*{0,2}\s*\n|(?!\s*\d+[.)]\s)(?!\s*[-*+]\s)[ \t]*#{0,6}[ \t]*\*{0,2}[^\n]{0,120}?\bplan\b[^\n]{0,120}?:\*{0,2}[ \t]*\n)/im,
+	);
 	if (!headerMatch) return items;
 
 	const planSection = message.slice(message.indexOf(headerMatch[0]) + headerMatch[0].length);

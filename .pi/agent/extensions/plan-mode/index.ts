@@ -228,10 +228,39 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("execute", {
 		description: "Execute the current plan (exit plan mode, start tracking)",
 		handler: async (_args, ctx) => {
+			// Re-sync against the latest assistant message before executing: the
+			// passive agent_end extraction can miss a plan restatement (e.g. a
+			// header phrasing it doesn't recognize), silently leaving `todoItems`
+			// stale. /execute should always run the freshest plan in the transcript.
+			const entries = ctx.sessionManager.getEntries();
+			for (let i = entries.length - 1; i >= 0; i--) {
+				const entry = entries[i] as { type: string; message?: AgentMessage };
+				if (entry.type === "message" && entry.message && isAssistantMessage(entry.message)) {
+					const extracted = extractTodoItems(getTextContent(entry.message));
+					if (extracted.length > 0) {
+						todoItems = extracted;
+					}
+					break;
+				}
+			}
+
 			if (todoItems.length === 0) {
 				ctx.ui.notify("No plan extracted yet. Ask the agent to create a plan first.", "warning");
 				return;
 			}
+
+			// Show the exact steps about to run so a stale/misparsed plan is
+			// visible before committing to execution.
+			const todoListText = todoItems.map((t) => `${t.step}. ☐ ${t.text}`).join("\n");
+			pi.sendMessage(
+				{
+					customType: "plan-todo-list",
+					content: `**Executing plan (${todoItems.length} steps):**\n\n${todoListText}`,
+					display: true,
+				},
+				{ triggerTurn: false },
+			);
+
 			planModeEnabled = false;
 			executionMode = true;
 			restoreActiveTools();
@@ -461,7 +490,8 @@ Do NOT attempt to make changes - just describe what you would do.`,
 		// Extract todos from last assistant message
 		const lastAssistant = [...event.messages].reverse().find(isAssistantMessage);
 		if (lastAssistant) {
-			const extracted = extractTodoItems(getTextContent(lastAssistant));
+			const lastAssistantText = getTextContent(lastAssistant);
+			const extracted = extractTodoItems(lastAssistantText);
 			if (extracted.length > 0) {
 				todoItems = extracted;
 				updateStatus(ctx);
@@ -474,6 +504,18 @@ Do NOT attempt to make changes - just describe what you would do.`,
 					`Plan extracted (${todoItems.length} steps). Use /execute to run, or keep exploring.`,
 					"info",
 				);
+			} else if (todoItems.length > 0) {
+				// Extraction failed to find a "Plan:"-style header. If the response still
+				// looks like it's restating a numbered plan, warn instead of silently
+				// keeping the old tracked plan — otherwise /execute could run stale steps
+				// without the user noticing the update never registered.
+				const numberedLines = lastAssistantText.match(/^\s*\d+[.)]\s+/gm);
+				if (numberedLines && numberedLines.length >= 2) {
+					ctx.ui.notify(
+						`Plan tracker could not parse an update from that response (no "Plan:" header detected) — still tracking the previous ${todoItems.length}-step plan. Ask for a clean "Plan:" restatement before running /execute, or run /execute anyway to use the last tracked plan.`,
+						"warning",
+					);
+				}
 			}
 		}
 		// Plan mode stays active until manually toggled off via /plan, Alt+P, or /execute

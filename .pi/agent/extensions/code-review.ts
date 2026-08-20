@@ -26,6 +26,26 @@
  *
  * The code_review tool lets the LLM proactively review changes when asked.
  *
+ * Sandboxing: the /review deep sub-agent is spawned as a separate `pi
+ * --no-session` process with `--tools` restricted to `pr-reviewer.md`'s
+ * frontmatter (read, grep, find, ls, git_diff, git_show, git_log, git_blame
+ * — no bash, no edit, no write). It also loads a small generated guard
+ * extension (GUARD_EXTENSION_SOURCE below, via `--extension`) that registers
+ * those four read-only git_* tools and hard-blocks edit/write/bash as
+ * defense in depth on top of the --tools allowlist. The git_* tools build a
+ * fixed argv from structured parameters and call `pi.exec()` (execFile-
+ * style, no shell), so there's no shell string for the model to inject into,
+ * and flag-style parameter values are rejected outright. Net result: the
+ * review sub-agent can never write to the filesystem, run arbitrary
+ * commands, or mutate git state.
+ *
+ * Deliberately not combined with --no-extensions: this would also disable
+ * any pi package the user relies on for model access (e.g. a custom
+ * provider installed via `packages` in settings.json), silently breaking
+ * the sub-agent. Other auto-discovered extensions still load alongside the
+ * guard, but see plan-mode/index.ts — it (and any well-behaved extension)
+ * should stay inert for non-interactive runs (`ctx.mode !== "tui"`).
+ *
  * Requires: git (always), gh CLI (for PR reviews)
  *
  * Installation:
@@ -968,6 +988,148 @@ interface ProgressEvent {
 	activity?: string;
 }
 
+/**
+ * Sandboxed extension loaded into the review sub-agent's own `pi` process via
+ * `--no-extensions --extension <tmpfile>`. This is the ONLY extension the
+ * sub-agent ever loads — it never sees plan-mode, custom-footer,
+ * questionnaire, or even this file's own /review commands.
+ *
+ * It guarantees the sub-agent can never write anything:
+ * - `edit`/`write`/`bash` are hard-blocked via a tool_call hook, on top of
+ *   already being excluded from `--tools`. This is defense in depth in case
+ *   the tool allowlist is ever loosened.
+ * - The only way to inspect git state is through git_diff/git_show/git_log/
+ *   git_blame below, each of which builds a fixed git argv itself from
+ *   structured parameters and calls `pi.exec()` (execFile-style, no shell),
+ *   so there is no shell string for the model to inject into. Path/ref
+ *   parameters are rejected outright if they start with "-", closing off
+ *   flag injection too, and path arguments are always passed after a
+ *   literal `--` separator.
+ */
+const GUARD_EXTENSION_SOURCE = `
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
+
+function assertNotFlag(value, field) {
+	if (value !== undefined && value.startsWith("-")) {
+		throw new Error(\`Invalid \${field}: must not start with "-"\`);
+	}
+}
+
+export default function guardExtension(pi) {
+	pi.on("tool_call", async (event) => {
+		if (event.toolName === "edit" || event.toolName === "write" || event.toolName === "bash") {
+			return {
+				block: true,
+				reason: "This review sub-agent is read-only. File edits and shell access are never permitted here.",
+			};
+		}
+	});
+
+	pi.registerTool({
+		name: "git_diff",
+		label: "Git Diff",
+		description:
+			"Show a read-only git diff between two refs (or the working tree if omitted), " +
+			"optionally scoped to a path, optionally as a --stat summary.",
+		parameters: Type.Object({
+			ref1: Type.Optional(Type.String({ description: "First ref (e.g. a commit, branch, or 'main')" })),
+			ref2: Type.Optional(Type.String({ description: "Second ref to diff against ref1" })),
+			path: Type.Optional(Type.String({ description: "Limit the diff to this path" })),
+			stat: Type.Optional(Type.Boolean({ description: "Show a diffstat summary instead of the full diff" })),
+		}),
+		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+			assertNotFlag(params.ref1, "ref1");
+			assertNotFlag(params.ref2, "ref2");
+			assertNotFlag(params.path, "path");
+
+			const args = ["diff"];
+			if (params.stat) args.push("--stat");
+			if (params.ref1 && params.ref2) args.push(\`\${params.ref1}...\${params.ref2}\`);
+			else if (params.ref1) args.push(params.ref1);
+			if (params.path) args.push("--", params.path);
+
+			const result = await pi.exec("git", args, { cwd: ctx.cwd, timeout: 30_000, signal });
+			if (result.code !== 0) {
+				throw new Error(result.stderr.trim() || \`git diff exited with code \${result.code}\`);
+			}
+			return { content: [{ type: "text", text: result.stdout || "(no differences)" }], details: {} };
+		},
+	});
+
+	pi.registerTool({
+		name: "git_show",
+		label: "Git Show",
+		description: "Show a commit, or a file's contents at a specific ref (ref:path).",
+		parameters: Type.Object({
+			ref: Type.String({ description: "Commit or ref to show" }),
+			path: Type.Optional(Type.String({ description: "File path to show at that ref" })),
+		}),
+		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+			assertNotFlag(params.ref, "ref");
+			assertNotFlag(params.path, "path");
+
+			const target = params.path ? \`\${params.ref}:\${params.path}\` : params.ref;
+			const result = await pi.exec("git", ["show", target], { cwd: ctx.cwd, timeout: 30_000, signal });
+			if (result.code !== 0) {
+				throw new Error(result.stderr.trim() || \`git show exited with code \${result.code}\`);
+			}
+			return { content: [{ type: "text", text: result.stdout }], details: {} };
+		},
+	});
+
+	pi.registerTool({
+		name: "git_log",
+		label: "Git Log",
+		description: "Show read-only commit history, optionally scoped to a path or ref range.",
+		parameters: Type.Object({
+			range: Type.Optional(Type.String({ description: "Ref range, e.g. main..pull/123/head" })),
+			path: Type.Optional(Type.String({ description: "Limit history to this path" })),
+			oneline: Type.Optional(Type.Boolean({ description: "Use one line per commit" })),
+		}),
+		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+			assertNotFlag(params.range, "range");
+			assertNotFlag(params.path, "path");
+
+			const args = ["log"];
+			if (params.oneline) args.push("--oneline");
+			if (params.range) args.push(params.range);
+			if (params.path) args.push("--", params.path);
+
+			const result = await pi.exec("git", args, { cwd: ctx.cwd, timeout: 30_000, signal });
+			if (result.code !== 0) {
+				throw new Error(result.stderr.trim() || \`git log exited with code \${result.code}\`);
+			}
+			return { content: [{ type: "text", text: result.stdout || "(no commits)" }], details: {} };
+		},
+	});
+
+	pi.registerTool({
+		name: "git_blame",
+		label: "Git Blame",
+		description: "Blame a file at a specific ref.",
+		parameters: Type.Object({
+			ref: Type.String({ description: "Ref to blame at" }),
+			path: Type.String({ description: "File path to blame" }),
+		}),
+		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+			assertNotFlag(params.ref, "ref");
+			assertNotFlag(params.path, "path");
+
+			const result = await pi.exec("git", ["blame", params.ref, "--", params.path], {
+				cwd: ctx.cwd,
+				timeout: 30_000,
+				signal,
+			});
+			if (result.code !== 0) {
+				throw new Error(result.stderr.trim() || \`git blame exited with code \${result.code}\`);
+			}
+			return { content: [{ type: "text", text: result.stdout }], details: {} };
+		},
+	});
+}
+`;
+
 async function runPrReviewSubagent(
 	task: string,
 	cwd: string,
@@ -997,6 +1159,20 @@ async function runPrReviewSubagent(
 	const taskFile = path.join(tmpDir, "task.md");
 	await fs.promises.writeFile(taskFile, task, { encoding: "utf-8", mode: 0o600 });
 	piArgs.push("@" + taskFile);
+
+	// Load the sandboxed guard above so the sub-agent gets git_diff/git_show/
+	// git_log/git_blame plus a hard edit/write/bash block. Deliberately NOT
+	// combined with --no-extensions: this user's model provider (and possibly
+	// others') is delivered as an installed pi package, which is only merged
+	// into the extension set when extension discovery is enabled —
+	// --no-extensions would silently make the configured model unavailable to
+	// the sub-agent. Other auto-discovered extensions (e.g. plan-mode) still
+	// load alongside this guard, but plan-mode is inert outside ctx.mode ===
+	// "tui" (see plan-mode/index.ts), and nothing else registers a tool_call
+	// or before_agent_start hook that could interfere with a headless run.
+	const guardFile = path.join(tmpDir, "guard.ts");
+	await fs.promises.writeFile(guardFile, GUARD_EXTENSION_SOURCE, { encoding: "utf-8", mode: 0o600 });
+	piArgs.push("--extension", guardFile);
 
 	const usage: SubagentUsage = {
 		input: 0, output: 0, cacheRead: 0, cacheWrite: 0,
@@ -1122,6 +1298,7 @@ async function runPrReviewSubagent(
 	} finally {
 		try { fs.unlinkSync(taskFile); } catch { /* ignore */ }
 		try { fs.unlinkSync(promptFile); } catch { /* ignore */ }
+		try { fs.unlinkSync(guardFile); } catch { /* ignore */ }
 		try { fs.rmdirSync(tmpDir); } catch { /* ignore */ }
 	}
 }

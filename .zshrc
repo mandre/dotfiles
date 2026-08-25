@@ -26,9 +26,7 @@ openshift() { cd ~/go/src/github.com/openshift/$1; }
 _openshift() { _files -W ~/go/src/github.com/openshift -/; }
 compdef _openshift openshift
 
-kolla() { cd ~/dev/openstack/kolla; }
-
-_hackon() { _files -W ${XDG_DATA_HOME:-${HOME}/.local/share}/hackon -/; }
+_hackon() { _files -W ${XDG_DATA_HOME:-${HOME}/.local/share}/hackon; }
 compdef _hackon hackon
 
 # Speed up git completion for huge repositories

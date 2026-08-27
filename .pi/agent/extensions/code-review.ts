@@ -1627,6 +1627,8 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 					"info",
 				);
 
+				pi.setSessionName(`Review: ${repo}#${prNumber}`);
+
 				const task = buildPrReviewPrompt(
 					metadata, diffResult.diff, stats, repo, prNumber, prRef,
 				);

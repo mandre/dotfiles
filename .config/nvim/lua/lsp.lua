@@ -85,7 +85,7 @@ function go_org_imports(wait_ms)
     local result = client:request_sync("textDocument/codeAction", params, wait_ms, 0)
     for _, r in pairs((result or {}).result or {}) do
       if r.edit then
-        vim.lsp.util.apply_workspace_edit(r.edit, { offset_encoding = client.offset_encoding })
+        vim.lsp.util.apply_workspace_edit(r.edit, client.offset_encoding)
       end
     end
   end

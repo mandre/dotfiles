@@ -443,16 +443,25 @@ Do NOT attempt to make changes - just describe what you would do.`,
 		const text = getTextContent(event.message);
 		const marked = markCompletedSteps(text, todoItems);
 
-		// Fallback heuristic: if no explicit markers were detected but
-		// mutating tools (edit, write) were used, mark the first uncompleted step.
-		if (marked === 0 && event.toolResults && event.toolResults.length > 0) {
-			const hasMutatingWork = event.toolResults.some(
+		// Fallback heuristic: if mutating tools (edit, write) were used and
+		// there are more mutating results than explicitly marked steps, mark
+		// additional uncompleted steps for the excess.  This handles the case
+		// where the model uses [DONE:n] for one step and performs an edit for
+		// a different step in the same turn — the old `marked === 0` guard
+		// would suppress the fallback entirely, leaving the edited step
+		// untracked.
+		if (event.toolResults && event.toolResults.length > 0) {
+			const mutatingCount = event.toolResults.filter(
 				(tr: { toolName?: string }) => tr.toolName === "edit" || tr.toolName === "write",
-			);
-			if (hasMutatingWork) {
-				const firstIncomplete = todoItems.find((t) => !t.completed);
-				if (firstIncomplete) {
-					firstIncomplete.completed = true;
+			).length;
+			if (mutatingCount > marked) {
+				let remaining = mutatingCount - marked;
+				for (const item of todoItems) {
+					if (remaining <= 0) break;
+					if (!item.completed) {
+						item.completed = true;
+						remaining--;
+					}
 				}
 			}
 		}

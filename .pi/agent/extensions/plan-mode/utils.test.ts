@@ -713,6 +713,56 @@ assert(isSafeCommand("echo 'dGVzdA==' | base64 -d"), "base64: piped decode is sa
 assert(!isSafeCommand("dot -Tpng -Gdpi=150 /tmp/diagram.dot -o /path/to/output.png"), "dot: -o writes file is blocked");
 assert(!isSafeCommand("dot -Tsvg input.dot -o output.svg 2>&1"), "dot: svg output is blocked");
 
+// --- markCompletedSteps: partial completion (regression for stale task list bug) ---
+// When a turn contains [DONE:1] for one step but an edit for a *different* step,
+// markCompletedSteps only marks the explicitly tagged step. The turn_end fallback
+// heuristic in index.ts must handle the rest. These tests verify markCompletedSteps
+// reports accurate counts so the heuristic can compare against mutating tool count.
+
+{
+	// Scenario from session 01a066c2: assistant text has [DONE:1] but the edit was
+	// for step 2. markCompletedSteps should mark exactly 1, leaving step 2 for the
+	// fallback heuristic in turn_end.
+	const items: TodoItem[] = [
+		{ step: 1, text: "Edit lsp.lua line 82", completed: false },
+		{ step: 2, text: "Edit lsp.lua line 88", completed: false },
+	];
+	const text = "Looking at line 82 again, no change needed there. [DONE:1]\n\nNow fixing line 88, the actual problem:";
+	const marked = markCompletedSteps(text, items);
+	assert(marked === 1, `markCompletedSteps partial: expected 1 marked, got ${marked}`);
+	assert(items[0].completed === true, "markCompletedSteps partial: step 1 completed via [DONE:1]");
+	assert(items[1].completed === false, "markCompletedSteps partial: step 2 left for fallback heuristic");
+}
+
+{
+	// When [DONE:n] marks one step AND natural language marks a different step,
+	// both should be counted — total marked should equal 2.
+	const items: TodoItem[] = [
+		{ step: 1, text: "Fix the bug", completed: false },
+		{ step: 2, text: "Update tests", completed: false },
+		{ step: 3, text: "Add docs", completed: false },
+	];
+	const text = "[DONE:1] and step 2 is done";
+	const marked = markCompletedSteps(text, items);
+	assert(marked === 2, `markCompletedSteps mixed markers: expected 2 marked, got ${marked}`);
+	assert(items[0].completed === true, "markCompletedSteps mixed: step 1 done");
+	assert(items[1].completed === true, "markCompletedSteps mixed: step 2 done");
+	assert(items[2].completed === false, "markCompletedSteps mixed: step 3 still incomplete");
+}
+
+{
+	// Zero markers found — marked should be 0 so the fallback heuristic can kick in.
+	const items: TodoItem[] = [
+		{ step: 1, text: "Fix the parser", completed: false },
+		{ step: 2, text: "Update config", completed: false },
+	];
+	const text = "Done. The fix is applied.";
+	const marked = markCompletedSteps(text, items);
+	assert(marked === 0, `markCompletedSteps no markers: expected 0 marked, got ${marked}`);
+	assert(items[0].completed === false, "markCompletedSteps no markers: step 1 unchanged");
+	assert(items[1].completed === false, "markCompletedSteps no markers: step 2 unchanged");
+}
+
 // --- Summary ---
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);

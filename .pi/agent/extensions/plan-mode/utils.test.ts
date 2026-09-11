@@ -416,7 +416,6 @@ assert(isSafeCommand("gh pr status"), "new: gh pr status");
 assert(isSafeCommand("gh run view 12345"), "new: gh run view");
 assert(isSafeCommand("gh auth status"), "new: gh auth status");
 assert(isSafeCommand("strings /usr/bin/acli"), "new: strings");
-assert(isSafeCommand("brave-search 'kudobuilder kuttl'"), "new: brave-search");
 assert(isSafeCommand("go list -m -versions github.com/foo/bar"), "new: go list");
 assert(isSafeCommand("go version"), "new: go version");
 assert(isSafeCommand("go doc fmt.Println"), "new: go doc");

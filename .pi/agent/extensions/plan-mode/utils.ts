@@ -137,7 +137,6 @@ const SAFE_PATTERNS = [
 	// Binary inspection
 	/^\s*strings\b/,
 	// Web search
-	/^\s*brave-search\b/,
 	// uv run (specific test/lint tools only)
 	/^\s*uv\s+run\s+(pytest|flake8|mypy|ruff|pylint|black\s+--check|isort\s+--check)\b/i,
 	// Ansible linting

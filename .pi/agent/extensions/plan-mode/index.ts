@@ -31,7 +31,7 @@
  *   Google Workspace (gws): +read, get, list, schema, export, download
  *   Python: python3 (for data processing / calculations)
  *   Go: list, version, doc, env, vet, mod graph/verify/why
- *   Web: curl, brave-search
+ *   Web: curl, web_search, web_fetch
  *   Documentation: man
  *   Package info: npm list/outdated, yarn info/audit, pip list/show/freeze,
  *     uv pip list/show/tree, uv lock --dry-run, rpm -q/-V/--query/--verify
@@ -51,7 +51,7 @@ import { type AutocompleteItem, Key, truncateToWidth } from "@earendil-works/pi-
 import { extractTodoItems, isSafeCommand, markCompletedSteps, type TodoItem } from "./utils.js";
 
 // Tools
-const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire"];
+const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch"];
 
 // Type guard for assistant messages
 function isAssistantMessage(m: AgentMessage): m is AssistantMessage {
@@ -410,7 +410,7 @@ blocked, stop immediately: do not retry with a different command, a different to
 indirect workaround to reach the same effect. Just add or update a step in your plan.
 
 Ask clarifying questions using the questionnaire tool.
-Use brave-search skill via bash for web research.
+Use the web_search and web_fetch tools for web research.
 
 Create a detailed numbered plan under a "Plan:" header:
 

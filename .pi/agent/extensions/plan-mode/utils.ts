@@ -27,8 +27,8 @@ const DESTRUCTIVE_PATTERNS = [
 	/\bpip3?\s+(install|uninstall)/i,
 	/\bapt(-get)?\s+(install|remove|purge|update|upgrade)/i,
 	/\bbrew\s+(install|uninstall|upgrade)/i,
-	/\bgit\s+(add|commit|push|pull|merge(?!-)|rebase|reset|checkout|branch\s+-[dD]|stash(?!\s+(list|show)\b)|cherry-pick|revert|tag|init|clone)/i,
-	/\bcurl\b[^|]*(-o|--output)\s+(?!\/tmp\/)\S+/i,
+	/\bgit\s+(add|commit|push|pull|merge(?!-)|rebase|reset|checkout|branch\s+-[dD]|stash(?!\s+(list|show)\b)|cherry-pick|revert|tag\s+(-[adfms]|--delete|--force|--create-reflog)|init|clone)/i,
+	/\bcurl\b[^|]*(-o|--output)\s+(?!\/tmp\/|\/dev\/null)\S+/i,
 	/\bsudo\b/i,
 	/\bsu\b/i,
 	/\bkill\b/i,
@@ -108,7 +108,7 @@ const SAFE_PATTERNS = [
 	/^\s*top\b/,
 	/^\s*htop\b/,
 	/^\s*free\b/,
-	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*(status|log|diff|show|branch|remote|config\s+--get|merge-base|for-each-ref|rev-parse|stash\s+(list|show))/i,
+	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*(status|log|diff|show|branch|remote|config\s+(--global\s+|--local\s+|--system\s+|--worktree\s+|--show-origin\s+)*(--get|--get-all|--list|--show-origin\b)|tag(\s+(-[lnv]|--sort|--list|--contains|--merged|--no-merged|--points-at)\b|\s*$)|merge-base|for-each-ref|rev-parse|stash\s+(list|show))/i,
 	/^\s*git\s+(-C\s+\S+\s+|--no-pager\s+)*ls-/i,
 	/^\s*npm\s+(list|ls|view|info|search|outdated|audit)/i,
 	/^\s*yarn\s+(list|info|why|audit)/i,
@@ -175,6 +175,10 @@ const SAFE_PATTERNS = [
 	/^\s*md5sum\b/,
 	/^\s*hexdump\b/,
 	/^\s*xxd\b/,
+	// Documentation
+	/^\s*man\b/,
+	// Package info (rpm)
+	/^\s*rpm\s+(-q[afilpRs]*|-V|--query|--verify)\b/i,
 	/^\s*acli\s+(jira\s+)?(--action\s+)?(getIssue|getIssueList|getFieldValue|getComments|getAttachmentList|getProjectList|getComponentList|getVersionList|getWorkflowList|getFilterList|getFilter|getBoardList|getSprintList|getStatusList|getLinkTypeList|getSecurityLevelList|run)\b/i,
 	// acli jira positional subcommands (read-only)
 	/^\s*acli\s+jira\s+project\s+(list|view)\b/i,
@@ -213,10 +217,12 @@ export function normalizeCommand(command: string): string {
 	// Strip leading `cd <path> &&`, `cd <path>;`, or `cd <path>\n` prefixes (repeated).
 	// Horizontal whitespace only before the separator so the newline alternative
 	// below isn't pre-consumed by a greedy \s*.
+	// Also handles optional stderr redirects between path and separator
+	// (e.g. `cd /path 2>&1;`, `cd /path 2>/dev/null &&`).
 	let prev = "";
 	while (prev !== cmd) {
 		prev = cmd;
-		cmd = cmd.replace(/^[ \t]*cd\s+(?:"[^"]*"|'[^']*'|\S+)[ \t]*(?:&&|;|\n)\s*/, "");
+		cmd = cmd.replace(/^[ \t]*cd\s+(?:"[^"]*"|'[^']*'|\S+)(?:\s+2>(?:&\d*|\/dev\/null))?[ \t]*(?:&&|;|\n)\s*/, "");
 	}
 	// Normalize absolute paths to common binaries (e.g., /usr/bin/curl -> curl)
 	cmd = cmd.replace(/^\s*\/(?:usr\/(?:local\/)?)?(?:s?bin)\/(\w+)/, "$1");
@@ -224,8 +230,9 @@ export function normalizeCommand(command: string): string {
 }
 
 export function isSafeCommand(command: string): boolean {
-	// --help is always safe (help output never modifies anything)
+	// --help and --version are always safe (output never modifies anything)
 	if (/(?:^|\s)--help(?:\s|$)/.test(command)) return true;
+	if (/(?:^|\s)--version(?:\s|$)/.test(command)) return true;
 
 	// Normalize: strip cd prefixes, comments, absolute paths for safe matching
 	const normalized = normalizeCommand(command);

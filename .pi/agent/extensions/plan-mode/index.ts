@@ -21,7 +21,8 @@
  *   Text processing: wc, sort, uniq, diff, tr, cut, tac, column, xargs,
  *     awk, sed -n, jq
  *   Git (read-only): status, log, diff, show, branch, remote, ls-files,
- *     merge-base, for-each-ref, rev-parse, stash list/show
+ *     merge-base, for-each-ref, rev-parse, tag (listing), stash list/show,
+ *     config --get/--get-all/--list/--show-origin (with --global/--local/etc.)
  *     (supports -C <path> and --no-pager flags)
  *   GitHub CLI (read-only): pr/issue view/list/diff/checks/status/search/review,
  *     auth status, api (GET only), run download
@@ -31,12 +32,16 @@
  *   Python: python3 (for data processing / calculations)
  *   Go: list, version, doc, env, vet, mod graph/verify/why
  *   Web: curl, brave-search
+ *   Documentation: man
  *   Package info: npm list/outdated, yarn info/audit, pip list/show/freeze,
- *     uv pip list/show/tree, uv lock --dry-run
+ *     uv pip list/show/tree, uv lock --dry-run, rpm -q/-V/--query/--verify
  *   System info: uname, whoami, date, uptime, ps, free, df, du, getconf
  *   Ansible: ansible-lint
  *   Crypto/encoding: openssl, base64, sha256sum, md5sum
  *   Cloud storage: gsutil ls/cat/stat/du
+ *
+ * Universal overrides (always allowed regardless of command):
+ *   --help, --version
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";

@@ -763,6 +763,105 @@ assert(!isSafeCommand("dot -Tsvg input.dot -o output.svg 2>&1"), "dot: svg outpu
 	assert(items[1].completed === false, "markCompletedSteps no markers: step 2 unchanged");
 }
 
+// --- isSafeCommand: man ---
+
+assert(isSafeCommand("man rg"), "man: man rg is safe");
+assert(isSafeCommand("man grep"), "man: man grep is safe");
+assert(isSafeCommand("man 2>/dev/null rg | grep -A 20 'CONFIG' | head -30"), "man: man piped is safe");
+assert(isSafeCommand("man 5 crontab"), "man: man with section number is safe");
+assert(isSafeCommand("man -k printf"), "man: man -k search is safe");
+
+// --- isSafeCommand: git tag (listing vs creation/deletion) ---
+
+assert(isSafeCommand("git tag --sort=-v:refname"), "git tag: --sort listing is safe");
+assert(isSafeCommand("git tag --sort=-v:refname | head -20"), "git tag: --sort piped is safe");
+assert(isSafeCommand("git tag -l 'v1.*'"), "git tag: -l listing is safe");
+assert(isSafeCommand("git tag --list 'v2.*'"), "git tag: --list listing is safe");
+assert(isSafeCommand("git tag --contains HEAD"), "git tag: --contains is safe");
+assert(isSafeCommand("git tag --merged main"), "git tag: --merged is safe");
+assert(isSafeCommand("git tag -n"), "git tag: -n (show annotations) is safe");
+assert(isSafeCommand("git -C /path tag --sort=-v:refname"), "git tag: with -C prefix is safe");
+assert(isSafeCommand("git --no-pager tag -l"), "git tag: with --no-pager is safe");
+assert(isSafeCommand("cd /home/user/project && git tag --sort=-creatordate | head -10"), "git tag: with cd prefix is safe");
+assert(!isSafeCommand("git tag -a v1.0 -m 'release'"), "git tag: -a create is blocked");
+assert(!isSafeCommand("git tag -d v1.0"), "git tag: -d delete is blocked");
+assert(!isSafeCommand("git tag -f v1.0"), "git tag: -f force is blocked");
+assert(!isSafeCommand("git tag -m 'message' v1.0"), "git tag: -m create is blocked");
+assert(!isSafeCommand("git tag -s v1.0"), "git tag: -s signed is blocked");
+assert(!isSafeCommand("git tag --delete v1.0"), "git tag: --delete is blocked");
+assert(!isSafeCommand("git tag --force v1.0"), "git tag: --force is blocked");
+
+// --- isSafeCommand: git config (expanded) ---
+
+assert(isSafeCommand("git config --get rebase.autoSquash"), "git config: --get is safe");
+assert(isSafeCommand("git config --global --get rebase.autoSquash"), "git config: --global --get is safe");
+assert(isSafeCommand("git config --global --list"), "git config: --global --list is safe");
+assert(isSafeCommand("git config --list --show-origin"), "git config: --list --show-origin is safe");
+assert(isSafeCommand("git config --show-origin --list"), "git config: --show-origin --list is safe");
+assert(isSafeCommand("git config --local --get-all user.email"), "git config: --local --get-all is safe");
+assert(isSafeCommand("git config --system --list"), "git config: --system --list is safe");
+assert(isSafeCommand("git config --global --list 2>/dev/null | grep -i exclu"), "git config: --global --list piped is safe");
+assert(isSafeCommand("git config --show-origin --get core.excludesFile"), "git config: --show-origin --get is safe");
+assert(isSafeCommand("git -C /path config --global --get user.name"), "git config: with -C prefix is safe");
+
+// --- isSafeCommand: --version override ---
+
+assert(isSafeCommand("nvim --version"), "version: nvim --version is safe (despite vim? destructive pattern)");
+assert(isSafeCommand("nvim --version | head -3"), "version: nvim --version piped is safe");
+assert(isSafeCommand("vim --version"), "version: vim --version is safe");
+assert(isSafeCommand("code --version"), "version: code --version is safe");
+assert(isSafeCommand("emacs --version"), "version: emacs --version is safe");
+assert(isSafeCommand("docker --version"), "version: docker --version is safe");
+assert(isSafeCommand("podman --version"), "version: podman --version is safe");
+assert(isSafeCommand("sudo --version"), "version: sudo --version is safe");
+
+// --- isSafeCommand: rpm ---
+
+assert(isSafeCommand("rpm -q texlive-fonts"), "rpm: -q query is safe");
+assert(isSafeCommand("rpm -qa | grep texlive"), "rpm: -qa list all piped is safe");
+assert(isSafeCommand("rpm -ql texlive-base"), "rpm: -ql list files is safe");
+assert(isSafeCommand("rpm -qi texlive-base"), "rpm: -qi info is safe");
+assert(isSafeCommand("rpm --query texlive-base"), "rpm: --query is safe");
+assert(isSafeCommand("rpm -V texlive-base"), "rpm: -V verify is safe");
+assert(isSafeCommand("rpm --verify texlive-base"), "rpm: --verify is safe");
+assert(!isSafeCommand("rpm -i package.rpm"), "rpm: -i install is blocked");
+assert(!isSafeCommand("rpm -e texlive-base"), "rpm: -e erase is blocked");
+assert(!isSafeCommand("rpm -U package.rpm"), "rpm: -U upgrade is blocked");
+
+// --- isSafeCommand: curl -o /dev/null ---
+
+assert(isSafeCommand("curl -s -o /dev/null -w '%{http_code}' https://example.com"), "curl: -o /dev/null is safe");
+assert(isSafeCommand("curl -o /dev/null -w '%{http_code}\\n' https://example.com"), "curl: -o /dev/null with newline format is safe");
+assert(isSafeCommand("curl -o /tmp/test.txt https://example.com"), "curl: -o /tmp/ still safe");
+assert(!isSafeCommand("curl -o /home/user/file.txt https://example.com"), "curl: -o elsewhere still blocked");
+
+// --- normalizeCommand: cd with 2>&1 / 2>/dev/null ---
+
+assert(
+	normalizeCommand("cd /path 2>&1; git log") === "git log",
+	"normalize: strips cd with 2>&1 and semicolon",
+);
+assert(
+	normalizeCommand("cd /path 2>/dev/null && git log") === "git log",
+	"normalize: strips cd with 2>/dev/null and &&",
+);
+assert(
+	normalizeCommand("cd /path 2>&1 && git log") === "git log",
+	"normalize: strips cd with 2>&1 and &&",
+);
+assert(
+	normalizeCommand("cd /path 2>&2; git log") === "git log",
+	"normalize: strips cd with 2>&2 and semicolon",
+);
+assert(
+	isSafeCommand("cd /path 2>&1; git -C /path log --oneline"),
+	"cd 2>&1: git log with cd 2>&1 prefix is safe",
+);
+assert(
+	isSafeCommand("cd /path 2>/dev/null && grep -rn 'pattern' src/"),
+	"cd 2>/dev/null: grep with cd 2>/dev/null prefix is safe",
+);
+
 // --- Summary ---
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);

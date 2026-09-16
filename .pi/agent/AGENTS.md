@@ -36,3 +36,10 @@ A "**Plan Complete!** ✓" checklist message (all items struck through) is emitt
 - Never run `git push` (or any variant like `git push origin`, `git push --force`, etc.) unless the user explicitly asks to push.
 - Never use `git add -A`, `git add --all`, `git add .`, or any other form that stages all changes. Always specify files or paths explicitly (e.g., `git add path/to/file.go path/to/other.go`).
 - Exception: when vendoring or equivalent (e.g., after `go mod vendor`), you may `git add` the entire vendored directory (e.g., `git add vendor/`).
+- Follow the 50/72 rule for commit messages:
+  - Subject line: max 50 characters, capitalized, imperative mood, no trailing period.
+  - Blank line separating subject from body.
+  - Body: wrap lines at 72 characters.
+- When a commit message includes links (URLs), use footnote-style references instead of inline URLs:
+  - Place a short reference marker in the body text (e.g., `[1]`).
+  - List the full URLs at the end of the message body, one per line, matching their markers (e.g., `[1]: https://example.com/...`).

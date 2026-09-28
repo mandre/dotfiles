@@ -6,21 +6,19 @@
 " NB: If you want "vim-like" behaviour where removing a line from
 " here makes the setting disappear, uncomment the line below.
 
-" sanitise tridactyllocal tridactylsync
+ sanitise tridactyllocal tridactylsync
 
 "
 " Binds
 "
 
-bind J tprev
-bind K tnext
+bind K tprev
+bind J tnext
 
 bind / fillcmdline find
 bind ? fillcmdline find --reverse
 bind n findnext --search-from-view
 bind N findnext --search-from-view --reverse
-bind gn findselect
-bind gN composite findnext --search-from-view --reverse; findselect
 bind ,<Space> nohlsearch
 
 " Only hint search results on Google and DDG
@@ -41,7 +39,7 @@ unbind <C-f>
 
 " Handy multiwindow/multitasking binds
 bind gd tabdetach
-bind gD composite tabduplicate | tabdetach
+bind gD composite tabduplicate; tabdetach
 
 " Make yy use canonical / short links on the 5 websites that support them
 " bind yy clipboard yankshort
@@ -50,10 +48,6 @@ bind gD composite tabduplicate | tabdetach
 " Misc settings
 "
 
-" set editorcmd to suckless terminal, or use the defaults on other platforms
-js tri.browserBg.runtime.getPlatformInfo().then(os=>{const editorcmd = os.os=="linux" ? "st vim" : "auto"; tri.config.set("editorcmd", editorcmd)})
-
-
 " Sane hinting mode
 set hintfiltermode vimperator-reflow
 set hintnames numeric
@@ -61,9 +55,7 @@ set hintnames numeric
 " Quickmarks
 " Use go/gn/gw to open in current tab / new tab / new win
 quickmark r https://review.opendev.org/#/dashboard/self
-quickmark p https://github.com/pulls
-
-seturl https://redhat.service-now.com/help noiframe true
+quickmark p https://github.com/pulls/authored
 
 "
 " URL redirects
@@ -72,14 +64,14 @@ seturl https://redhat.service-now.com/help noiframe true
 set followpagepatterns.next ^(next|newer|prochain|suivant)\b|→|»|>>
 set followpagepatterns.prev ^(prev(ious)?|older|précédent)\b|←|«|<<
 
-set smoothscroll true
+smoothscrollwizard
 
 colourscheme twilight
 
 set modeindicator false
-" gnome-terminal is client/server and the command returns immediately, need to
-" use another terminal
-set editorcmd urxvt256c -e vim
+set editorcmd ghostty -e vim
+
+set findresults 0
 
 set externalclipboardcmd wl-copy
 

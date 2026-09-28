@@ -16,22 +16,46 @@
     --tridactyl-status-fg: var(--tridactyl-fg);
     --tridactyl-status-border: 1px lightgray solid;
     --tridactyl-status-border-radius: 2px;
+    --tridactyl-indicator-border-style: solid;
+    --tridactyl-indicator-border-width: 1.5px;
 
     /* Search highlight */
-    --tridactyl-search-highlight-color: yellow;
+    --tridactyl-search-highlight-color: #8C9440;
+    --tridactyl-search-highlight-active-color: #F0C674;
 
     /* Hinting */
 
     /* Hint character tags */
+    --tridactyl-hintspan-font-family: var(--tridactyl-font-family-sans);
+    --tridactyl-hintspan-font-size: var(--tridactyl-small-font-size);
+    --tridactyl-hintspan-font-weight: bold;
     --tridactyl-hintspan-fg: #1e1e1e;
+    --tridactyl-hintspan-pressed-fg: var(--tridactyl-hintspan-fg);
     --tridactyl-hintspan-bg: #f9ee98;
+    --tridactyl-hintspan-border-color: ButtonShadow;
+    --tridactyl-hintspan-border-width: 0px;
+    --tridactyl-hintspan-border-style: solid;
+    --tridactyl-hintspan-js-background: hsla(0, 0%, 65%);
+    --tridactyl-hintspan-active-fg: var(--tridactyl-hint-active-bg);
+    --tridactyl-hintspan-active-bg: var(--tridactyl-hint-active-fg);
+    --tridactyl-hintspan-active-border-color: var(--tridactyl-hintspan-border-color);
 
     /* Element highlights */
+    --tridactyl-hint-fg: var(--tridactyl-fg);
     --tridactyl-hint-active-fg: var(--tridactyl-fg);
     --tridactyl-hint-active-bg: rgba(255, 255, 0, 0.25);
     --tridactyl-hint-active-outline: none;
     --tridactyl-hint-bg: none;
     --tridactyl-hint-outline: none;
+
+    /* Element highlight overlays */
+    --tridactyl-hint-highlight-fg: var(--tridactyl-hint-fg);
+    --tridactyl-hint-highlight-active-fg: var(--tridactyl-hint-active-fg);
+    --tridactyl-hint-highlight-bg: var(--tridactyl-hint-bg);
+    --tridactyl-hint-highlight-active-bg: var(--tridactyl-hint-active-bg);
+    --tridactyl-hint-highlight-outline: var(--tridactyl-hint-outline);
+    --tridactyl-hint-highlight-active-outline: var(--tridactyl-hint-active-outline);
+    --tridactyl-hint-highlight-opacity: 0.25;
 
     /* :viewsource */
     --tridactyl-vs-bg: var(--tridactyl-bg);
@@ -65,9 +89,9 @@
 
     /*sectionHeader*/
 
-    /* --tridactyl-header-first-bg: black; */
-    /* --tridactyl-header-second-bg: black; */
-    /* --tridactyl-header-third-bg: black; */
+    --tridactyl-header-first-bg: #1c2128;
+    --tridactyl-header-second-bg: #12151a;
+    --tridactyl-header-third-bg: var(--tridactyl-bg);
     /* eg. What if I dont want liner-gradient as bg?
      *
      * :root .sectionHeader { background: blue; }
@@ -75,6 +99,7 @@
      * ????
      */
 
+    --tridactyl-header-font-size: inherit;
     --tridactyl-header-font-weight: bold;
     /* i don't think 0.5px is redered */
     --tridactyl-header-border-bottom: 1px solid bottom;

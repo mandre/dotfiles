@@ -94,7 +94,7 @@
     --tridactyl-of-bg: #121212;
 
     /*new tab spoiler box*/
-    --tridactyl-highlight-box-bg: #eee;
+    --tridactyl-highlight-box-bg: #1c2128;
     --tridactyl-highlight-box-fg: var(--tridactyl-fg);
 
     --tridactyl-private-window-icon-url: url("chrome://browser/skin/privatebrowsing/private-browsing.svg");

@@ -40,6 +40,8 @@ A "**Plan Complete!** ✓" checklist message (all items struck through) is emitt
   - Subject line: max 50 characters, capitalized, imperative mood, no trailing period.
   - Blank line separating subject from body.
   - Body: wrap lines at 72 characters.
+- When fixing a bug in the OCPBUGS Jira project, prefix the subject line with the issue key followed by a colon (e.g., `OCPBUGS-12345: Fix node scaling`). The key counts toward the 50-character subject limit.
 - When a commit message includes links (URLs), use footnote-style references instead of inline URLs:
   - Place a short reference marker in the body text (e.g., `[1]`).
-  - List the full URLs at the end of the message body, one per line, matching their markers (e.g., `[1]: https://example.com/...`).
+  - List the full URLs at the end of the message body, one per line, matching their markers (e.g., `[1] https://example.com/...`).
+  - Every footnote must be referenced by its marker (e.g., `[1]`) somewhere in the body text. Do not add unreferenced footnotes.

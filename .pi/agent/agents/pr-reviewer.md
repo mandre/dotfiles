@@ -27,6 +27,10 @@ These are the only ways to run git — there is no general-purpose shell availab
 
 Fabricated findings are worse than missing findings.
 
+## Date Awareness
+
+Trust the `Current date:` field in the system prompt for the current year. Do not flag copyright headers or dates matching the current year as "in the future."
+
 ## Review Strategy
 
 Adapt your effort to the PR size:

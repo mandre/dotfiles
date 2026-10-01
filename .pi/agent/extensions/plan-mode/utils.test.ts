@@ -762,6 +762,37 @@ assert(!isSafeCommand("dot -Tsvg input.dot -o output.svg 2>&1"), "dot: svg outpu
 	assert(items[1].completed === false, "markCompletedSteps no markers: step 2 unchanged");
 }
 
+// --- isSafeCommand: tmux read-only ---
+
+assert(isSafeCommand("tmux capture-pane -p"), "tmux: capture-pane is safe");
+assert(isSafeCommand("tmux capture-pane -t .0 -p"), "tmux: capture-pane with target is safe");
+assert(isSafeCommand("tmux list-sessions"), "tmux: list-sessions is safe");
+assert(isSafeCommand("tmux ls"), "tmux: ls is safe");
+assert(isSafeCommand("tmux list-panes -a"), "tmux: list-panes is safe");
+assert(isSafeCommand("tmux list-windows"), "tmux: list-windows is safe");
+assert(isSafeCommand("tmux list-buffers"), "tmux: list-buffers is safe");
+assert(isSafeCommand("tmux list-keys"), "tmux: list-keys is safe");
+assert(isSafeCommand("tmux show-options -g"), "tmux: show-options is safe");
+assert(isSafeCommand("tmux show-environment"), "tmux: show-environment is safe");
+assert(isSafeCommand("tmux show-buffer"), "tmux: show-buffer is safe");
+assert(isSafeCommand("tmux display-message -p '#{pane_current_path}'"), "tmux: display-message is safe");
+assert(isSafeCommand("tmux has-session -t main"), "tmux: has-session is safe");
+assert(isSafeCommand("tmux info"), "tmux: info is safe");
+assert(isSafeCommand("tmux display-panes"), "tmux: display-panes is safe");
+assert(isSafeCommand("tmux capture-pane -p | head -50"), "tmux: capture-pane piped is safe");
+assert(isSafeCommand("tmux list-clients"), "tmux: list-clients is safe");
+assert(isSafeCommand("tmux list-commands"), "tmux: list-commands is safe");
+
+// tmux destructive (blocked)
+assert(!isSafeCommand("tmux kill-session -t main"), "tmux: kill-session is blocked");
+assert(!isSafeCommand("tmux kill-server"), "tmux: kill-server is blocked");
+assert(!isSafeCommand("tmux send-keys -t .0 'ls' Enter"), "tmux: send-keys is blocked");
+assert(!isSafeCommand("tmux new-session -s test"), "tmux: new-session is blocked");
+assert(!isSafeCommand("tmux split-window"), "tmux: split-window is blocked");
+assert(!isSafeCommand("tmux kill-pane -t .1"), "tmux: kill-pane is blocked");
+assert(!isSafeCommand("tmux rename-session -t old new"), "tmux: rename-session is blocked");
+assert(!isSafeCommand("tmux rename-window newname"), "tmux: rename-window is blocked");
+
 // --- isSafeCommand: man ---
 
 assert(isSafeCommand("man rg"), "man: man rg is safe");

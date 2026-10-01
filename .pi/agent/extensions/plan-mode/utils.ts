@@ -174,6 +174,8 @@ const SAFE_PATTERNS = [
 	/^\s*md5sum\b/,
 	/^\s*hexdump\b/,
 	/^\s*xxd\b/,
+	// tmux (read-only)
+	/^\s*tmux\s+(capture-pane|list-sessions|list-windows|list-panes|list-buffers|list-clients|list-commands|list-keys|display-message|show-options|show-environment|show-buffer|has-session|info|display-panes|ls)\b/i,
 	// Documentation
 	/^\s*man\b/,
 	// Package info (rpm)

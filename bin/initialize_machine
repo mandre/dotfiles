@@ -27,7 +27,8 @@ ${INSTALLER} install -y \
 	tmux \
 	mc \
 	neovim \
-	ripgrep
+	ripgrep \
+	fzf
 
 if ! id -u martin; then
 	adduser martin
@@ -105,15 +106,6 @@ else
 	git pull
 	popd
 fi
-
-# FZF
-mkdir -p ~/.local/share ~/.local/bin
-if ! [ -d ~/.local/share/fzf ]; then
-	git clone --depth 1 https://github.com/junegunn/fzf.git ~/.local/share/fzf
-	~/.local/share/fzf/install --bin
-fi
-ln -sf ~/.local/share/fzf/bin/fzf ~/.local/bin/fzf
-ln -sf ~/.local/share/fzf/bin/fzf-tmux ~/.local/bin/fzf-tmux
 
 # General ~/.config directories
 mkdir -p ~/.config

@@ -25,7 +25,9 @@ ${INSTALLER} install -y \
 	git \
 	vim \
 	tmux \
-	mc
+	mc \
+	neovim \
+	ripgrep
 
 if ! id -u martin; then
 	adduser martin
@@ -79,8 +81,11 @@ export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 [[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
 EOS
 
-ln -sf ~/dotfiles/bin ~/
+mkdir -p ~/.local
+ln -sf ~/dotfiles/bin ~/.local/bin
+ln -sf ~/dotfiles/bin ~/bin
 
+# Git
 mkdir -p ~/.config/git
 ln -sf ~/dotfiles/.config/git/config ~/.config/git/config
 ln -sf ~/dotfiles/.config/git/template ~/.config/git/template
@@ -90,6 +95,7 @@ cat > ~/.config/git/config.private <<EOS
         email = ${email}
 EOS
 
+# Tmux
 mkdir -p ~/.config/tmux/plugins
 ln -sf ~/dotfiles/.config/tmux/tmux.conf ~/.config/tmux/tmux.conf
 if ! [ -d ~/.config/tmux/plugins/tpm ]; then
@@ -100,6 +106,7 @@ else
 	popd
 fi
 
+# FZF
 mkdir -p ~/.local/share ~/.local/bin
 if ! [ -d ~/.local/share/fzf ]; then
 	git clone --depth 1 https://github.com/junegunn/fzf.git ~/.local/share/fzf
@@ -108,20 +115,52 @@ fi
 ln -sf ~/.local/share/fzf/bin/fzf ~/.local/bin/fzf
 ln -sf ~/.local/share/fzf/bin/fzf-tmux ~/.local/bin/fzf-tmux
 
-mkdir -p ~/.config/vim
-ln -sf ~/dotfiles/.config/vim ~/.config/vim
-vim +PlugInstall +qall
+# General ~/.config directories
+mkdir -p ~/.config
+for app in bugwarrior gh ghostty hubtty k9s mc mplayer2 nvim ripgrep tridactyl vim; do
+	if [ -d ~/dotfiles/.config/"$app" ]; then
+		ln -sf ~/dotfiles/.config/"$app" ~/.config/"$app"
+	fi
+done
 
+if command -v nvim >/dev/null 2>&1; then
+	nvim --headless +PlugInstall +qall 2>/dev/null || true
+elif command -v vim >/dev/null 2>&1; then
+	vim +PlugInstall +qall 2>/dev/null || true
+fi
+
+# IRB config
 mkdir -p ~/.config/irb
 ln -sf ~/dotfiles/.config/irb/irbrc ~/.config/irb/irbrc
 
-ln -sf ~/dotfiles/.config/mplayer2 ~/.config/mplayer2
+# Zsh custom modules
+if [ -d ~/dotfiles/.config/zsh/custom ]; then
+	ln -sf ~/dotfiles/.config/zsh/custom ~/.config/zsh/custom
+fi
 
-mkdir -p ~/.config/mc
-ln -sf ~/dotfiles/.config/mc/ini ~/.config/mc/
-ln -sf ~/dotfiles/.config/mc/mc.keymap ~/.config/mc/
+# Pi agent
+mkdir -p ~/.pi/agent
+for item in agents extensions themes AGENTS.md settings.json; do
+	if [ -e ~/dotfiles/.pi/agent/"$item" ]; then
+		ln -sf ~/dotfiles/.pi/agent/"$item" ~/.pi/agent/"$item"
+	fi
+done
+
+# Local share data
 mkdir -p ~/.local/share/mc
-ln -sf ~/dotfiles/.local/share/mc/skins/ ~/.local/share/mc/
+if [ -d ~/dotfiles/.local/share/hackon ]; then
+	ln -sf ~/dotfiles/.local/share/hackon ~/.local/share/hackon
+fi
+if [ -d ~/dotfiles/.local/share/mc/skins ]; then
+	ln -sf ~/dotfiles/.local/share/mc/skins ~/.local/share/mc/skins
+fi
+
+# Root dotfiles
+for rc in .curlrc .inputrc .taskrc .wgetrc; do
+	if [ -f ~/dotfiles/"$rc" ]; then
+		ln -sf ~/dotfiles/"$rc" ~/"$rc"
+	fi
+done
 EOF
 
 chsh -s /bin/zsh martin

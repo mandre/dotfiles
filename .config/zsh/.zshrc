@@ -58,4 +58,4 @@ if (( $+commands[oc] )); then
     compdef kubectl=oc
 fi
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+(( $+commands[fzf] )) && source <(fzf --zsh)

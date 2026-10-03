@@ -58,49 +58,64 @@ else
 	popd
 fi
 
-if ! [ -d .zprezto ]; then
-	git clone --recursive https://github.com/sorin-ionescu/prezto.git ~/.zprezto
+mkdir -p ~/.config/zsh
+if ! [ -d ~/.config/zsh/.zprezto ]; then
+	git clone --recursive https://github.com/sorin-ionescu/prezto.git ~/.config/zsh/.zprezto
 else
-	pushd .zprezto
+	pushd ~/.config/zsh/.zprezto
 	git pull
 	git submodules update
 	popd
 fi
 
-ln -sf ~/dotfiles/.zlogin ~/
-ln -sf ~/dotfiles/.zpreztorc ~/
-ln -sf ~/dotfiles/.zprofile ~/
-ln -sf ~/dotfiles/.zshenv ~/
-ln -sf ~/dotfiles/.zshrc ~/
+ln -sf ~/dotfiles/.config/zsh/.zlogin ~/.config/zsh/
+ln -sf ~/dotfiles/.config/zsh/.zpreztorc ~/.config/zsh/
+ln -sf ~/dotfiles/.config/zsh/.zprofile ~/.config/zsh/
+ln -sf ~/dotfiles/.config/zsh/.zshenv ~/.config/zsh/
+ln -sf ~/dotfiles/.config/zsh/.zshrc ~/.config/zsh/
+
+cat > ~/.zshenv <<'EOS'
+export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+[[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
+EOS
 
 ln -sf ~/dotfiles/bin ~/
 
-ln -sf ~/dotfiles/.git_template/ ~/
-ln -sf ~/dotfiles/.gitconfig ~/
-cat > ~/.gitconfig.private <<EOS
+mkdir -p ~/.config/git
+ln -sf ~/dotfiles/.config/git/config ~/.config/git/config
+ln -sf ~/dotfiles/.config/git/template ~/.config/git/template
+cat > ~/.config/git/config.private <<EOS
 [user]
         name = Martin André
         email = ${email}
 EOS
 
-if [[ \$(tmux -V) == "tmux 1.8" ]]; then
-	ln -sf ~/dotfiles/.tmux-1.8.conf ~/.tmux.conf
+mkdir -p ~/.config/tmux/plugins
+ln -sf ~/dotfiles/.config/tmux/tmux.conf ~/.config/tmux/tmux.conf
+if ! [ -d ~/.config/tmux/plugins/tpm ]; then
+	git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
 else
-	ln -sf ~/dotfiles/.tmux.conf ~/
-	if ! [ -d ~/.tmux/plugins/tpm ]; then
-		git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-	else
-		pushd ~/.tmux/plugins/tpm
-		git pull
-		popd
-	fi
+	pushd ~/.config/tmux/plugins/tpm
+	git pull
+	popd
 fi
 
-ln -sf ~/dotfiles/.vimrc ~/
-mkdir -p ~/.vim
-ln -sf ~/dotfiles/.vim/colors/ ~/.vim/
+mkdir -p ~/.local/share ~/.local/bin
+if ! [ -d ~/.local/share/fzf ]; then
+	git clone --depth 1 https://github.com/junegunn/fzf.git ~/.local/share/fzf
+	~/.local/share/fzf/install --bin
+fi
+ln -sf ~/.local/share/fzf/bin/fzf ~/.local/bin/fzf
+ln -sf ~/.local/share/fzf/bin/fzf-tmux ~/.local/bin/fzf-tmux
+
+mkdir -p ~/.config/vim
+ln -sf ~/dotfiles/.config/vim ~/.config/vim
 vim +PlugInstall +qall
-ln -sf ~/dotfiles/.vim/vim-airline/twilight.vim ~/.vim/plugged/vim-airline/autoload/airline/themes/
+
+mkdir -p ~/.config/irb
+ln -sf ~/dotfiles/.config/irb/irbrc ~/.config/irb/irbrc
+
+ln -sf ~/dotfiles/.config/mplayer2 ~/.config/mplayer2
 
 mkdir -p ~/.config/mc
 ln -sf ~/dotfiles/.config/mc/ini ~/.config/mc/

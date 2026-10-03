@@ -94,7 +94,7 @@ zstyle ':prezto:module:git:alias' skip 'yes'
 #
 
 # Set the file to save the history in when an interactive shell exits.
-# zstyle ':prezto:module:history' histfile "${ZDOTDIR:-$HOME}/.zsh_history"
+zstyle ':prezto:module:history' histfile "${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history"
 
 # Set the maximum  number  of  events  stored  in  the  internal history list.
 # zstyle ':prezto:module:history' histsize 10000

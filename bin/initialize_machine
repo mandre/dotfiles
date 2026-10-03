@@ -117,7 +117,7 @@ ln -sf ~/.local/share/fzf/bin/fzf-tmux ~/.local/bin/fzf-tmux
 
 # General ~/.config directories
 mkdir -p ~/.config
-for app in bugwarrior gh ghostty hubtty k9s mc mplayer2 nvim ripgrep tridactyl vim; do
+for app in bugwarrior gh ghostty hubtty k9s mc nvim ripgrep tridactyl vim; do
 	if [ -d ~/dotfiles/.config/"$app" ]; then
 		ln -sf ~/dotfiles/.config/"$app" ~/.config/"$app"
 	fi

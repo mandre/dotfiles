@@ -80,6 +80,7 @@ call plug#end()
 lua require("statusline")
 lua require("lsp")
 lua require("completion")
+lua require("treesitter")
 lua require('gitsigns').setup()
 
 syntax enable
@@ -186,8 +187,10 @@ set nobackup
 set nowritebackup
 set noswapfile
 set undofile
+set autoread
 set smarttab
 set shiftround
+set updatetime=250
 
 " set number
 " set relativenumber
@@ -230,6 +233,8 @@ autocmd TermOpen term://* startinsert
 " set title
 set scrolloff=3
 set sidescrolloff=10
+set splitright
+set splitbelow
 set listchars+=precedes:❮,extends:❯
 set showbreak=↪
 set noshowmode
@@ -316,6 +321,9 @@ if has("autocmd")
   " Utilities {{{
   augroup utilities
     autocmd!
+
+    " Pick up file changes made outside of Neovim
+    autocmd FocusGained,BufEnter,CursorHold * checktime
 
     " When editing a file, always jump to the last known cursor position.
     " Don't do it when the position is invalid or when inside an event handler

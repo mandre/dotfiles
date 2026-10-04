@@ -346,8 +346,8 @@ set expandtab
 
 " Shortcuts to often edited files
 nnoremap <leader>ev :vsplit $HOME/.config/nvim/init-0.5.vim<cr>
-nnoremap <leader>ez :vsplit $HOME/.zshrc<cr>
-nnoremap <leader>et :vsplit $HOME/.tmux.conf<cr>
+nnoremap <leader>ez :vsplit $HOME/.config/zsh/.zshrc<cr>
+nnoremap <leader>et :vsplit $HOME/.config/tmux/tmux.conf<cr>
 nnoremap <leader>es :vsplit $HOME/.ssh/config<cr>
 
 " Toggle settings

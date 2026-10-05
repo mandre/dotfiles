@@ -33,6 +33,7 @@ A "**Plan Complete!** ✓" checklist message (all items struck through) is emitt
 
 ## Git Rules
 
+- Always set `GIT_EDITOR=true` when running git commands that may open an interactive editor (e.g. `git rebase --continue`, `git commit --amend`, `git merge`). For interactive rebase, also set `GIT_SEQUENCE_EDITOR=true` (e.g. `GIT_SEQUENCE_EDITOR=true GIT_EDITOR=true git rebase -i --autosquash <base>`). Failing to do this will hang the shell waiting for an editor that cannot be used.
 - Never run `git push` (or any variant like `git push origin`, `git push --force`, etc.) unless the user explicitly asks to push.
 - Never use `git add -A`, `git add --all`, `git add .`, or any other form that stages all changes. Always specify files or paths explicitly (e.g., `git add path/to/file.go path/to/other.go`).
 - Exception: when vendoring or equivalent (e.g., after `go mod vendor`), you may `git add` the entire vendored directory (e.g., `git add vendor/`).

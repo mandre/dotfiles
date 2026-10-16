@@ -48,7 +48,7 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, TextContent } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { type AutocompleteItem, Key, truncateToWidth } from "@earendil-works/pi-tui";
-import { extractTodoItems, isSafeCommand, markCompletedSteps, type TodoItem } from "./utils.js";
+import { extractTodoItems, isSafeCommand, markCompletedSteps, matchToolResultsToSteps, type TodoItem, type ToolCallInfo } from "./utils.js";
 
 // Tools
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch", "codemode"];
@@ -64,6 +64,26 @@ function getTextContent(message: AssistantMessage): string {
 		.filter((block): block is TextContent => block.type === "text")
 		.map((block) => block.text)
 		.join("\n");
+}
+
+// Extract tool call info (name, path, command) from assistant message
+// content blocks for content-aware step matching.
+function extractToolCallInfos(message: AssistantMessage): ToolCallInfo[] {
+	const calls: ToolCallInfo[] = [];
+	for (const block of message.content) {
+		if (block.type !== "toolCall") continue;
+		const tc = block as unknown as { name: string; arguments?: Record<string, unknown> };
+		const args = tc.arguments ?? {};
+		calls.push({
+			name: tc.name,
+			path:
+				tc.name === "edit" || tc.name === "write"
+					? ((args.path as string | undefined) ?? (args.file_path as string | undefined))
+					: undefined,
+			command: tc.name === "bash" ? (args.command as string | undefined) : undefined,
+		});
+	}
+	return calls;
 }
 
 export default function planModeExtension(pi: ExtensionAPI): void {
@@ -448,19 +468,24 @@ Do NOT attempt to make changes - just describe what you would do.`,
 		const text = getTextContent(event.message);
 		const marked = markCompletedSteps(text, todoItems);
 
-		// Fallback heuristic: if mutating tools (edit, write) were used and
-		// there are more mutating results than explicitly marked steps, mark
-		// additional uncompleted steps for the excess.  This handles the case
-		// where the model uses [DONE:n] for one step and performs an edit for
-		// a different step in the same turn — the old `marked === 0` guard
-		// would suppress the fallback entirely, leaving the edited step
-		// untracked.
-		if (event.toolResults && event.toolResults.length > 0) {
+		// Content-aware matching: match tool calls to plan steps by file
+		// path and command keywords. Handles multi-block edits (one edit
+		// covering multiple plan steps for the same file) and bash-based
+		// steps (build, lint, test, commit).
+		const toolCalls = extractToolCallInfos(event.message);
+		const contentMatched = matchToolResultsToSteps(toolCalls, todoItems);
+
+		// Sequential fallback: if neither explicit markers nor content-aware
+		// matching found anything, fall back to counting edit/write mutations
+		// and marking that many uncompleted steps in order. This handles
+		// steps whose text doesn't contain recognizable file paths or
+		// command keywords.
+		if (marked === 0 && contentMatched === 0 && event.toolResults && event.toolResults.length > 0) {
 			const mutatingCount = event.toolResults.filter(
 				(tr: { toolName?: string }) => tr.toolName === "edit" || tr.toolName === "write",
 			).length;
-			if (mutatingCount > marked) {
-				let remaining = mutatingCount - marked;
+			if (mutatingCount > 0) {
+				let remaining = mutatingCount;
 				for (const item of todoItems) {
 					if (remaining <= 0) break;
 					if (!item.completed) {

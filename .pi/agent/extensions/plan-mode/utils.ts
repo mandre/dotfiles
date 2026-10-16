@@ -356,3 +356,97 @@ export function markCompletedSteps(text: string, items: TodoItem[]): number {
 	}
 	return marked;
 }
+
+/**
+ * Info extracted from an assistant message's tool call blocks,
+ * used for content-aware step matching.
+ */
+export interface ToolCallInfo {
+	name: string;
+	path?: string;
+	command?: string;
+}
+
+/**
+ * Check if a file path matches a plan step's text (case-insensitive).
+ * Tries the full relative path first, then progressively shorter
+ * trailing path components.
+ */
+export function filePathMatchesStep(filePath: string, stepText: string): boolean {
+	const normalizedPath = filePath.toLowerCase().replace(/\\/g, "/");
+	const normalizedStep = stepText.toLowerCase();
+
+	const parts = normalizedPath.split("/");
+	for (let i = 0; i < parts.length; i++) {
+		const suffix = parts.slice(i).join("/");
+		// Require at least 5 chars to avoid matching single-letter directory names
+		if (suffix.length >= 5 && normalizedStep.includes(suffix)) return true;
+	}
+	return false;
+}
+
+/**
+ * Check if a bash command corresponds to a plan step.
+ * Recognizes common build/test/lint/commit patterns from make, go,
+ * cargo, npm, git, and standalone test runners.
+ */
+export function bashCommandMatchesStep(command: string, stepText: string): boolean {
+	const normalizedCmd = normalizeCommand(command).toLowerCase();
+	const normalizedStep = stepText.toLowerCase();
+
+	// Build/test/lint via make, go, cargo, npm, yarn
+	const buildToolMatch = normalizedCmd.match(
+		/\b(?:make|go|cargo|npm\s+run|yarn)\s+(build|test|lint|vet|fmt|format|generate(?:-\w+)?)\b/,
+	);
+	if (buildToolMatch) {
+		const action = buildToolMatch[1];
+		if (action === "vet") return normalizedStep.includes("vet") || normalizedStep.includes("lint");
+		if (action.startsWith("generate")) return normalizedStep.includes("generate");
+		return normalizedStep.includes(action);
+	}
+
+	// npm test / pytest / jest (no subcommand after the tool name)
+	if (/\b(?:npm\s+test|pytest|jest)\b/.test(normalizedCmd)) {
+		return normalizedStep.includes("test");
+	}
+
+	// git commit
+	if (/\bgit\s+commit\b/.test(normalizedCmd)) {
+		return normalizedStep.includes("commit");
+	}
+
+	// git push
+	if (/\bgit\s+push\b/.test(normalizedCmd)) {
+		return normalizedStep.includes("push");
+	}
+
+	return false;
+}
+
+/**
+ * Match tool calls to plan steps by content (file paths, command keywords).
+ * For edit/write calls, matches the file path against step text.
+ * For bash calls, matches recognized action keywords against step text.
+ * Returns the number of newly marked steps.
+ */
+export function matchToolResultsToSteps(toolCalls: ToolCallInfo[], items: TodoItem[]): number {
+	let marked = 0;
+	for (const tc of toolCalls) {
+		if ((tc.name === "edit" || tc.name === "write") && tc.path) {
+			for (const item of items) {
+				if (!item.completed && filePathMatchesStep(tc.path, item.text)) {
+					item.completed = true;
+					marked++;
+				}
+			}
+		} else if (tc.name === "bash" && tc.command) {
+			for (const item of items) {
+				if (!item.completed && bashCommandMatchesStep(tc.command, item.text)) {
+					item.completed = true;
+					marked++;
+				}
+			}
+		}
+	}
+	return marked;
+}

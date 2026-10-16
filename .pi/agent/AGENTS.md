@@ -4,6 +4,12 @@
 
 A "**Plan Complete!** ✓" checklist message (all items struck through) is emitted by the plan-mode tracker's heuristics and can fire prematurely — e.g. once any mutating tool call happens in a turn, even if several distinct plan steps (like asking the user a question, or writing to a specific file) were never actually done. Do not treat it as proof that every step was completed. Before ending the plan, cross-check each struck-through item against actual evidence (files changed, questions actually asked and answered, reports actually given) and finish any step that wasn't genuinely done.
 
+## Writing Style
+
+- Do not use filler words or phrases in code comments and git commit messages. Avoid hedging language (e.g., "basically", "essentially", "simply", "just", "obviously", "clearly", "in order to", "it should be noted that", "as a matter of fact", "it is worth mentioning"). Be direct and concise.
+- Do not use emdashes (—). Use other punctuation instead: commas, colons, semicolons, parentheses, or separate sentences.
+- Use a single space after a period, not two.
+
 ## Plan Mode
 
 - If a tool call is blocked because plan mode is active, do not retry with a different command, a different tool, or an indirect workaround (e.g. `cp`/`mv` tricks, chaining, or switching to `write`/`edit`) to achieve the same effect. Stop immediately and describe the intended action as a plan step instead.
@@ -34,13 +40,15 @@ A "**Plan Complete!** ✓" checklist message (all items struck through) is emitt
 ## Git Rules
 
 - Always set `GIT_EDITOR=true` when running git commands that may open an interactive editor (e.g. `git rebase --continue`, `git commit --amend`, `git merge`). For interactive rebase, also set `GIT_SEQUENCE_EDITOR=true` (e.g. `GIT_SEQUENCE_EDITOR=true GIT_EDITOR=true git rebase -i --autosquash <base>`). Failing to do this will hang the shell waiting for an editor that cannot be used.
+- When amending a commit (e.g. `git commit --amend`), always re-read the existing commit message and verify it still accurately describes the commit's content after the amendment. If the change alters what the commit does (e.g. reverting a behavior, adding/removing a feature, changing a value), update the commit message to reflect the new content. Do not preserve a stale message that describes behavior the commit no longer introduces. Use `git log -1 --format=%B` to read the current message before amending, compare it against the actual diff (`git diff HEAD~1 --stat` or similar), and rewrite the `-m` argument as needed.
 - Never run `git push` (or any variant like `git push origin`, `git push --force`, etc.) unless the user explicitly asks to push.
 - Never use `git add -A`, `git add --all`, `git add .`, or any other form that stages all changes. Always specify files or paths explicitly (e.g., `git add path/to/file.go path/to/other.go`).
 - Exception: when vendoring or equivalent (e.g., after `go mod vendor`), you may `git add` the entire vendored directory (e.g., `git add vendor/`).
 - Follow the 50/72 rule for commit messages:
   - Subject line: max 50 characters, capitalized, imperative mood, no trailing period.
   - Blank line separating subject from body.
-  - Body: wrap lines at 72 characters.
+  - Body: target a line width of 72 characters. Fill each line to as close to 72 characters as possible without exceeding it; do not wrap early at 60.
+  - Body: use backticks around code identifiers (function names, variable names, type names, field names, package names, command names, file paths, etc.).
 - When fixing a bug in the OCPBUGS Jira project, prefix the subject line with the issue key followed by a colon (e.g., `OCPBUGS-12345: Fix node scaling`). The key counts toward the 50-character subject limit.
 - When a commit message includes links (URLs), use footnote-style references instead of inline URLs:
   - Place a short reference marker in the body text (e.g., `[1]`).

@@ -4,9 +4,14 @@
 [color "diff"]
 	meta = yellow
 
+[commit]
+	gpgsign = true
+
 [diff]
 	renames = copies
 	mnemonicprefix = true
+	algorithm = histogram
+	colorMoved = default
 
 [push]
 	default = current
@@ -14,11 +19,18 @@
 [pull]
 	rebase = true
 
+[rebase]
+	autoSquash = true
+
 [rerere]
 	enabled = false
 
-; [init]
-; 	templatedir = ~/.config/git/template
+[init]
+	defaultBranch = main
+; 	templatedir = ~/.git_template
+
+[branch]
+	sort = -committerdate
 
 [alias]
 	ctags = !.git/hooks/ctags
@@ -40,7 +52,3 @@
 
 [include]
 	path = config.private
-[commit]
-	gpgsign = true
-[init]
-	defaultBranch = main

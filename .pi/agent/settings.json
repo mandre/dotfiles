@@ -1,22 +1,28 @@
 {
-  "lastChangelogVersion": "0.78.1",
+  "lastChangelogVersion": "1.4.0",
   "packages": [
     "npm:@twogiants/pi-anthropic-vertex",
     "npm:@juicesharp/rpiv-web-tools"
   ],
   "theme": "mandre",
-  "defaultProvider": "anthropic-vertex",
-  "defaultModel": "claude-sonnet-5",
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "high",
   "enabledModels": [
     "anthropic-vertex/claude-opus-4-6",
-    "anthropic-vertex/claude-sonnet-5",
     "google-vertex/gemini-3.1-pro-preview",
-    "google-vertex/gemini-3.5-flash"
+    "google-vertex/gemini-3.8-flash",
+    "openai/gpt-6.1-sol",
+    "enmaas-glm-5-3/rits/zai-org/glm-5-3",
+    "anthropic/claude-opus-5-5",
+    "anthropic/claude-sonnet-5-5"
   ],
   "extensions": [
     "+extensions/code-review.ts"
   ],
   "enableInstallTelemetry": false,
-  "tuiMode": "fullscreen"
+  "tuiMode": "fullscreen",
+  "fullscreenScrollbar": "auto",
+  "fullscreenWheelScrollLines": "auto",
+  "quietStartup": "header"
 }

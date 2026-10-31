@@ -693,7 +693,7 @@ async function performReview(
 
 	const prompt = buildReviewPrompt(diff, focus, prTitle);
 
-	const response = await ctx.modelRegistry.complete(
+	const response = await ctx.modelRegistry.streamSimple(
 		model,
 		{
 			messages: [
@@ -705,10 +705,10 @@ async function performReview(
 			],
 		},
 		{
-			reasoningEffort: "high",
+			reasoning: "high",
 			signal,
 		},
-	);
+	).result();
 
 	const review = response.content
 		.filter((c): c is { type: "text"; text: string } => c.type === "text")
@@ -990,11 +990,11 @@ interface ProgressEvent {
 
 /**
  * Sandboxed extension loaded into the review sub-agent's own `pi` process via
- * `--no-extensions --extension <tmpfile>`. This is the ONLY extension the
- * sub-agent ever loads — it never sees plan-mode, custom-footer,
- * questionnaire, or even this file's own /review commands.
+ * `--extension <tmpfile>`. Provider extensions still load; built-in MCP is
+ * disabled with `--no-mcp`. The tool allowlist selects read-only inspection
+ * tools, and the hook below blocks the built-in mutation and shell tools.
  *
- * It guarantees the sub-agent can never write anything:
+ * Read-only restrictions:
  * - `edit`/`write`/`bash` are hard-blocked via a tool_call hook, on top of
  *   already being excluded from `--tools`. This is defense in depth in case
  *   the tool allowlist is ever loosened.
@@ -1139,7 +1139,7 @@ async function runPrReviewSubagent(
 ): Promise<SubagentResult> {
 	const agent = loadPrReviewerAgent();
 
-	const piArgs: string[] = ["--mode", "json", "-p", "--no-session"];
+	const piArgs: string[] = ["--mode", "json", "-p", "--no-session", "--no-mcp"];
 	
 	// Prioritize parent session's current model over the hardcoded agent model
 	const modelArg = parentModel ? `${parentModel.provider}/${parentModel.id}` : agent.model;

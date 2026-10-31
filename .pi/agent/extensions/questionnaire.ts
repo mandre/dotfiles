@@ -6,7 +6,7 @@
  */
 
 import { keyHint, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import { CURSOR_MARKER, Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
 // Types
@@ -60,18 +60,8 @@ const QuestionSchema = Type.Object({
 });
 
 const QuestionnaireParams = Type.Object({
-	questions: Type.Array(QuestionSchema, { description: "Questions to ask the user" }),
+	questions: Type.Array(QuestionSchema, { minItems: 1, description: "Questions to ask the user" }),
 });
-
-function errorResult(
-	message: string,
-	questions: Question[] = [],
-): { content: { type: "text"; text: string }[]; details: QuestionnaireResult } {
-	return {
-		content: [{ type: "text", text: message }],
-		details: { questions, answers: [], cancelled: true },
-	};
-}
 
 export default function questionnaire(pi: ExtensionAPI) {
 	pi.registerTool({
@@ -100,7 +90,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 			// Normalize each question's optional fields
 			input.questions = (input.questions as Record<string, unknown>[]).map((q) => {
 				// Handle allowOther stored as string (edge case from older sessions)
-				if (typeof q.allowOther === "string") {
+				if (q && typeof q.allowOther === "string") {
 					return { ...q, allowOther: q.allowOther === "true" };
 				}
 				return q;
@@ -109,12 +99,16 @@ export default function questionnaire(pi: ExtensionAPI) {
 			return input;
 		},
 
-		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			if (ctx.mode !== "tui") {
-				return errorResult("Error: UI not available (requires interactive TUI mode)");
-			}
-			if (params.questions.length === 0) {
-				return errorResult("Error: No questions provided");
+		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+			if (ctx.mode !== "tui") throw new Error("Questionnaire requires interactive TUI mode.");
+			if (signal?.aborted) throw new Error("Questionnaire aborted.");
+			if (params.questions.length === 0) throw new Error("No questions provided.");
+			const ids = new Set<string>();
+			for (const q of params.questions) {
+				if (!q.id.trim() || ids.has(q.id)) throw new Error(`Question IDs must be nonblank and unique: ${q.id}`);
+				ids.add(q.id);
+				if (q.options.length === 0 && q.allowOther === false) throw new Error(`Question ${q.id} has no available answers.`);
+				if (new Set(q.options.map((o) => o.value)).size !== q.options.length) throw new Error(`Question ${q.id} has duplicate option values.`);
 			}
 
 			// Normalize questions with defaults
@@ -135,6 +129,11 @@ export default function questionnaire(pi: ExtensionAPI) {
 				let inputQuestionId: string | null = null;
 				let cachedLines: string[] | undefined;
 				let cachedWidth: number | undefined;
+				let cachedHeight: number | undefined;
+				let selectedLine = 0;
+				let scrollOffset: number | undefined;
+				let renderedHeight = 0;
+				let finished = false;
 				let focused = false;
 				const answers = new Map<string, Answer>();
 
@@ -159,8 +158,13 @@ export default function questionnaire(pi: ExtensionAPI) {
 				}
 
 				function submit(cancelled: boolean) {
+					if (finished) return;
+					finished = true;
+					signal?.removeEventListener("abort", abort);
 					done({ questions, answers: Array.from(answers.values()), cancelled });
 				}
+				const abort = () => submit(true);
+				signal?.addEventListener("abort", abort, { once: true });
 
 				function currentQuestion(): Question | undefined {
 					return questions[currentTab];
@@ -210,6 +214,13 @@ export default function questionnaire(pi: ExtensionAPI) {
 				};
 
 				function handleInput(data: string) {
+					if (matchesKey(data, Key.pageUp) || matchesKey(data, Key.pageDown)) {
+						const page = Math.max(1, tui.terminal.rows - 4);
+						scrollOffset = Math.max(0, Math.min(Math.max(0, renderedHeight - page), (scrollOffset ?? 0) + (matchesKey(data, Key.pageDown) ? page : -page)));
+						refresh();
+						return;
+					}
+					scrollOffset = undefined;
 					// Input mode: route to editor
 					if (inputMode) {
 						if (keybindings.matches(data, "tui.select.cancel")) {
@@ -288,8 +299,12 @@ export default function questionnaire(pi: ExtensionAPI) {
 				}
 
 				function render(width: number): string[] {
-					if (cachedLines && cachedWidth === width) return cachedLines;
+					if (width < 1) return [];
+					const height = Math.max(1, tui.terminal.rows - 2);
+					if (cachedLines && cachedWidth === width && cachedHeight === height) return cachedLines;
 					cachedWidth = width;
+					cachedHeight = height;
+					selectedLine = 0;
 
 					const lines: string[] = [];
 					const q = currentQuestion();
@@ -336,6 +351,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 						for (let i = 0; i < opts.length; i++) {
 							const opt = opts[i];
 							const selected = i === optionIndex;
+							if (selected) selectedLine = lines.length;
 							const isOther = opt.isOther === true;
 							const prefix = selected ? theme.fg("accent", "> ") : "  ";
 							const color = selected ? "accent" : "text";
@@ -346,8 +362,8 @@ export default function questionnaire(pi: ExtensionAPI) {
 								addWrapped(prefix + theme.fg(color, `${i + 1}. ${opt.label}`));
 							}
 							if (opt.description) {
-								for (const line of wrapTextWithAnsi(theme.fg("muted", opt.description), width - descIndent.length)) {
-									lines.push(descIndent + line);
+								for (const line of wrapTextWithAnsi(theme.fg("muted", opt.description), Math.max(1, width - descIndent.length))) {
+									add(descIndent + line);
 								}
 							}
 						}
@@ -361,7 +377,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 						renderOptions();
 						lines.push("");
 						add(theme.fg("muted", " Your answer:"));
-						for (const line of editor.render(width - 2)) {
+						for (const line of editor.render(Math.max(1, width - 2))) {
 							add(` ${line}`);
 						}
 						lines.push("");
@@ -413,8 +429,16 @@ export default function questionnaire(pi: ExtensionAPI) {
 					}
 					add(theme.fg("accent", "─".repeat(width)));
 
-					cachedLines = lines;
-					return lines;
+					renderedHeight = lines.length;
+					if (lines.length > height) {
+						const cursorLine = lines.findIndex((line) => line.includes(CURSOR_MARKER));
+						const anchor = inputMode && cursorLine >= 0 ? cursorLine : selectedLine;
+						const bodyHeight = Math.max(1, height - 1);
+						const start = Math.max(0, Math.min(lines.length - bodyHeight, scrollOffset ?? anchor - Math.floor(bodyHeight / 2)));
+						cachedLines = lines.slice(start, start + bodyHeight);
+						if (height > 1) cachedLines.push(truncateToWidth(theme.fg("dim", `${currentQuestion()?.label ?? "Submit"} • ${start + 1}-${start + bodyHeight}/${lines.length} • PgUp/PgDn scroll`), width));
+					} else cachedLines = lines;
+					return cachedLines;
 				}
 
 				return {
@@ -430,6 +454,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 						editor.invalidate();
 					},
 					handleInput,
+					dispose() { signal?.removeEventListener("abort", abort); },
 				};
 			});
 

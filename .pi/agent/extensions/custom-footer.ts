@@ -6,6 +6,8 @@
  * Line 2: 42%/200k ↑in ↓out R… W… CH…% $cost (sub)         extension statuses
  */
 
+import { sep } from "node:path";
+import type { Usage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
@@ -42,8 +44,10 @@ export default function (pi: ExtensionAPI) {
 				for (const entry of ctx.sessionManager.getBranch()) {
 					const usage = entry.type === "usage" || entry.type === "compaction" || entry.type === "branch_summary"
 						? entry.usage
-						: entry.type === "message" && (entry.message.role === "assistant" || entry.message.role === "toolResult")
-							? entry.message.usage : undefined;
+						: entry.type === "custom" && entry.customType === "review-usage"
+							? (entry.data as { usage?: Usage })?.usage
+							: entry.type === "message" && (entry.message.role === "assistant" || entry.message.role === "toolResult")
+								? entry.message.usage : undefined;
 					if (!usage) continue;
 					input += usage.input || 0;
 					output += usage.output || 0;
@@ -76,7 +80,7 @@ export default function (pi: ExtensionAPI) {
 					// ── Line 1 left: ~/path (branch) • session-name ──
 					const branch = footerData.getGitBranch();
 					const home = process.env.HOME || process.env.USERPROFILE || "";
-					const displayPath = home && ctx.cwd.startsWith(home)
+					const displayPath = home && (ctx.cwd === home || ctx.cwd.startsWith(home + sep))
 						? "~" + ctx.cwd.slice(home.length)
 						: ctx.cwd;
 					let pathStr = theme.fg("dim", displayPath);
@@ -104,10 +108,8 @@ export default function (pi: ExtensionAPI) {
 
 					// ── Line 2 left: context + tokens + cache + cost ──
 					const ctxUsage = ctx.getContextUsage();
-					const contextWindow = ctx.model?.contextWindow || 0;
-					const usageRatio = contextWindow > 0 && ctxUsage?.tokens != null
-						? ctxUsage.tokens / contextWindow
-						: 0;
+					const contextWindow = ctxUsage?.contextWindow ?? 0;
+					const usageRatio = (ctxUsage?.percent ?? 0) / 100;
 					const usageColor = usageRatio >= 0.8 ? "error" : usageRatio >= 0.5 ? "warning" : "success";
 					const contextStr = contextWindow > 0 && ctxUsage?.tokens != null
 						? theme.fg(usageColor, `${Math.round(usageRatio * 100)}%`) +
@@ -141,11 +143,15 @@ export default function (pi: ExtensionAPI) {
 					const statusStr = statusParts.join(theme.fg("dim", " │ "));
 
 					// ── Layout ──
-					const line1pad = " ".repeat(Math.max(1, width - visibleWidth(pathStr) - visibleWidth(modelStr)));
-					const line1 = truncateToWidth(pathStr + line1pad + modelStr, width);
-
-					const line2pad = " ".repeat(Math.max(1, width - visibleWidth(tokens) - visibleWidth(statusStr)));
-					const line2 = truncateToWidth(tokens + line2pad + statusStr, width);
+					const align = (left: string, right: string) => {
+						if (width < 1) return "";
+						const rhs = truncateToWidth(right, width);
+						const room = Math.max(0, width - visibleWidth(rhs) - (rhs ? 1 : 0));
+						const lhs = truncateToWidth(left, room);
+						return lhs + " ".repeat(Math.max(0, width - visibleWidth(lhs) - visibleWidth(rhs))) + rhs;
+					};
+					const line1 = align(pathStr, modelStr);
+					const line2 = align(tokens, statusStr);
 
 					return [line1, line2];
 				},

@@ -8,12 +8,13 @@ function harness(mode = "tui") {
 	const commands = new Map<string, any>();
 	const tools = new Map<string, any>();
 	const messages: any[] = [];
+	const notifications: any[] = [];
 	let active = ["read", "bash", "edit", "write", "codemode", "custom_tool"];
 	let branch: any[] = [];
 	const theme = { fg: (_color: string, text: string) => text, strikethrough: (text: string) => text };
 	const ctx = {
 		mode,
-		ui: { theme, setStatus() {}, setWidget() {}, notify() {}, setWorkingMessage() {} },
+		ui: { theme, setStatus() {}, setWidget() {}, notify: (...args: any[]) => notifications.push(args), setWorkingMessage() {} },
 		sessionManager: {
 			getBranch: () => branch,
 			getEntries: () => { throw new Error("Must use active branch"); },
@@ -33,7 +34,7 @@ function harness(mode = "tui") {
 	} as unknown as ExtensionAPI;
 	planModeExtension(pi);
 	return {
-		ctx, tools, messages,
+		ctx, tools, messages, notifications,
 		get active() { return active; },
 		get branch() { return branch; },
 		set branch(value: any[]) { branch = value; },
@@ -49,7 +50,8 @@ function harness(mode = "tui") {
 }
 
 type Harness = ReturnType<typeof harness>;
-const boundary = { outcome: "completed", continue: false, context: { canContinue: true } };
+const boundary = { outcome: "completed", entries: [], continue: false,
+	context: { canContinue: true, contextMessages: [], pendingMessages: [] } };
 const snapshot = (completed = false) => ({
 	type: "custom", customType: "plan-mode", data: {
 		enabled: false, executing: true,
@@ -63,7 +65,12 @@ async function executing(): Promise<Harness> {
 	await h.emit("before_agent_start", { systemPrompt: "System" });
 	return h;
 }
-const steps = async (h: Harness) => (await h.progress({ action: "list" })).details.todos;
+const steps = async (h: Harness) => {
+	const result = await h.progress({ action: "list" });
+	assert.deepEqual(result.structuredContent.todos, result.details.todos);
+	assert(h.tools.get("plan_progress").outputSchema);
+	return result.details.todos;
+};
 const complete = (h: Harness, ids: number[]) => h.progress({ action: "complete", updates: ids.map((step) => ({ step, evidence: `Verified step ${step}` })) });
 
 let passed = 0;
@@ -140,17 +147,31 @@ await test("aborts, errors, existing continuations, and invalid contexts do not 
 	}
 });
 
-await test("status and tool instructions are present on every request", async () => {
+await test("execution snapshots are append-only and tool results expose updated progress", async () => {
 	const h = await executing();
 	assert(h.active.includes("plan_progress"));
 	assert.equal(h.tools.get("plan_progress").exposure, "codemode");
 	assert.equal(h.tools.get("plan_progress").executionMode, "sequential");
+	const options = { sections: { plan_mode: "Stale", other: "Preserve" } };
+	const start = await h.emit("before_agent_start", { systemPromptOptions: options });
+	assert.match((options.sections as any).plan_execution, /call plan_progress/);
+	assert.match((options.sections as any).plan_execution, /codemode/);
+	assert.equal((options.sections as any).plan_mode, undefined);
+	assert.equal(options.sections.other, "Preserve");
+	assert.match(start.message.content, /4\. \[ \] Task 4/);
+	const messages = [{ role: "custom", ...start.message }];
 	for (let i = 0; i < 3; i++) {
-		const result = await h.emit("context", { messages: [] });
-		assert.match(result.messages[0].content, /call plan_progress/);
-		assert.match(result.messages[0].content, /codemode/);
-		assert.match(result.messages[0].content, /4\. \[ \] Task 4/);
+		assert.deepEqual((await h.emit("context", { messages })).messages, messages);
 	}
+	const update = await complete(h, [1]);
+	assert.match(update.content[0].text, /1\. \[x\] Task 1/);
+	assert.match(start.message.content, /1\. \[ \] Task 1/);
+	const resumed = await h.emit("before_agent_start");
+	assert.match(resumed.message.content, /1\. \[x\] Task 1/);
+	await complete(h, [2, 3, 4]);
+	await h.emit("agent_before_settle", boundary);
+	assert.equal(await h.emit("before_agent_start", { systemPromptOptions: options }), undefined);
+	assert.deepEqual(options.sections, { other: "Preserve" });
 });
 
 await test("planning tools stay restricted and execute restores original tools", async () => {
@@ -162,7 +183,7 @@ await test("planning tools stay restricted and execute restores original tools",
 	await assert.rejects(h.progress({ action: "list" }));
 	const blocked = await h.emit("tool_call", { toolName: "bash", input: { command: "rm file" } });
 	assert.equal(blocked.block, true);
-	h.branch.push({ type: "message", message: { role: "assistant", content: [{ type: "text", text: "Plan:\n1. Update **reviewer.md** and validate wording.\n2. Check the referenced session." }] } });
+	h.branch.push({ type: "message", message: { role: "assistant", stopReason: "stop", content: [{ type: "text", text: "Plan:\n1. Update **reviewer.md** and validate wording.\n2. Check the referenced session." }] } });
 	await h.command("execute");
 	assert.deepEqual(h.active, [...original, "plan_progress"]);
 	assert.equal((await steps(h))[0].text, "Update reviewer.md and validate wording.");
@@ -243,7 +264,7 @@ await test("a later plan does not inherit completed tasks from an earlier plan",
 	await complete(h, [1, 2, 3, 4]);
 	await h.emit("agent_before_settle", boundary);
 	await h.command("plan");
-	h.branch.push({ type: "message", message: { role: "assistant", content: [{ type: "text", text: "Plan:\n1. Implement a separate task.\n" }] } });
+	h.branch.push({ type: "message", message: { role: "assistant", stopReason: "stop", content: [{ type: "text", text: "Plan:\n1. Implement a separate task.\n" }] } });
 	await h.command("execute");
 	assert.deepEqual((await steps(h)).map((t: any) => t.completed), [false]);
 });
@@ -288,9 +309,67 @@ await test("structured prompt section preserves other sections for user and cust
 	await h.emit("before_agent_start", { systemPromptOptions: options });
 	assert.deepEqual(options.sections, { other: "Keep this" });
 	const headless = harness("json");
-	const headlessOptions = { sections: { plan_mode: "Stale" } };
+	const headlessOptions = { sections: { plan_mode: "Stale", plan_execution: "Stale" } };
 	await headless.emit("before_agent_start", { messageType: "custom", systemPromptOptions: headlessOptions });
 	assert.deepEqual(headlessOptions.sections, {});
+});
+
+await test("execute does not extract an incomplete assistant plan", async () => {
+	for (const stopReason of ["aborted", "error", "length", "toolUse"]) {
+		const h = harness();
+		await h.emit("session_start");
+		h.branch = [{ type: "message", message: { role: "assistant", stopReason,
+			content: [{ type: "text", text: "Plan:\n1. Partial step." }] } }];
+		await h.command("execute");
+		assert(!h.active.includes("plan_progress"));
+		assert.equal(h.messages.length, 0);
+		assert.match(h.notifications[0][0], /No plan extracted/);
+	}
+});
+
+await test("planning extracts only at successful settlement boundaries and notifies once", async () => {
+	const h = harness();
+	await h.emit("session_start");
+	const assistant = (text: string, stopReason = "stop") => ({ role: "assistant", stopReason,
+		content: [{ type: "text", text }] });
+	const first = assistant("Plan:\n1. Intermediate step.");
+	await h.emit("agent_end", { messages: [first] });
+	assert.equal(h.notifications.length, 0);
+	assert.equal(h.branch.length, 0);
+	const candidate = { ...boundary, context: { ...boundary.context, contextMessages: [first] } };
+	for (const overrides of [
+		{ outcome: "error" }, { outcome: "aborted" }, { continue: true },
+		{ context: { ...candidate.context, pendingMessages: [{ role: "user", content: "Continue" }] } },
+		{ context: { ...candidate.context, contextMessages: [assistant("Plan:\n1. Partial.", "aborted")] } },
+	]) {
+		assert.equal(await h.emit("agent_before_settle", { ...candidate, ...overrides }), undefined);
+		await h.emit("agent_settled", { aborted: false });
+		assert.equal(h.notifications.length, 0);
+		assert.equal(h.branch.length, 0);
+	}
+	const result = await h.emit("agent_before_settle", candidate);
+	assert.equal(result.entries[0].data.todos[0].text, "Intermediate step.");
+	assert.equal(h.notifications.length, 0);
+	// A later boundary handler can continue after this handler has staged a plan.
+	await h.emit("agent_start");
+	await h.emit("agent_settled", { aborted: false });
+	assert.equal(h.notifications.length, 0);
+	await h.emit("agent_before_settle", candidate);
+	await h.emit("agent_settled", { aborted: true });
+	assert.equal(h.notifications.length, 0);
+	const final = assistant("Plan:\n1. Final step.\n2. Validate.");
+	const finalBoundary = { ...boundary, context: { ...boundary.context, contextMessages: [first, final] } };
+	const saved = await h.emit("agent_before_settle", finalBoundary);
+	h.branch.push(...saved.entries);
+	await h.emit("agent_settled", { aborted: false });
+	await h.emit("agent_settled", { aborted: false });
+	assert.equal(h.notifications.length, 1);
+	assert.match(h.notifications[0][0], /Plan extracted \(2 steps\)/);
+	assert(saved.entries[0].data.todos.every((t: any) => !t.completed));
+	const warning = assistant("Updated tasks:\n1. Revised task.\n2. Check it.");
+	await h.emit("agent_before_settle", { ...boundary, context: { ...boundary.context, contextMessages: [warning] } });
+	await h.emit("agent_settled", { aborted: false });
+	assert.equal(h.notifications[1][1], "warning");
 });
 
 console.log(`\nExtension tests: ${passed} passed`);

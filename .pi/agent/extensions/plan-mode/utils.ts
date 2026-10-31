@@ -195,10 +195,7 @@ const SAFE_PATTERNS = [
 	/^\s*acli\s+jira\s+component\s+(list|get)\b/i,
 	/^\s*acli\s+jira\s+auth\s+status\b/i,
 	/^\s*acli\s+jira\s+version\s+list\b/i,
-	/^\s*acli\b.*--help\b/i,
 	// gws (Google Workspace) read-only operations
-	/^\s*gws\s+(--help|-h)\b/i,
-	/^\s*gws\s+\S+\s+(--help|-h)\b/i,
 	/^\s*gws\s+schema\b/i,
 	/^\s*gws\s+\S+\s+\+read\b/i,
 	/^\s*gws\s+\S+\s+(\S+\s+)?(get|list|export|download|listLabels|generateIds|getByDataFilter|getStartPageToken)\b/i,
@@ -230,21 +227,78 @@ export function normalizeCommand(command: string): string {
 	return cmd;
 }
 
+/** Parse a conservative shell subset. Reject expansion, redirection and execution wrappers. */
 export function isSafeCommand(command: string): boolean {
-	// --help and --version are always safe (output never modifies anything)
-	if (/(?:^|\s)--help(?:\s|$)/.test(command)) return true;
-	if (/(?:^|\s)--version(?:\s|$)/.test(command)) return true;
-
-	// Normalize: strip cd prefixes, comments, absolute paths for safe matching
-	const normalized = normalizeCommand(command);
-
-	// Destructive check runs against the NORMALIZED command so that
-	// words in stripped comment lines (e.g. "code" matching the VS Code
-	// editor pattern) don't cause false positives. cd-stripping is safe
-	// because destructive patterns use \b word boundaries, not ^ anchors.
-	const isDestructive = DESTRUCTIVE_PATTERNS.some((p) => p.test(normalized));
-	const isSafe = SAFE_PATTERNS.some((p) => p.test(normalized));
-	return !isDestructive && isSafe;
+	const commands: string[][] = [];
+	let words: string[] = [], word = "", quote = "", started = false;
+	const endWord = () => { if (started) words.push(word); word = ""; started = false; };
+	const endCommand = () => { endWord(); if (words.length) commands.push(words); words = []; };
+	for (let i = 0; i < command.length; i++) {
+		const c = command[i];
+		if (c === "\\" && quote !== "'") {
+			if (++i >= command.length || command[i] === "\n") return false;
+			word += command[i]; started = true; continue;
+		}
+		if (quote) {
+			if (c === quote) quote = "";
+			else {
+				if (quote === '"' && (c === "$" || c === "`")) return false;
+				word += c;
+			}
+			continue;
+		}
+		if (c === "'" || c === '"') { quote = c; started = true; continue; }
+		if (c === "#" && !started) { while (i < command.length && command[i] !== "\n") i++; endCommand(); continue; }
+		if ("$`<>(){}".includes(c)) return false;
+		if (c === ";" || c === "\n" || c === "|" || c === "&") {
+			if (c === "&" && command[i + 1] !== "&") return false;
+			if ((c === "&" || c === "|") && command[i + 1] === c) i++;
+			endCommand(); continue;
+		}
+		if (/\s/.test(c)) { endWord(); continue; }
+		word += c; started = true;
+	}
+	if (quote) return false;
+	endCommand();
+	return commands.length > 0 && commands.every((args) => {
+		const normalized = normalizeCommand(args[0]);
+		const rest = args.slice(1);
+		if (normalized === "cd") return rest.length === 1 && !rest[0].startsWith("-");
+		// Help/version are admitted only for a single invocation with no other arguments.
+		if (rest.length === 1 && ["--help", "--version"].includes(rest[0])) return /^[\w./-]+$/.test(args[0]);
+		if (/^(python3?|node|npx|awk|xargs|env|for|bash|openssl|pdftotext|ansible-lint)$/.test(normalized)) return false;
+		if (normalized === "sed") return rest[0] === "-n" && /^\d+(?:,\d+)?p$/.test(rest[1] ?? "") && rest.slice(2).every((arg) => !arg.startsWith("-"));
+		if (normalized === "uv" && !/^(?:pip\s+)?(?:list|show|tree|version)\b/.test(rest.join(" "))) return false;
+		if (normalized === "date" && rest.some((arg) => /^-s|^--(?:set|date|file)(?:=|$)/.test(arg))) return false;
+		if (normalized === "xxd" && (rest.length > 1 || rest.some((arg) => arg.startsWith("-")))) return false;
+		if (normalized === "tmux" && rest[0] === "display-panes") return false;
+		const text = [normalized, ...rest].join(" ");
+		if (DESTRUCTIVE_PATTERNS.some((p) => p.test(text))) return false;
+		// These options execute programs or write files even on inspection commands.
+		if (rest.some((arg) => /^(?:-exec|-execdir|-ok|-okdir|-delete|-fprint\w*|-fls|--exec(?:-batch)?|--pre|--pre-glob|--output|--output-file|--out|--upload-file|--post-file|--post-data|--request|--data\w*|--config)(?:=|$)/.test(arg))) return false;
+		if (normalized === "wget") return false;
+		if (normalized === "curl" && rest.some((arg) => arg.startsWith("-") && !/^(?:-[sSILfik]+|--(?:silent|show-error|head|location|fail|insecure))$/.test(arg))) return false;
+		if (normalized === "gh" && (/\b(?:review|download)\b/.test(text) || rest.some((arg) => /^-[fF]|^--(?:field|raw-field|input|method)(?:=|$)/.test(arg)))) return false;
+		if (normalized === "gws" && /\b(?:export|download)\b/.test(text)) return false;
+		if (normalized === "go" && /\b(?:vet|generate|run|test)\b|(?:^|\s)-w(?:\s|$)/.test(text)) return false;
+		if (/^(oc|kubectl)$/.test(normalized) && /\b(?:project|watch|proxy|exec)\b/.test(rest[0] ?? "")) return false;
+		if (/^(npm|yarn)$/.test(normalized) && rest.includes("--fix")) return false;
+		if (normalized === "git") {
+			if (rest.some((arg) => /^(?:--output|-o|-c|--config-env)(?:=|$)/.test(arg))) return false;
+			const gitArgs = [...rest];
+			while (gitArgs[0] === "-C" || gitArgs[0] === "--no-pager") {
+				if (gitArgs.shift() === "-C") gitArgs.shift();
+			}
+			const subcommand = gitArgs.shift();
+			if (!["status", "log", "diff", "show", "branch", "remote", "ls-files", "ls-tree", "merge-base", "for-each-ref", "rev-parse", "stash", "tag", "config"].includes(subcommand ?? "")) return false;
+			if (subcommand === "branch" && gitArgs.some((arg) => !["--show-current", "--list", "-a", "-r", "-v", "-vv", "--all", "--remotes"].includes(arg))) return false;
+			if (subcommand === "remote" && gitArgs.some((arg) => arg !== "-v" && arg !== "--verbose")) return false;
+			if (["tag", "config"].includes(subcommand ?? "") && gitArgs.some((arg) => /^(?:-[adfms]|--(?:delete|force|unset|add|replace|rename|remove|edit|set))(?:$|=|-)/.test(arg))) return false;
+		}
+		if (normalized === "sort" && rest.some((arg) => /^(-o|--output)/.test(arg))) return false;
+		if (normalized === "jq" && rest.some((arg) => /^(--run-tests|-f|--from-file)/.test(arg))) return false;
+		return SAFE_PATTERNS.some((p) => p.test(text));
+	});
 }
 
 export interface TodoItem {

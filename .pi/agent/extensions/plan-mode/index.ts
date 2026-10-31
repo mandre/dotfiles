@@ -9,39 +9,16 @@
  * - Bash restricted to allowlisted read-only commands
  * - Command normalization: `cd <path> &&` prefixes, leading `# comments`,
  *   and absolute binary paths (e.g. /usr/bin/curl) are stripped before matching
- * - `--help` on any command is always allowed (help output never modifies anything)
+ * - Shell commands are parsed into individually checked invocations
  * - Extracts numbered plan steps from "Plan:" sections
  * - Explicit plan_progress updates to complete steps during execution
  * - Progress tracking widget during execution
  *
- * Safe command allowlist includes:
- *   File inspection: cat, head, tail, less, more, strings, hexdump, xxd
- *   Search: grep, find, rg, fd
- *   Directory: ls, pwd, tree, basename, dirname, realpath, readlink
- *   Text processing: wc, sort, uniq, diff, tr, cut, tac, column, xargs,
- *     awk, sed -n, jq
- *   Git (read-only): status, log, diff, show, branch, remote, ls-files,
- *     merge-base, for-each-ref, rev-parse, tag (listing), stash list/show,
- *     config --get/--get-all/--list/--show-origin (with --global/--local/etc.)
- *     (supports -C <path> and --no-pager flags)
- *   GitHub CLI (read-only): pr/issue view/list/diff/checks/status/search/review,
- *     auth status, api (GET only), run download
- *   Jira CLI (acli): workitem view/search, component list, auth status,
- *     project list/view, and all --help invocations
- *   Google Workspace (gws): +read, get, list, schema, export, download
- *   Python: python3 (for data processing / calculations)
- *   Go: list, version, doc, env, vet, mod graph/verify/why
- *   Web: curl, web_search, web_fetch
- *   Documentation: man
- *   Package info: npm list/outdated, yarn info/audit, pip list/show/freeze,
- *     uv pip list/show/tree, uv lock --dry-run, rpm -q/-V/--query/--verify
- *   System info: uname, whoami, date, uptime, ps, free, df, du, getconf
- *   Ansible: ansible-lint
- *   Crypto/encoding: openssl, base64, sha256sum, md5sum
- *   Cloud storage: gsutil ls/cat/stat/du
+ * Inspection commands, read-only CLI operations and bounded sed printing
+ * remain available. Interpreters, test runners and output-file options do not.
  *
- * Universal overrides (always allowed regardless of command):
- *   --help, --version
+ * Help/version requests require a standalone argument. Execution wrappers,
+ * substitutions and redirections are rejected. See README.md for the policy.
  */
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
@@ -84,6 +61,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	let todoItems: TodoItem[] = [];
 	let savedActiveTools: string[] | null = null;
 	let reconciliationRequested = false;
+	let pendingPlanNotification: { message: string; level: "info" | "warning" } | null = null;
 	// Counts consecutive blocked bash calls within the current agent run, so the
 	// block reason can escalate if the model keeps probing for a workaround
 	// instead of stopping. Reset in before_agent_start (once per user prompt).
@@ -145,6 +123,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 	function togglePlanMode(ctx: ExtensionContext): void {
 		planModeEnabled = !planModeEnabled;
+		pendingPlanNotification = null;
 		executionMode = false;
 		todoItems = [];
 
@@ -163,14 +142,18 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		persistState();
 	}
 
-	function persistState(): void {
-		pi.appendEntry("plan-mode", {
+	function stateSnapshot() {
+		return {
 			enabled: planModeEnabled,
 			version: 2,
 			todos: todoItems.map((item) => ({ ...item })),
 			executing: executionMode,
 			savedActiveTools,
-		});
+		};
+	}
+
+	function persistState(): void {
+		pi.appendEntry("plan-mode", stateSnapshot());
 	}
 
 	function finishExecution(ctx: ExtensionContext): void {
@@ -195,6 +178,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		description: "List plan tasks or explicitly complete steps after successful work. Each update requires a step number and evidence. Supports multiple steps per call.",
 		exposure: "codemode",
 		executionMode: "sequential",
+		annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+		outputSchema: Type.Object({ todos: Type.Array(Type.Object({
+			step: Type.Integer(), text: Type.String(), completed: Type.Boolean(), evidence: Type.Optional(Type.String()),
+		})) }),
 		parameters: Type.Object({
 			action: Type.Union([Type.Literal("list"), Type.Literal("complete")]),
 			updates: Type.Optional(Type.Array(Type.Object({
@@ -213,6 +200,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			return {
 				content: [{ type: "text", text: todos.map((t) => `${t.step}. [${t.completed ? "x" : " "}] ${t.text}`).join("\n") }],
 				details: { todos },
+				structuredContent: { todos },
 			};
 		},
 	});
@@ -278,15 +266,14 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("execute", {
 		description: "Execute the current plan (exit plan mode, start tracking)",
 		handler: async (_args, ctx) => {
-			// Re-sync against the latest assistant message before executing: the
-			// passive agent_end extraction can miss a plan restatement (e.g. a
-			// header phrasing it doesn't recognize), silently leaving `todoItems`
-			// stale. /execute should always run the freshest plan in the transcript.
+			// Re-sync against the latest completed assistant message so /execute
+			// uses a fresh plan even if passive extraction missed its header.
 			const entries = ctx.sessionManager.getBranch();
 			for (let i = entries.length - 1; i >= 0; i--) {
 				const entry = entries[i] as { type: string; message?: AgentMessage };
 				if (entry.type === "message" && entry.message && isAssistantMessage(entry.message)) {
-					const extracted = extractTodoItems(getTextContent(entry.message));
+					const extracted = entry.message.stopReason === "stop"
+						? extractTodoItems(getTextContent(entry.message)) : [];
 					if (extracted.length > 0) {
 						todoItems = extracted;
 					}
@@ -369,9 +356,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		}
 	});
 
-	// Filter stale persistent messages (backward compat with old sessions) and
-	// inject ephemeral context at the end of the message list (cache-friendly:
-	// the conversation prefix stays unchanged across turns).
+	// Legacy cleanup and one-shot mode notices can rebuild Pi's prompt/tool
+	// checkpoint. Normal execution requests leave the transcript unchanged.
 	pi.on("context", async (event) => {
 		// Always filter stale persistent plan/execution messages from prior sessions
 		let messages = event.messages.filter((m) => {
@@ -391,16 +377,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			}
 			return true;
 		});
-
-		// Rebuild request-local status on every model call, including tool-loop turns.
-		if (!planModeEnabled && executionMode && todoItems.length > 0) {
-			const todoList = todoItems.map((t) => `${t.step}. [${t.completed ? "x" : " "}] ${t.text}`).join("\n");
-			messages = [...messages, {
-				role: "user" as const,
-				content: `[Plan execution status]\n${todoList}\n\n${EXECUTION_INSTRUCTIONS}`,
-				timestamp: Date.now(),
-			}];
-		}
 
 		// Mode was just toggled mid-conversation (via /plan or the shortcut, not at
 		// session start): append an ephemeral, one-shot notice for the next LLM call.
@@ -425,8 +401,20 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		// able to run /execute, /plan, or answer questionnaire prompts, so a
 		// headless sub-agent forced into "just describe a Plan" mode can never
 		// actually finish its task.
+		delete event.systemPromptOptions.sections.plan_execution;
 		if (!planModeEnabled || ctx.mode !== "tui") {
 			delete event.systemPromptOptions.sections.plan_mode;
+			if (executionMode && ctx.mode === "tui" && todoItems.length > 0) {
+				event.systemPromptOptions.sections.plan_execution = EXECUTION_INSTRUCTIONS;
+				const todoList = todoItems.map((t) => `${t.step}. [${t.completed ? "x" : " "}] ${t.text}`).join("\n");
+				// Pi persists this snapshot once per prompt. Tool results carry later
+				// updates without rewriting earlier prompt or tool transitions.
+				return { message: {
+					customType: "plan-execution-status",
+					content: `[Plan execution status]\n${todoList}`,
+					display: false,
+				} };
+			}
 			return;
 		}
 
@@ -477,14 +465,46 @@ Do NOT attempt to make changes - just describe what you would do.`;
 		if (planModeEnabled || executionMode) ctx.ui.setWorkingMessage();
 	});
 
+	// Another extension can request a continuation after our boundary handler.
+	// Clear its tentative notification when that next low-level run starts.
+	pi.on("agent_start", async () => { pendingPlanNotification = null; });
+
 	pi.on("agent_before_settle", async (event, ctx) => {
-		if (!executionMode || ctx.mode !== "tui" || event.outcome !== "completed") return;
+		pendingPlanNotification = null;
+		if (ctx.mode !== "tui" || event.outcome !== "completed") return;
+		if (planModeEnabled) {
+			if (event.continue || event.context.pendingMessages.length > 0) return;
+			const lastAssistant = [...event.context.contextMessages].reverse().find(isAssistantMessage);
+			if (!lastAssistant || lastAssistant.stopReason !== "stop") return;
+			const text = getTextContent(lastAssistant);
+			const extracted = extractTodoItems(text);
+			if (extracted.length > 0) {
+				todoItems = extracted;
+				const leafId = ctx.sessionManager.getLeafId();
+				if (leafId) pi.setLabel(leafId, `plan-${todoItems.length}-steps`);
+				pendingPlanNotification = {
+					message: `Plan extracted (${todoItems.length} steps). Use /execute to run, or keep exploring.`,
+					level: "info",
+				};
+				return { entries: [...event.entries, {
+					type: "custom" as const, customType: "plan-mode", data: stateSnapshot(),
+				}] };
+			}
+			if (todoItems.length > 0 && (text.match(/^\s*\d+[.)]\s+/gm)?.length ?? 0) >= 2) {
+				pendingPlanNotification = {
+					message: `Plan tracker could not parse an update from that response (no "Plan:" header detected). Still tracking the previous ${todoItems.length}-step plan. Ask for a clean "Plan:" restatement before running /execute, or run /execute to use the last tracked plan.`,
+					level: "warning",
+				};
+			}
+			return;
+		}
+		if (!executionMode) return;
 		finishExecution(ctx);
 		if (!executionMode || reconciliationRequested || event.continue || !event.context.canContinue) return;
 		reconciliationRequested = true;
 		const remaining = todoItems.filter((t) => !t.completed).map((t) => `${t.step}. ${t.text}`).join("\n");
 		return {
-			entries: [{
+			entries: [...event.entries, {
 				type: "custom_message" as const,
 				customType: "plan-reconciliation",
 				content: `Reconcile the remaining plan steps with work already performed:\n${remaining}\n\nUse plan_progress to record only verified completions, with evidence. Do not do new work merely to clear the checklist. Leave unfinished steps unchecked and explain blockers or remaining work. This is the only automatic reconciliation pass.`,
@@ -494,42 +514,13 @@ Do NOT attempt to make changes - just describe what you would do.`;
 		};
 	});
 
-	// Plan extraction remains separate from execution progress.
-	pi.on("agent_end", async (event, ctx) => {
-		if (!planModeEnabled || ctx.mode !== "tui") return;
-
-		// Extract todos from last assistant message
-		const lastAssistant = [...event.messages].reverse().find(isAssistantMessage);
-		if (lastAssistant) {
-			const lastAssistantText = getTextContent(lastAssistant);
-			const extracted = extractTodoItems(lastAssistantText);
-			if (extracted.length > 0) {
-				todoItems = extracted;
-				updateStatus(ctx);
-				persistState();
-				const leafId = ctx.sessionManager.getLeafId();
-				if (leafId) {
-					pi.setLabel(leafId, `plan-${todoItems.length}-steps`);
-				}
-				ctx.ui.notify(
-					`Plan extracted (${todoItems.length} steps). Use /execute to run, or keep exploring.`,
-					"info",
-				);
-			} else if (todoItems.length > 0) {
-				// Extraction failed to find a "Plan:"-style header. If the response still
-				// looks like it's restating a numbered plan, warn instead of silently
-				// keeping the old tracked plan — otherwise /execute could run stale steps
-				// without the user noticing the update never registered.
-				const numberedLines = lastAssistantText.match(/^\s*\d+[.)]\s+/gm);
-				if (numberedLines && numberedLines.length >= 2) {
-					ctx.ui.notify(
-						`Plan tracker could not parse an update from that response (no "Plan:" header detected) — still tracking the previous ${todoItems.length}-step plan. Ask for a clean "Plan:" restatement before running /execute, or run /execute anyway to use the last tracked plan.`,
-						"warning",
-					);
-				}
-			}
-		}
-		// Plan mode stays active until manually toggled off via /plan, Alt+P, or /execute
+	// Settlement is notification-only. The boundary above persists extraction.
+	pi.on("agent_settled", async (event, ctx) => {
+		const notification = pendingPlanNotification;
+		pendingPlanNotification = null;
+		if (event.aborted || !planModeEnabled || ctx.mode !== "tui" || !notification) return;
+		updateStatus(ctx);
+		ctx.ui.notify(notification.message, notification.level);
 	});
 
 	// Snapshots, including legacy snapshots, are authoritative. Do not replay
@@ -539,6 +530,7 @@ Do NOT attempt to make changes - just describe what you would do.`;
 		executionMode = false;
 		todoItems = [];
 		reconciliationRequested = false;
+		pendingPlanNotification = null;
 		pendingModeChangeNotice = null;
 		const previousTools = savedActiveTools ?? pi.getActiveTools().filter((name) => name !== PROGRESS_TOOL);
 		savedActiveTools = null;

@@ -19,7 +19,14 @@ all four extensions through Pi's real extension loader. It checks:
 - Direct and nested tool-call gating, including unapproved deferred/MCP tools,
   Bash validation, tool restoration, and headless modes.
 - Structured prompt sections for user and custom-message runs, preserving
-  unrelated sections and removing stale planning instructions.
+  unrelated sections and removing stale planning/execution instructions.
+- Reconciliation entry composition across multiple extensions through Pi's real
+  boundary runner, preserving earlier drafts.
+- Append-only execution snapshots and progress-tool results, preserving separate
+  prompt/tool transitions across repeated real-runner context transforms.
+- Settlement-aware extraction, deferred notices, incomplete replies, failure and
+  cancellation paths, queued work, and continuations requested by later handlers.
+  Lifecycle tests drive events without live retries or provider requests.
 - Footer accounting for assistant, tool-result, compaction, branch-summary,
   cache-warming, and unknown-kind usage entries. It uses Pi's `SessionManager`
   to verify branch selection, cache reuse, invalidation, and session changes.
@@ -28,8 +35,23 @@ all four extensions through Pi's real extension loader. It checks:
   editor focus propagation.
 - Provider-neutral quick-review calls with reasoning and cancellation options,
   using a temporary git repository and a fake model response.
-- A source assertion that review subprocess arguments include `--no-mcp`.
-  The suite does not launch a model-backed review subprocess.
+- Generated review guard loading and real-runner rejection of unknown tools,
+  including nested and deferred calls; large-output spilling and retrieval.
+- Review cancellation and shutdown, abort-listener cleanup, forced termination
+  of a real SIGTERM-ignoring child, and rejection of concurrent command reviews.
+- A fixture-driven review subprocess, without model requests: selected tools,
+  multi-block final answers, nested usage and temporary prompt cleanup.
+- Repository identity checks and refreshed PR refs using mocked CLI responses.
+- Questionnaire invalid IDs, impossible questions, abort handling, tiny widths,
+  bounded terminal height, selection-following and manual viewport scrolling.
+- Effective context limits, persisted command-review usage, home-path boundaries
+  and right-prioritized narrow footer layouts.
+
+The plan utility tests use table-driven cases for the conservative shell subset.
+Old expectations admitting interpreters, test runners, downloads and temporary
+output writes have been replaced with explicit rejection cases. The suites do
+not make live model requests or fetch remote PRs. Context tests assert transcript
+structure; they do not measure provider cache hits, latency, or cost savings.
 
 ## Terminal smoke tests
 

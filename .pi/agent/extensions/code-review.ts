@@ -26,18 +26,18 @@
  *
  * The code_review tool lets the LLM proactively review changes when asked.
  *
- * Sandboxing: the /review deep sub-agent is spawned as a separate `pi
+ * Tool isolation: the /review deep sub-agent is spawned as a separate `pi
  * --no-session` process with `--tools` restricted to `pr-reviewer.md`'s
  * frontmatter (read, grep, find, ls, git_diff, git_show, git_log, git_blame
  * — no bash, no edit, no write). It also loads a small generated guard
  * extension (GUARD_EXTENSION_SOURCE below, via `--extension`) that registers
- * those four read-only git_* tools and hard-blocks edit/write/bash as
+ * those four read-only git_* tools and gates every call by name as
  * defense in depth on top of the --tools allowlist. The git_* tools build a
  * fixed argv from structured parameters and call `pi.exec()` (execFile-
  * style, no shell), so there's no shell string for the model to inject into,
- * and flag-style parameter values are rejected outright. Net result: the
- * review sub-agent can never write to the filesystem, run arbitrary
- * commands, or mutate git state.
+ * and flag-style parameter values are rejected outright. This is a workflow
+ * guard, not an OS sandbox: trusted extensions and git configuration still
+ * execute with the process's permissions.
  *
  * Deliberately not combined with --no-extensions: this would also disable
  * any pi package the user relies on for model access (e.g. a custom
@@ -53,11 +53,13 @@
  */
 
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { bindChildCancellation, boundedOutput, REVIEW_TOOLS } from "./code-review/support.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { StringEnum } from "@earendil-works/pi-ai";
-import type { Model } from "@earendil-works/pi-ai";
+import type { Model, Usage } from "@earendil-works/pi-ai";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
@@ -72,7 +74,7 @@ import { Type } from "typebox";
 
 /** Match GitHub PR URLs like https://github.com/owner/repo/pull/123 */
 const PR_URL_RE =
-	/^https?:\/\/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/;
+	/^https?:\/\/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)\/pull\/([1-9]\d*)(?:[/?#].*)?$/;
 
 function parsePrUrl(url: string): { repo: string; number: number } | undefined {
 	const m = url.match(PR_URL_RE);
@@ -594,7 +596,11 @@ function buildReviewPrompt(diff: string, focus?: string, prTitle?: string): stri
 
 	lines.push("");
 	lines.push("<diff>");
-	lines.push(diff);
+	const budgeted = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES);
+	lines.push(budgeted.diff);
+	if (budgeted.skippedPaths.length) {
+		lines.push(`\n[Diff budget exceeded. Not reviewed: ${budgeted.skippedPaths.join(", ")}]`);
+	}
 	lines.push("</diff>");
 
 	return lines.join("\n");
@@ -658,7 +664,7 @@ function buildPrReviewPrompt(
 
 		const exploreCmd = prRef
 			? `Use \`git diff ${metadata.baseRefName}...${prRef} -- <file>\` or \`git show ${prRef}:<file>\` to view unseen files.`
-			: `The PR ref could not be fetched locally. Use \`gh pr diff ${prNumber} --repo ${repo}\` and pipe through grep, or try \`gh api repos/${repo}/pulls/${prNumber}/files --paginate\` for file-level diffs.`;
+			: "The PR ref could not be fetched locally. Shell and GitHub CLI access are unavailable. Explicitly skip unseen diffs; do not substitute working-tree contents for the PR version.";
 
 		lines.push(
 			`> **Diff truncated**: The full diff is ${Math.round(diffBytes / 1024)}KB (${stats.files} files). ` +
@@ -678,14 +684,14 @@ function buildPrReviewPrompt(
 }
 
 /** Call the LLM to perform the review. */
-async function performReview(
+export async function performReview(
 	pi: ExtensionAPI,
 	diff: string,
 	focus: string | undefined,
 	prTitle: string | undefined,
 	ctx: ExtensionContext,
 	signal?: AbortSignal,
-): Promise<{ ok: true; review: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; review: string; usage: Usage } | { ok: false; error: string; usage?: Usage }> {
 	const model = ctx.model;
 	if (!model) {
 		return { ok: false, error: "No active model available in current session for code review" };
@@ -710,16 +716,19 @@ async function performReview(
 		},
 	).result();
 
+	if (signal?.aborted || response.stopReason !== "stop") {
+		return { ok: false, error: response.errorMessage || `Review ${signal?.aborted ? "aborted" : response.stopReason}`, usage: response.usage };
+	}
 	const review = response.content
 		.filter((c): c is { type: "text"; text: string } => c.type === "text")
 		.map((c) => c.text)
 		.join("\n");
 
 	if (!review.trim()) {
-		return { ok: false, error: "Model returned an empty review" };
+		return { ok: false, error: "Model returned an empty review", usage: response.usage };
 	}
 
-	return { ok: true, review };
+	return { ok: true, review, usage: response.usage };
 }
 
 
@@ -787,6 +796,9 @@ function smartTruncateDiff(
 	if (totalBytes <= maxBytes) {
 		return { diff, includedCount: totalCount, totalCount, skippedPaths: [] };
 	}
+	if (sections.length === 0) {
+		return { diff: "", includedCount: 0, totalCount: 1, skippedPaths: ["(unparsed diff)"] };
+	}
 
 	const source: typeof sections = [];
 	const generated: typeof sections = [];
@@ -807,7 +819,7 @@ function smartTruncateDiff(
 
 	for (const section of [...source, ...generated]) {
 		const sectionBytes = Buffer.byteLength(section.content, "utf8");
-		if (bytes + sectionBytes > maxBytes && parts.length > 0) {
+		if (bytes + sectionBytes > maxBytes) {
 			skippedPaths.push(section.path);
 		} else {
 			parts.push(section.content);
@@ -819,24 +831,22 @@ function smartTruncateDiff(
 }
 
 /** Ensure the PR ref exists locally for sub-agent exploration. Returns the ref name or undefined. */
-async function ensurePrRef(
+export async function ensurePrRef(
 	pi: ExtensionAPI,
+	repo: string,
 	prNumber: number,
 	cwd: string,
 	signal?: AbortSignal,
 ): Promise<string | undefined> {
-	const ref = `pull/${prNumber}/head`;
+	const identity = await pi.exec("gh", ["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"], { cwd, timeout: 15_000, signal });
+	if (identity.code !== 0 || identity.stdout.trim().toLowerCase() !== repo.toLowerCase()) {
+		throw new Error(`Deep review requires a checkout of ${repo}. Use /review-diff for a remote diff-only review.`);
+	}
+	const ref = `refs/pi/reviews/${repo}/${prNumber}/head`;
 
-	// Check if ref already exists locally
-	const check = await pi.exec(
-		"git", ["rev-parse", "--verify", ref],
-		{ cwd, timeout: 5_000, signal },
-	);
-	if (check.code === 0) return ref;
-
-	// Try to fetch it
+	// Refresh from the URL's repository, never from an unrelated origin.
 	const fetchResult = await pi.exec(
-		"git", ["fetch", "origin", `pull/${prNumber}/head:${ref}`],
+		"git", ["fetch", "--no-tags", `https://github.com/${repo}.git`, `+refs/pull/${prNumber}/head:${ref}`],
 		{ cwd, timeout: 30_000, signal },
 	);
 	if (fetchResult.code === 0) return ref;
@@ -989,15 +999,14 @@ interface ProgressEvent {
 }
 
 /**
- * Sandboxed extension loaded into the review sub-agent's own `pi` process via
+ * Guard extension loaded into the review sub-agent's own `pi` process via
  * `--extension <tmpfile>`. Provider extensions still load; built-in MCP is
  * disabled with `--no-mcp`. The tool allowlist selects read-only inspection
- * tools, and the hook below blocks the built-in mutation and shell tools.
+ * tools, and the hook gates direct and nested calls against the same allowlist.
  *
  * Read-only restrictions:
- * - `edit`/`write`/`bash` are hard-blocked via a tool_call hook, on top of
- *   already being excluded from `--tools`. This is defense in depth in case
- *   the tool allowlist is ever loosened.
+ * - Unknown tools are blocked regardless of exposure or activation.
+ * - Trusted extensions still run with OS permissions. This is not a sandbox.
  * - The only way to inspect git state is through git_diff/git_show/git_log/
  *   git_blame below, each of which builds a fixed git argv itself from
  *   structured parameters and calls `pi.exec()` (execFile-style, no shell),
@@ -1006,8 +1015,8 @@ interface ProgressEvent {
  *   flag injection too, and path arguments are always passed after a
  *   literal `--` separator.
  */
-const GUARD_EXTENSION_SOURCE = `
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+export const GUARD_EXTENSION_SOURCE = `
+import { boundedOutput } from ${JSON.stringify(path.join(path.dirname(fileURLToPath(import.meta.url)), "code-review/support.ts"))};
 import { Type } from "typebox";
 
 function assertNotFlag(value, field) {
@@ -1017,8 +1026,9 @@ function assertNotFlag(value, field) {
 }
 
 export default function guardExtension(pi) {
+	const allowed = new Set(${JSON.stringify(REVIEW_TOOLS)});
 	pi.on("tool_call", async (event) => {
-		if (event.toolName === "edit" || event.toolName === "write" || event.toolName === "bash") {
+		if (!allowed.has(event.toolName)) {
 			return {
 				block: true,
 				reason: "This review sub-agent is read-only. File edits and shell access are never permitted here.",
@@ -1043,7 +1053,7 @@ export default function guardExtension(pi) {
 			assertNotFlag(params.ref2, "ref2");
 			assertNotFlag(params.path, "path");
 
-			const args = ["diff"];
+			const args = ["diff", "--no-ext-diff", "--no-textconv"];
 			if (params.stat) args.push("--stat");
 			if (params.ref1 && params.ref2) args.push(\`\${params.ref1}...\${params.ref2}\`);
 			else if (params.ref1) args.push(params.ref1);
@@ -1053,7 +1063,7 @@ export default function guardExtension(pi) {
 			if (result.code !== 0) {
 				throw new Error(result.stderr.trim() || \`git diff exited with code \${result.code}\`);
 			}
-			return { content: [{ type: "text", text: result.stdout || "(no differences)" }], details: {} };
+			return boundedOutput(result.stdout || "(no differences)");
 		},
 	});
 
@@ -1070,11 +1080,11 @@ export default function guardExtension(pi) {
 			assertNotFlag(params.path, "path");
 
 			const target = params.path ? \`\${params.ref}:\${params.path}\` : params.ref;
-			const result = await pi.exec("git", ["show", target], { cwd: ctx.cwd, timeout: 30_000, signal });
+			const result = await pi.exec("git", ["show", "--no-ext-diff", "--no-textconv", target, "--"], { cwd: ctx.cwd, timeout: 30_000, signal });
 			if (result.code !== 0) {
 				throw new Error(result.stderr.trim() || \`git show exited with code \${result.code}\`);
 			}
-			return { content: [{ type: "text", text: result.stdout }], details: {} };
+			return boundedOutput(result.stdout);
 		},
 	});
 
@@ -1091,7 +1101,7 @@ export default function guardExtension(pi) {
 			assertNotFlag(params.range, "range");
 			assertNotFlag(params.path, "path");
 
-			const args = ["log"];
+			const args = ["log", "--no-ext-diff", "--no-textconv"];
 			if (params.oneline) args.push("--oneline");
 			if (params.range) args.push(params.range);
 			if (params.path) args.push("--", params.path);
@@ -1100,7 +1110,7 @@ export default function guardExtension(pi) {
 			if (result.code !== 0) {
 				throw new Error(result.stderr.trim() || \`git log exited with code \${result.code}\`);
 			}
-			return { content: [{ type: "text", text: result.stdout || "(no commits)" }], details: {} };
+			return boundedOutput(result.stdout || "(no commits)");
 		},
 	});
 
@@ -1116,7 +1126,7 @@ export default function guardExtension(pi) {
 			assertNotFlag(params.ref, "ref");
 			assertNotFlag(params.path, "path");
 
-			const result = await pi.exec("git", ["blame", params.ref, "--", params.path], {
+			const result = await pi.exec("git", ["blame", "--no-textconv", params.ref, "--", params.path], {
 				cwd: ctx.cwd,
 				timeout: 30_000,
 				signal,
@@ -1124,13 +1134,13 @@ export default function guardExtension(pi) {
 			if (result.code !== 0) {
 				throw new Error(result.stderr.trim() || \`git blame exited with code \${result.code}\`);
 			}
-			return { content: [{ type: "text", text: result.stdout }], details: {} };
+			return boundedOutput(result.stdout);
 		},
 	});
 }
 `;
 
-async function runPrReviewSubagent(
+export async function runPrReviewSubagent(
 	task: string,
 	cwd: string,
 	signal: AbortSignal | undefined,
@@ -1146,44 +1156,38 @@ async function runPrReviewSubagent(
 	if (modelArg) {
 		piArgs.push("--model", modelArg);
 	}
-	if (agent.tools && agent.tools.length > 0) piArgs.push("--tools", agent.tools.join(","));
+	const selectedTools = (agent.tools ?? REVIEW_TOOLS).filter((name) => REVIEW_TOOLS.includes(name));
+	if (selectedTools.length === 0) throw new Error("Reviewer has no approved inspection tools.");
+	piArgs.push("--tools", selectedTools.join(","));
 
 	// Write system prompt and task to temp files to avoid E2BIG when
 	// the task (prompt + diff) exceeds Linux's per-argument limit
 	// (MAX_ARG_STRLEN = 128 KB).
+	if (signal?.aborted) throw new Error("Review aborted");
 	const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "pi-pr-review-"));
-	const promptFile = path.join(tmpDir, "system-prompt.md");
-	await fs.promises.writeFile(promptFile, agent.systemPrompt, { encoding: "utf-8", mode: 0o600 });
-	piArgs.push("--append-system-prompt", promptFile);
-
-	const taskFile = path.join(tmpDir, "task.md");
-	await fs.promises.writeFile(taskFile, task, { encoding: "utf-8", mode: 0o600 });
-	piArgs.push("@" + taskFile);
-
-	// Load the sandboxed guard above so the sub-agent gets git_diff/git_show/
-	// git_log/git_blame plus a hard edit/write/bash block. Deliberately NOT
-	// combined with --no-extensions: this user's model provider (and possibly
-	// others') is delivered as an installed pi package, which is only merged
-	// into the extension set when extension discovery is enabled —
-	// --no-extensions would silently make the configured model unavailable to
-	// the sub-agent. Other auto-discovered extensions (e.g. plan-mode) still
-	// load alongside this guard, but plan-mode is inert outside ctx.mode ===
-	// "tui" (see plan-mode/index.ts), and nothing else registers a tool_call
-	// or before_agent_start hook that could interfere with a headless run.
-	const guardFile = path.join(tmpDir, "guard.ts");
-	await fs.promises.writeFile(guardFile, GUARD_EXTENSION_SOURCE, { encoding: "utf-8", mode: 0o600 });
-	piArgs.push("--extension", guardFile);
-
-	const usage: SubagentUsage = {
-		input: 0, output: 0, cacheRead: 0, cacheWrite: 0,
-		cost: 0, contextTokens: 0, turns: 0,
-	};
-	let finalOutput = "";
-	let model: string | undefined = agent.model;
-	let stderr = "";
-	let wasAborted = false;
-
 	try {
+		const promptFile = path.join(tmpDir, "system-prompt.md");
+		await fs.promises.writeFile(promptFile, agent.systemPrompt, { encoding: "utf-8", mode: 0o600 });
+		piArgs.push("--append-system-prompt", promptFile);
+
+		const taskFile = path.join(tmpDir, "task.md");
+		await fs.promises.writeFile(taskFile, task, { encoding: "utf-8", mode: 0o600 });
+		piArgs.push("@" + taskFile);
+
+		// Preserve provider discovery while gating every direct and nested tool call.
+		// Loaded extensions remain trusted code with the process's OS permissions.
+		const guardFile = path.join(tmpDir, "guard.ts");
+		await fs.promises.writeFile(guardFile, GUARD_EXTENSION_SOURCE, { encoding: "utf-8", mode: 0o600 });
+		piArgs.push("--extension", guardFile);
+
+		const usage: SubagentUsage = {
+			input: 0, output: 0, cacheRead: 0, cacheWrite: 0,
+			cost: 0, contextTokens: 0, turns: 0,
+		};
+		let finalOutput = "";
+		let model: string | undefined = modelArg;
+		let stderr = "";
+
 		const exitCode = await new Promise<number>((resolve) => {
 			const invocation = getPiInvocation(piArgs);
 			const proc = spawn(invocation.command, invocation.args, {
@@ -1202,24 +1206,28 @@ async function runPrReviewSubagent(
 					`${usage.turns} turn${usage.turns !== 1 ? "s" : ""}, ` +
 					`↑${formatTokens(usage.input)} ↓${formatTokens(usage.output)}`;
 
+				const addUsage = (u?: Usage) => {
+					if (!u) return;
+					usage.input += u.input || 0;
+					usage.output += u.output || 0;
+					usage.cacheRead += u.cacheRead || 0;
+					usage.cacheWrite += u.cacheWrite || 0;
+					usage.cost += u.cost?.total || 0;
+				};
+				if (event.type === "compaction_end") addUsage(event.result?.usage);
 				if (event.type === "message_end" && event.message) {
 					const msg = event.message;
+					if (msg.role === "assistant" || msg.role === "toolResult") addUsage(msg.usage);
 					if (msg.role === "assistant") {
 						usage.turns++;
-						const u = msg.usage;
-						if (u) {
-							usage.input += u.input || 0;
-							usage.output += u.output || 0;
-							usage.cacheRead += u.cacheRead || 0;
-							usage.cacheWrite += u.cacheWrite || 0;
-							usage.cost += u.cost?.total || 0;
-							usage.contextTokens = u.totalTokens || 0;
-						}
-						if (!model && msg.model) model = msg.model;
+						usage.contextTokens = msg.usage?.totalTokens || 0;
+						if (msg.model) model = `${msg.provider}/${msg.model}`;
 
-						// Extract final text content
-						for (const part of msg.content ?? []) {
-							if (part.type === "text") finalOutput = part.text;
+						// Only a complete final answer can finish the review.
+						if (msg.stopReason === "stop") {
+							finalOutput = (msg.content ?? []).filter((part: any) => part.type === "text").map((part: any) => part.text).join("\n");
+						} else {
+							finalOutput = "";
 						}
 
 						onProgress({ status: statusSummary(), activity: `Turn ${usage.turns} complete` });
@@ -1259,27 +1267,20 @@ async function runPrReviewSubagent(
 				for (const l of lines) processLine(l);
 			});
 
-			proc.stderr.on("data", (data) => { stderr += data.toString(); });
+			proc.stderr.on("data", (data) => { stderr = (stderr + data.toString()).slice(-50_000); });
+			bindChildCancellation(proc, signal);
 
 			proc.on("close", (code) => {
 				if (buffer.trim()) processLine(buffer);
-				resolve(code ?? 0);
+				resolve(code ?? 1);
 			});
 
 			proc.on("error", () => resolve(1));
 
-			if (signal) {
-				const killProc = () => {
-					wasAborted = true;
-					proc.kill("SIGTERM");
-					setTimeout(() => { if (!proc.killed) proc.kill("SIGKILL"); }, 5000);
-				};
-				if (signal.aborted) killProc();
-				else signal.addEventListener("abort", killProc, { once: true });
-			}
+			// The cancellation binding removes its listener and timer on exit.
 		});
 
-		if (wasAborted) {
+		if (signal?.aborted) {
 			return { ok: false, review: "", usage, model, error: "Review aborted" };
 		}
 
@@ -1296,10 +1297,7 @@ async function runPrReviewSubagent(
 
 		return { ok: true, review: finalOutput, usage, model };
 	} finally {
-		try { fs.unlinkSync(taskFile); } catch { /* ignore */ }
-		try { fs.unlinkSync(promptFile); } catch { /* ignore */ }
-		try { fs.unlinkSync(guardFile); } catch { /* ignore */ }
-		try { fs.rmdirSync(tmpDir); } catch { /* ignore */ }
+		await fs.promises.rm(tmpDir, { recursive: true, force: true });
 	}
 }
 
@@ -1372,6 +1370,30 @@ function parseReviewArgs(raw: string, defaultMode: "branch" | "staged"): ReviewA
 // ---------------------------------------------------------------------------
 
 export default function codeReviewExtension(pi: ExtensionAPI) {
+	let activeReview: { controller: AbortController; done: Promise<void> } | undefined;
+	const withReview = (run: (args: string, ctx: ExtensionContext, signal: AbortSignal) => Promise<void>) =>
+		async (args: string, ctx: ExtensionContext) => {
+			if (activeReview) { ctx.ui.notify("A review is already running. Use /cancel-review first.", "warning"); return; }
+			const controller = new AbortController();
+			let finish!: () => void;
+			const done = new Promise<void>((resolve) => { finish = resolve; });
+			activeReview = { controller, done };
+			try { await run(args, ctx, controller.signal); }
+			catch (error) { if (!controller.signal.aborted) ctx.ui.notify(String(error), "error"); }
+			finally { activeReview = undefined; finish(); }
+		};
+	pi.registerCommand("cancel-review", {
+		description: "Cancel the running review",
+		handler: async () => { activeReview?.controller.abort(); },
+	});
+	pi.on("session_shutdown", async () => {
+		const review = activeReview;
+		review?.controller.abort();
+		await review?.done;
+	});
+	const recordUsage = (usage?: Usage) => {
+		if (usage) pi.appendEntry("review-usage", { usage });
+	};
 	// ------------------------------------------------------------------
 	// Message renderer for inline review display
 	// ------------------------------------------------------------------
@@ -1408,6 +1430,8 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 	let cachedPrs: AutocompleteItem[] = [];
 
 	pi.on("session_start", async (_event, ctx) => {
+		if (ctx.mode !== "tui") return;
+		cachedPrs = [];
 		const result = await pi.exec(
 			"gh",
 			["pr", "list", "--json", "number,title,url", "--limit", "20"],
@@ -1530,7 +1554,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 		description:
 			"Deep code review (/review [--base <branch>] [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = current branch)",
 		getArgumentCompletions: getSharedCompletions,
-		handler: async (args, ctx) => {
+		handler: withReview(async (args, ctx, signal) => {
 			const parsed = parseReviewArgs(args ?? "", "branch");
 
 			// Shared sub-agent runner
@@ -1544,18 +1568,14 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			) => {
 				const activityLog: string[] = [];
 				const MAX_LOG_LINES = 8;
-				const ac = new AbortController();
-				pi.registerCommand("cancel-review", {
-					description: "Cancel the running review",
-					handler: async () => { ac.abort(); },
-				});
+
 				ctx.ui.setStatus("review", "Sub-agent starting… (/cancel-review to abort)");
 
 				try {
 					const result = await runPrReviewSubagent(
 						task,
 						ctx.cwd,
-						ac.signal,
+						signal,
 						ctx.model,
 						({ status, activity }) => {
 							ctx.ui.setStatus("review", `Review: ${status}`);
@@ -1570,6 +1590,13 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 						},
 					);
 
+					recordUsage({
+						input: result.usage.input, output: result.usage.output,
+						cacheRead: result.usage.cacheRead, cacheWrite: result.usage.cacheWrite,
+						totalTokens: result.usage.input + result.usage.output + result.usage.cacheRead + result.usage.cacheWrite,
+						cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: result.usage.cost },
+					});
+					if (signal.aborted) return;
 					if (!result.ok) {
 						ctx.ui.notify(result.error ?? "Sub-agent failed", "error");
 						return;
@@ -1603,9 +1630,9 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				ctx.ui.notify(`Fetching PR #${prNumber} from ${repo}…`, "info");
 
 				const [metaResult, diffResult, prRef] = await Promise.all([
-					getPrMetadata(pi, repo, prNumber, ctx.cwd, ctx.signal),
-					getPrDiff(pi, repo, prNumber, ctx.cwd, ctx.signal),
-					ensurePrRef(pi, prNumber, ctx.cwd, ctx.signal),
+					getPrMetadata(pi, repo, prNumber, ctx.cwd, signal),
+					getPrDiff(pi, repo, prNumber, ctx.cwd, signal),
+					ensurePrRef(pi, repo, prNumber, ctx.cwd, signal),
 				]);
 
 				if (!metaResult.ok) {
@@ -1617,6 +1644,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 					return;
 				}
 
+				if (signal.aborted) return;
 				const { metadata } = metaResult;
 				const stats = diffStats(diffResult.diff);
 				const heading = `PR Review — ${repo}#${prNumber}: ${metadata.title}`;
@@ -1648,7 +1676,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			if (parsed.mode === "branch") {
 				ctx.ui.notify("Analysing branch changes…", "info");
 
-				const branchDiff = await getBranchDiff(pi, ctx.cwd, ctx.signal, parsed.baseBranch);
+				const branchDiff = await getBranchDiff(pi, ctx.cwd, signal, parsed.baseBranch);
 				if (!branchDiff.ok) {
 					ctx.ui.notify(branchDiff.error, "error");
 					return;
@@ -1656,13 +1684,14 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 
 				const metaResult = await getBranchMetadata(
 					pi, branchDiff.branch, branchDiff.baseBranch,
-					branchDiff.mergeBase, ctx.cwd, ctx.signal,
+					branchDiff.mergeBase, ctx.cwd, signal,
 				);
 				if (!metaResult.ok) {
 					ctx.ui.notify(metaResult.error, "error");
 					return;
 				}
 
+				if (signal.aborted) return;
 				const { metadata } = metaResult;
 				const stats = diffStats(branchDiff.diff);
 				const heading = `Branch Review — ${metadata.branch} (${metadata.commitCount} commits)`;
@@ -1686,9 +1715,9 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			// ── Local / range: deep sub-agent review of local diff ──
 			ctx.ui.notify("Fetching diff…", "info");
 
-			const diffResult = await fetchDiff(parsed, ctx.cwd, ctx.signal);
-			if (!diffResult.ok) {
-				ctx.ui.notify(diffResult.error, "error");
+			const diffResult = await fetchDiff(parsed, ctx.cwd, signal);
+			if (!diffResult.ok || signal.aborted) {
+				if (!diffResult.ok && !signal.aborted) ctx.ui.notify(diffResult.error, "error");
 				return;
 			}
 
@@ -1707,7 +1736,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				heading,
 				(review) => buildReviewContent(review, heading, stats, diffResult.diff),
 			);
-		},
+		}),
 	});
 
 	// ------------------------------------------------------------------
@@ -1717,14 +1746,14 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 		description:
 			"Quick code review (/review-diff [--base <branch>] [staged|unstaged|all|<range>|<path>|<PR URL>] — no args = staged)",
 		getArgumentCompletions: getSharedCompletions,
-		handler: async (args, ctx) => {
+		handler: withReview(async (args, ctx, signal) => {
 			const parsed = parseReviewArgs(args ?? "", "staged");
 
 			ctx.ui.notify("Fetching diff…", "info");
 
-			const diffResult = await fetchDiff(parsed, ctx.cwd, ctx.signal);
-			if (!diffResult.ok) {
-				ctx.ui.notify(diffResult.error, "error");
+			const diffResult = await fetchDiff(parsed, ctx.cwd, signal);
+			if (!diffResult.ok || signal.aborted) {
+				if (!diffResult.ok && !signal.aborted) ctx.ui.notify(diffResult.error, "error");
 				return;
 			}
 
@@ -1736,7 +1765,9 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				"info",
 			);
 
-			const reviewResult = await performReview(pi, diffResult.diff, undefined, diffResult.prTitle, ctx, ctx.signal);
+			const reviewResult = await performReview(pi, diffResult.diff, undefined, diffResult.prTitle, ctx, signal);
+			recordUsage(reviewResult.usage);
+			if (signal.aborted) return;
 			if (!reviewResult.ok) {
 				ctx.ui.notify(reviewResult.error, "error");
 				return;
@@ -1748,7 +1779,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 				display: true,
 				details: { heading, stats, review: reviewResult.review },
 			});
-		},
+		}),
 	});
 
 	// ------------------------------------------------------------------
@@ -1757,6 +1788,12 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "code_review",
 		label: "Code Review",
+		annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+		outputSchema: Type.Object({
+			review: Type.String(), label: Type.String(), empty: Type.Boolean(),
+			stats: Type.Object({ files: Type.Number(), additions: Type.Number(), deletions: Type.Number() }),
+			skippedPaths: Type.Array(Type.String()),
+		}),
 		description:
 			"Review git changes or a GitHub PR for bugs, security issues, style, and improvements. " +
 			"Supports local diffs (staged/unstaged/all), commit ranges, and GitHub PR URLs.",
@@ -1828,6 +1865,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 						return {
 							content: [{ type: "text", text: "No changes to review (nothing staged or unstaged)." }],
 							details: { empty: true },
+							structuredContent: { review: "", label: "No changes", empty: true, stats: diffStats(""), skippedPaths: [] },
 						};
 					}
 					label = "unstaged changes";
@@ -1835,6 +1873,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 					return {
 						content: [{ type: "text", text: `No changes to review (${scope}${params.path ? ` in ${params.path}` : ""}).` }],
 						details: { empty: true },
+						structuredContent: { review: "", label: "No changes", empty: true, stats: diffStats(""), skippedPaths: [] },
 					};
 				} else {
 					label = `${scope} changes${params.path ? ` in ${params.path}` : ""}`;
@@ -1843,7 +1882,7 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			}
 
 			if (signal?.aborted) {
-				return { content: [{ type: "text", text: "Cancelled" }], details: {} };
+				throw new Error("Review cancelled");
 			}
 
 			const stats = diffStats(diff);
@@ -1857,12 +1896,18 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			});
 
 			const reviewResult = await performReview(pi, diff, params.focus, prTitle, ctx, signal);
-			if (!reviewResult.ok) throw new Error(reviewResult.error);
+			if (!reviewResult.ok) return {
+				isError: true, content: [{ type: "text", text: reviewResult.error }], details: {}, usage: reviewResult.usage,
+			};
 
+			const skippedPaths = smartTruncateDiff(diff, PR_REVIEW_MAX_DIFF_BYTES).skippedPaths;
 			const diffExcerpt = truncateDiff(diff);
+			const output = await boundedOutput(`${reviewResult.review}\n\n---\n### Reviewed Diff\n<diff>\n${diffExcerpt}\n</diff>`);
 			return {
-				content: [{ type: "text", text: `${reviewResult.review}\n\n---\n### Reviewed Diff\n<diff>\n${diffExcerpt}\n</diff>` }],
-				details: { label, stats, prTitle },
+				...output,
+				details: { ...output.details, label, stats, prTitle, skippedPaths },
+				usage: reviewResult.usage,
+				structuredContent: { review: reviewResult.review, label, stats, empty: false, skippedPaths },
 			};
 		},
 
@@ -1887,7 +1932,10 @@ export default function codeReviewExtension(pi: ExtensionAPI) {
 			return new Text(text, 0, 0);
 		},
 
-		renderResult(result, { expanded, isPartial }, theme, _context) {
+		renderResult(result, { expanded, isPartial }, theme, context) {
+			if (context.isError) {
+				return new Text(theme.fg("error", result.content.filter((c) => c.type === "text").map((c) => c.text).join("\n")), 0, 0);
+			}
 			if (isPartial) {
 				const partial = result.content?.[0];
 				const msg = partial && "text" in partial ? partial.text : "Reviewing…";

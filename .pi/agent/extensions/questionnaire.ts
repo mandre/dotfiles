@@ -84,6 +84,8 @@ export default function questionnaire(pi: ExtensionAPI) {
 			"Use questionnaire for structured user input when you need to ask one or more questions with predefined options.",
 			"Prefer questionnaire over plain text questions when the answer should be one of a known set of choices.",
 		],
+		exposure: "model-only",
+		executionMode: "sequential",
 		parameters: QuestionnaireParams,
 
 		prepareArguments(args) {
@@ -132,6 +134,8 @@ export default function questionnaire(pi: ExtensionAPI) {
 				let inputMode = false;
 				let inputQuestionId: string | null = null;
 				let cachedLines: string[] | undefined;
+				let cachedWidth: number | undefined;
+				let focused = false;
 				const answers = new Map<string, Answer>();
 
 				// Editor for "Type something" option
@@ -149,6 +153,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 
 				// Helpers
 				function refresh() {
+					editor.focused = focused && inputMode;
 					cachedLines = undefined;
 					tui.requestRender();
 				}
@@ -207,7 +212,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 				function handleInput(data: string) {
 					// Input mode: route to editor
 					if (inputMode) {
-						if (matchesKey(data, Key.escape)) {
+						if (keybindings.matches(data, "tui.select.cancel")) {
 							inputMode = false;
 							inputQuestionId = null;
 							editor.setText("");
@@ -240,29 +245,30 @@ export default function questionnaire(pi: ExtensionAPI) {
 
 					// Submit tab
 					if (currentTab === questions.length) {
-						if (matchesKey(data, Key.enter) && allAnswered()) {
+						if (keybindings.matches(data, "tui.select.confirm") && allAnswered()) {
 							submit(false);
-						} else if (matchesKey(data, Key.escape)) {
+						} else if (keybindings.matches(data, "tui.select.cancel")) {
 							submit(true);
 						}
 						return;
 					}
 
 					// Option navigation
-					if (matchesKey(data, Key.up)) {
+					if (keybindings.matches(data, "tui.select.up")) {
 						optionIndex = Math.max(0, optionIndex - 1);
 						refresh();
 						return;
 					}
-					if (matchesKey(data, Key.down)) {
+					if (keybindings.matches(data, "tui.select.down")) {
 						optionIndex = Math.min(opts.length - 1, optionIndex + 1);
 						refresh();
 						return;
 					}
 
 					// Select option
-					if (matchesKey(data, Key.enter) && q) {
+					if (keybindings.matches(data, "tui.select.confirm") && q) {
 						const opt = opts[optionIndex];
+						if (!opt) return;
 						if (opt.isOther) {
 							inputMode = true;
 							inputQuestionId = q.id;
@@ -276,13 +282,14 @@ export default function questionnaire(pi: ExtensionAPI) {
 					}
 
 					// Cancel
-					if (matchesKey(data, Key.escape)) {
+					if (keybindings.matches(data, "tui.select.cancel")) {
 						submit(true);
 					}
 				}
 
 				function render(width: number): string[] {
-					if (cachedLines) return cachedLines;
+					if (cachedLines && cachedWidth === width) return cachedLines;
+					cachedWidth = width;
 
 					const lines: string[] = [];
 					const q = currentQuestion();
@@ -358,7 +365,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 							add(` ${line}`);
 						}
 						lines.push("");
-						add(` ${keyHint("tui.select.confirm", "submit")}${theme.fg("dim", " • ")}${keyHint("tui.select.cancel", "cancel")}`);
+						add(` ${keyHint("tui.input.submit", "submit")}${theme.fg("dim", " • ")}${keyHint("tui.select.cancel", "cancel")}`);
 					} else if (currentTab === questions.length) {
 						add(theme.fg("accent", theme.bold(" Ready to submit")));
 						lines.push("");
@@ -371,7 +378,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 						}
 						lines.push("");
 						if (allAnswered()) {
-							add(theme.fg("success", " Press Enter to submit"));
+							add(` ${keyHint("tui.select.confirm", "submit")}`);
 						} else {
 							const missing = questions
 								.filter((q) => !answers.has(q.id))
@@ -391,12 +398,14 @@ export default function questionnaire(pi: ExtensionAPI) {
 						const helpParts = isMulti
 							? [
 								theme.fg("dim", "Tab/←→ navigate"),
-								theme.fg("dim", "↑↓ select"),
+								keyHint("tui.select.up", "up"),
+								keyHint("tui.select.down", "down"),
 								keyHint("tui.select.confirm", "confirm"),
 								keyHint("tui.select.cancel", "cancel"),
 							]
 							: [
-								theme.fg("dim", "↑↓ navigate"),
+								keyHint("tui.select.up", "up"),
+								keyHint("tui.select.down", "down"),
 								keyHint("tui.select.confirm", "select"),
 								keyHint("tui.select.cancel", "cancel"),
 							];
@@ -409,9 +418,16 @@ export default function questionnaire(pi: ExtensionAPI) {
 				}
 
 				return {
+					get focused() { return focused; },
+					set focused(value: boolean) {
+						focused = value;
+						editor.focused = value && inputMode;
+						cachedLines = undefined;
+					},
 					render,
 					invalidate: () => {
 						cachedLines = undefined;
+						editor.invalidate();
 					},
 					handleInput,
 				};

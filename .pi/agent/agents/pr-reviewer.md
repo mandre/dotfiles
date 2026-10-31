@@ -27,6 +27,30 @@ These are the only ways to run git — there is no general-purpose shell availab
 
 Fabricated findings are worse than missing findings.
 
+## Compare Behavior Before and After
+
+Review the change against its actual pre-change baseline, not an ideal implementation. Use the supplied diff and read the relevant baseline and changed implementations with `git_show`, `git_diff`, or `read`. Follow callers and error/retry paths when needed to verify causality. Use the baseline appropriate to the review scope; do not assume the working tree is the PR version or that HEAD is always the baseline.
+
+Classify each correctness finding by origin, separately from severity:
+
+- **Regression (introduced or worsened):** The change creates a failure or makes an existing failure worse. Explain the triggering scenario, behavior before and after, and the specific change responsible.
+- **Partial fix / remaining limitation:** The change improves an existing problem but leaves some cases unresolved. State what improves, under which conditions, and what remains broken. Do not describe the residual problem as newly introduced.
+- **Pre-existing issue:** The problem already exists and is not addressed or worsened by this change. Omit unrelated issues, or identify them as separate follow-up work rather than findings against the patch.
+
+If the baseline or causal mechanism cannot be verified, mark the origin as **unverified** and state what evidence is missing. Do not assert a regression from the presence of new code alone.
+
+Assess new costs and tradeoffs separately from residual bugs: added latency, worker occupancy, error/retry paths, or deferred work. A new retry path reaching an existing vulnerability does not by itself prove that the patch increases its frequency or impact; verify any claimed worsening.
+
+Severity describes impact, not origin. A serious pre-existing risk does not automatically make a partial fix a newly introduced critical bug or justify requesting changes. If a partial fix must block merge because it fails an explicit requirement or safety contract, cite that requirement and explain the unmet guarantee while retaining the partial-fix classification. Do not impose a complete-fix requirement without evidence.
+
+For example, a bounded cache wait may prevent duplicate creation during short cache delays while leaving the existing risk during prolonged stalls. Report the improvement and remaining limitation separately from any new polling or timeout costs.
+
+## Project Review Skills
+
+Before reviewing code, read applicable project review skills advertised in the available skills list, including the project's `review` skill when present. Apply their checklists alongside these general review rules; do not rely on skill descriptions as a substitute for reading their instructions. If project instructions reference additional review guidance, read the relevant files too.
+
+Respect the read-only tool restrictions even when a project skill requests shell commands, file changes, builds, or tests. Use the available read-only git tools for inspection and report checks you could not perform. Keep origin and severity distinct even when a project checklist labels a category of issue as a blocker.
+
 ## Date Awareness
 
 Trust the `Current date:` field in the system prompt for the current year. Do not flag copyright headers or dates matching the current year as "in the future."
@@ -41,12 +65,12 @@ Adapt your effort to the PR size:
 
 Prioritize efficiently:
 
-1. Read the project's AGENTS.md if it exists (one tool call)
+1. Read the project's AGENTS.md if it exists and load applicable project review skills
 2. **Check diff coverage**: Compare the "Changed Files" list against the `<diff>` block. If files are listed under "Files NOT Included in Diff", plan which unseen files to explore with tools (prioritize by risk/complexity)
 3. If the diff was truncated, call `git_diff` with `stat: true` and the refs from the prompt to understand the full scope
 4. Focus on the most complex or risky changed files — skip trivial changes (renames, formatting, generated code like `zz_generated.*`)
-5. Read surrounding context only when the diff is ambiguous or you suspect a bug
-6. Check for bugs, edge cases, missing error handling, and security concerns
+5. Read surrounding context and baseline code as needed to verify suspected bugs and compare before-and-after behavior
+6. Check for bugs, edge cases, missing error handling, and security concerns; classify their origin before assigning severity
 7. Note whether tests exist for the changes, but don't exhaustively trace test files
 8. Write your review as soon as you have enough context — don't over-explore
 
@@ -64,16 +88,19 @@ Replace `<base>` and `<pr-ref>` with the actual values from the PR info in the p
 ## Output Format
 
 ### Summary
-Brief description of what the changes do and overall assessment.
+Brief description of what the changes do and overall assessment. For a bug fix, state whether it is a complete fix or partial mitigation, and under which conditions it improves behavior. State when no regression was demonstrated without implying proof that none exists.
 
 ### Critical Issues (must fix)
-- `file.ts:42` — Issue description with explanation
+- `file.ts:42` [Regression / Partial fix / Unverified] Issue description, triggering scenario, before-and-after behavior, evidence, and why it must block merge.
 
 ### Warnings (should fix)
-- `file.ts:100` — Issue description
+- `file.ts:100` [Regression / Partial fix / Unverified / Tradeoff / Test gap] Issue description, evidence, and recommendation. For correctness findings, explain the before-and-after behavior.
+
+### Remaining Limitations / Follow-up
+Relevant unresolved cases of the original bug, clearly labeled as partial fixes or pre-existing issues. Explain what improved and what remains; do not duplicate findings already reported above. Keep unrelated pre-existing issues out of the review.
 
 ### Suggestions (consider)
-- `file.ts:150` — Improvement idea
+- `file.ts:150` Improvement idea
 
 ### Test Coverage
 Assessment of test coverage for the changes.

@@ -11,7 +11,7 @@
  *   and absolute binary paths (e.g. /usr/bin/curl) are stripped before matching
  * - `--help` on any command is always allowed (help output never modifies anything)
  * - Extracts numbered plan steps from "Plan:" sections
- * - [DONE:n] markers to complete steps during execution
+ * - Explicit plan_progress updates to complete steps during execution
  * - Progress tracking widget during execution
  *
  * Safe command allowlist includes:
@@ -47,8 +47,9 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, TextContent } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { type AutocompleteItem, Key, truncateToWidth } from "@earendil-works/pi-tui";
-import { extractTodoItems, isSafeCommand, markCompletedSteps, matchToolResultsToSteps, type TodoItem, type ToolCallInfo } from "./utils.js";
+import { type AutocompleteItem, truncateToWidth } from "@earendil-works/pi-tui";
+import { Type } from "typebox";
+import { completeSteps, extractTodoItems, isSafeCommand, type TodoItem } from "./utils.js";
 
 // Tools
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch", "codemode"];
@@ -66,36 +67,22 @@ function getTextContent(message: AssistantMessage): string {
 		.join("\n");
 }
 
-// Extract tool call info (name, path, command) from assistant message
-// content blocks for content-aware step matching.
-function extractToolCallInfos(message: AssistantMessage): ToolCallInfo[] {
-	const calls: ToolCallInfo[] = [];
-	for (const block of message.content) {
-		if (block.type !== "toolCall") continue;
-		const tc = block as unknown as { name: string; arguments?: Record<string, unknown> };
-		const args = tc.arguments ?? {};
-		calls.push({
-			name: tc.name,
-			path:
-				tc.name === "edit" || tc.name === "write"
-					? ((args.path as string | undefined) ?? (args.file_path as string | undefined))
-					: undefined,
-			command: tc.name === "bash" ? (args.command as string | undefined) : undefined,
-		});
-	}
-	return calls;
-}
+const PROGRESS_TOOL = "plan_progress";
+const EXECUTION_INSTRUCTIONS = `After successfully completing work, call plan_progress with action "complete" and
+updates containing each completed step number and a brief evidence explanation.
+One edit may complete several steps. Verify every requirement of each step first.
+Call the tool after the work succeeds, not alongside work whose result is still unknown.
+Use action "list" to inspect progress. The tool is also callable from codemode.
+Before your final response, reconcile progress with actual work. Leave blocked,
+failed, partial, or unperformed steps unchecked and explain what remains.
+Prose, [DONE:n] markers, and attempted tool calls do not update the tracker.`;
 
 export default function planModeExtension(pi: ExtensionAPI): void {
 	let planModeEnabled = true;
 	let executionMode = false;
 	let todoItems: TodoItem[] = [];
 	let savedActiveTools: string[] | null = null;
-	// Ensures the ephemeral execution reminder (injected in the "context" hook,
-	// which fires before every LLM call in the tool loop) is only added once per
-	// agent run instead of once per tool-call round trip. Reset in
-	// before_agent_start, which fires once per user prompt.
-	let reminderInjectedThisRun = false;
+	let reconciliationRequested = false;
 	// Counts consecutive blocked bash calls within the current agent run, so the
 	// block reason can escalate if the model keeps probing for a workaround
 	// instead of stopping. Reset in before_agent_start (once per user prompt).
@@ -110,8 +97,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 	/** Restore the tool set that was active before plan mode was entered. */
 	function restoreActiveTools(): void {
-		const tools = savedActiveTools ?? pi.getAllTools().map((t) => t.name);
-		pi.setActiveTools(tools);
+		const tools = savedActiveTools ?? pi.getAllTools()
+			.filter((t) => t.exposure === "direct" || t.exposure === "model-only" || t.exposure === undefined)
+			.map((t) => t.name);
+		pi.setActiveTools(tools.filter((name) => name !== PROGRESS_TOOL));
 		savedActiveTools = null;
 	}
 
@@ -159,7 +148,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		todoItems = [];
 
 		if (planModeEnabled) {
-			savedActiveTools = pi.getActiveTools();
+			savedActiveTools = (savedActiveTools ?? pi.getActiveTools()).filter((name) => name !== PROGRESS_TOOL);
 			pi.setActiveTools(PLAN_MODE_TOOLS);
 			ctx.ui.notify(`Plan mode enabled. Tools: ${PLAN_MODE_TOOLS.join(", ")}`);
 			pendingModeChangeNotice = `[Mode change] Plan mode has just been enabled by the user. Tool access has changed to read-only: ${PLAN_MODE_TOOLS.join(", ")}. Any file-editing access you had earlier in this conversation (e.g. during a previous plan-execution phase) no longer applies. If a tool call is blocked, do not attempt a workaround — describe it as a plan step instead.`;
@@ -176,10 +165,56 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	function persistState(): void {
 		pi.appendEntry("plan-mode", {
 			enabled: planModeEnabled,
-			todos: todoItems,
+			version: 2,
+			todos: todoItems.map((item) => ({ ...item })),
 			executing: executionMode,
+			savedActiveTools,
 		});
 	}
+
+	function finishExecution(ctx: ExtensionContext): void {
+		if (!executionMode || todoItems.length === 0 || !todoItems.every((t) => t.completed)) return;
+		const completedList = todoItems.map((t) => `~~${t.text}~~`).join("\n");
+		executionMode = false;
+		todoItems = [];
+		restoreActiveTools();
+		updateStatus(ctx);
+		persistState();
+		pi.sendMessage(
+			{ customType: "plan-complete", content: `**Plan Complete!** ✓\n\n${completedList}`, display: true },
+			{ triggerTurn: false },
+		);
+		const leafId = ctx.sessionManager.getLeafId();
+		if (leafId) pi.setLabel(leafId, "plan-complete");
+	}
+
+	pi.registerTool({
+		name: PROGRESS_TOOL,
+		label: "Plan progress",
+		description: "List plan tasks or explicitly complete steps after successful work. Each update requires a step number and evidence. Supports multiple steps per call.",
+		exposure: "codemode",
+		executionMode: "sequential",
+		parameters: Type.Object({
+			action: Type.Union([Type.Literal("list"), Type.Literal("complete")]),
+			updates: Type.Optional(Type.Array(Type.Object({
+				step: Type.Integer({ minimum: 1 }),
+				evidence: Type.String({ minLength: 1 }),
+			}), { minItems: 1 })),
+		}),
+		async execute(_id, params, _signal, _onUpdate, ctx) {
+			if (!executionMode || planModeEnabled || ctx.mode !== "tui") throw new Error("No active plan execution.");
+			if (params.action === "complete") {
+				completeSteps(todoItems, params.updates ?? []);
+				updateStatus(ctx);
+				persistState();
+			}
+			const todos = todoItems.map((item) => ({ ...item }));
+			return {
+				content: [{ type: "text", text: todos.map((t) => `${t.step}. [${t.completed ? "x" : " "}] ${t.text}`).join("\n") }],
+				details: { todos },
+			};
+		},
+	});
 
 	pi.registerCommand("plan", {
 		description: "Toggle plan mode (read-only exploration)",
@@ -193,7 +228,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 				ctx.ui.notify("No todos. Create a plan first with /plan", "info");
 				return;
 			}
-			const list = todoItems.map((item, i) => `${i + 1}. ${item.completed ? "✓" : "○"} ${item.text}`).join("\n");
+			const list = todoItems.map((item) => `${item.step}. ${item.completed ? "✓" : "○"} ${item.text}`).join("\n");
 			ctx.ui.notify(`Plan Progress:\n${list}`, "info");
 		},
 	});
@@ -217,7 +252,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 				return;
 			}
 			const stepNum = Number(args?.trim());
-			if (!Number.isFinite(stepNum) || stepNum < 1) {
+			if (!Number.isInteger(stepNum) || stepNum < 1) {
 				ctx.ui.notify("Usage: /done <step number>", "warning");
 				return;
 			}
@@ -230,23 +265,12 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 				ctx.ui.notify(`Step ${stepNum} already completed.`, "info");
 				return;
 			}
-			item.completed = true;
+			completeSteps(todoItems, [{ step: stepNum, evidence: "Manually confirmed via /done." }]);
 			updateStatus(ctx);
 			persistState();
 			ctx.ui.notify(`Step ${stepNum} marked as done.`, "success");
 
-			if (todoItems.every((t) => t.completed)) {
-				const completedList = todoItems.map((t) => `~~${t.text}~~`).join("\n");
-				pi.sendMessage(
-					{ customType: "plan-complete", content: `**Plan Complete!** ✓\n\n${completedList}`, display: true },
-					{ triggerTurn: false },
-				);
-				executionMode = false;
-				todoItems = [];
-				restoreActiveTools();
-				updateStatus(ctx);
-				persistState();
-			}
+			finishExecution(ctx);
 		},
 	});
 
@@ -257,7 +281,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			// passive agent_end extraction can miss a plan restatement (e.g. a
 			// header phrasing it doesn't recognize), silently leaving `todoItems`
 			// stale. /execute should always run the freshest plan in the transcript.
-			const entries = ctx.sessionManager.getEntries();
+			const entries = ctx.sessionManager.getBranch();
 			for (let i = entries.length - 1; i >= 0; i--) {
 				const entry = entries[i] as { type: string; message?: AgentMessage };
 				if (entry.type === "message" && entry.message && isAssistantMessage(entry.message)) {
@@ -288,7 +312,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 			planModeEnabled = false;
 			executionMode = true;
+			reconciliationRequested = false;
 			restoreActiveTools();
+			savedActiveTools = pi.getActiveTools();
+			pi.setActiveTools([...savedActiveTools, PROGRESS_TOOL]);
 			updateStatus(ctx);
 			persistState();
 			const leafId = ctx.sessionManager.getLeafId();
@@ -357,29 +384,14 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			return true;
 		});
 
-		// Execution mode: append ephemeral remaining-steps reminder at the end,
-		// but only once per agent run (context fires on every LLM call inside the
-		// tool loop, so without this guard the reminder would repeat after every
-		// tool result within a single run).
-		if (!planModeEnabled && executionMode && todoItems.length > 0 && !reminderInjectedThisRun) {
-			const remaining = todoItems.filter((t) => !t.completed);
-			if (remaining.length > 0) {
-				const todoList = remaining.map((t) => `${t.step}. ${t.text}`).join("\n");
-				messages = [
-					...messages,
-					{
-						role: "user" as const,
-						content: `[Plan execution status]
-
-Remaining steps:
-${todoList}
-
-Execute each step in order. After completing a step, include a [DONE:n] marker in your response (e.g. [DONE:2]) to update the progress tracker.`,
-						timestamp: Date.now(),
-					},
-				];
-				reminderInjectedThisRun = true;
-			}
+		// Rebuild request-local status on every model call, including tool-loop turns.
+		if (!planModeEnabled && executionMode && todoItems.length > 0) {
+			const todoList = todoItems.map((t) => `${t.step}. [${t.completed ? "x" : " "}] ${t.text}`).join("\n");
+			messages = [...messages, {
+				role: "user" as const,
+				content: `[Plan execution status]\n${todoList}\n\n${EXECUTION_INSTRUCTIONS}`,
+				timestamp: Date.now(),
+			}];
 		}
 
 		// Mode was just toggled mid-conversation (via /plan or the shortcut, not at
@@ -400,7 +412,7 @@ Execute each step in order. After completing a step, include a [DONE:n] marker i
 	pi.on("before_agent_start", async (event, ctx) => {
 		// Reset once per run (before_agent_start fires once per user prompt,
 		// unlike "context" which fires on every LLM call in the tool loop).
-		reminderInjectedThisRun = false;
+		reconciliationRequested = false;
 		blockedBashCallsThisRun = 0;
 
 		// Never activate in non-TUI runs (see session_start) — there's no human
@@ -456,74 +468,29 @@ Do NOT attempt to make changes - just describe what you would do.`,
 		}
 	});
 
-	// Track progress after each turn (tools have completed)
-	pi.on("turn_end", async (event, ctx) => {
-		// Restore default working message for both plan and execution modes
-		if (planModeEnabled || executionMode) {
-			ctx.ui.setWorkingMessage();
-		}
-		if (!executionMode || todoItems.length === 0) return;
-		if (!isAssistantMessage(event.message)) return;
-
-		const text = getTextContent(event.message);
-		const marked = markCompletedSteps(text, todoItems);
-
-		// Content-aware matching: match tool calls to plan steps by file
-		// path and command keywords. Handles multi-block edits (one edit
-		// covering multiple plan steps for the same file) and bash-based
-		// steps (build, lint, test, commit).
-		const toolCalls = extractToolCallInfos(event.message);
-		const contentMatched = matchToolResultsToSteps(toolCalls, todoItems);
-
-		// Sequential fallback: if neither explicit markers nor content-aware
-		// matching found anything, fall back to counting edit/write mutations
-		// and marking that many uncompleted steps in order. This handles
-		// steps whose text doesn't contain recognizable file paths or
-		// command keywords.
-		if (marked === 0 && contentMatched === 0 && event.toolResults && event.toolResults.length > 0) {
-			const mutatingCount = event.toolResults.filter(
-				(tr: { toolName?: string }) => tr.toolName === "edit" || tr.toolName === "write",
-			).length;
-			if (mutatingCount > 0) {
-				let remaining = mutatingCount;
-				for (const item of todoItems) {
-					if (remaining <= 0) break;
-					if (!item.completed) {
-						item.completed = true;
-						remaining--;
-					}
-				}
-			}
-		}
-
-		updateStatus(ctx);
-		persistState();
-		ctx.ui.setWorkingMessage(); // Restore default
+	pi.on("turn_end", async (_event, ctx) => {
+		if (planModeEnabled || executionMode) ctx.ui.setWorkingMessage();
 	});
 
-	// Handle plan completion and plan mode UI
-	pi.on("agent_end", async (event, ctx) => {
-		// Check if execution is complete
-		if (executionMode && todoItems.length > 0) {
-			if (todoItems.every((t) => t.completed)) {
-				const completedList = todoItems.map((t) => `~~${t.text}~~`).join("\n");
-				pi.sendMessage(
-					{ customType: "plan-complete", content: `**Plan Complete!** ✓\n\n${completedList}`, display: true },
-					{ triggerTurn: false },
-				);
-				const leafId = ctx.sessionManager.getLeafId();
-				if (leafId) {
-					pi.setLabel(leafId, "plan-complete");
-				}
-				executionMode = false;
-				todoItems = [];
-				restoreActiveTools();
-				updateStatus(ctx);
-				persistState(); // Save cleared state so resume doesn't restore old execution mode
-			}
-			return;
-		}
+	pi.on("agent_before_settle", async (event, ctx) => {
+		if (!executionMode || ctx.mode !== "tui" || event.outcome !== "completed") return;
+		finishExecution(ctx);
+		if (!executionMode || reconciliationRequested || event.continue || !event.context.canContinue) return;
+		reconciliationRequested = true;
+		const remaining = todoItems.filter((t) => !t.completed).map((t) => `${t.step}. ${t.text}`).join("\n");
+		return {
+			entries: [{
+				type: "custom_message" as const,
+				customType: "plan-reconciliation",
+				content: `Reconcile the remaining plan steps with work already performed:\n${remaining}\n\nUse plan_progress to record only verified completions, with evidence. Do not do new work merely to clear the checklist. Leave unfinished steps unchecked and explain blockers or remaining work. This is the only automatic reconciliation pass.`,
+				display: false,
+			}],
+			continue: true,
+		};
+	});
 
+	// Plan extraction remains separate from execution progress.
+	pi.on("agent_end", async (event, ctx) => {
 		if (!planModeEnabled || ctx.mode !== "tui") return;
 
 		// Extract todos from last assistant message
@@ -560,66 +527,42 @@ Do NOT attempt to make changes - just describe what you would do.`,
 		// Plan mode stays active until manually toggled off via /plan, Alt+P, or /execute
 	});
 
-	// Restore state on session start/resume
-	pi.on("session_start", async (_event, ctx) => {
-		// Plan mode is an interactive, human-in-the-loop safety net (/execute,
-		// /done, widgets, notifications, /plan to escape). It has no meaningful
-		// way to be toggled off in non-TUI runs — for example, headless
-		// `--mode json`/`-p` sub-agents spawned by other extensions — so never
-		// activate it there. Those runs always get full tool access.
+	// Snapshots, including legacy snapshots, are authoritative. Do not replay
+	// prose or markers from other plans or abandoned branches.
+	function restoreState(ctx: ExtensionContext): void {
+		planModeEnabled = ctx.mode === "tui";
+		executionMode = false;
+		todoItems = [];
+		reconciliationRequested = false;
+		pendingModeChangeNotice = null;
+		const previousTools = savedActiveTools ?? pi.getActiveTools().filter((name) => name !== PROGRESS_TOOL);
+		savedActiveTools = null;
 		if (ctx.mode !== "tui") {
-			planModeEnabled = false;
-			executionMode = false;
-			todoItems = [];
+			pi.setActiveTools(previousTools);
+			updateStatus(ctx);
 			return;
 		}
-
-		if (pi.getFlag("plan") === true) {
-			planModeEnabled = true;
+		const entries = ctx.sessionManager.getBranch();
+		const state = entries
+			.filter((e) => e.type === "custom" && e.customType === "plan-mode")
+			.pop() as { data?: { enabled: boolean; todos?: TodoItem[]; executing?: boolean; savedActiveTools?: string[] | null } } | undefined;
+		if (state?.data) {
+			planModeEnabled = state.data.enabled ?? true;
+			todoItems = (state.data.todos ?? []).map((item) => ({ ...item }));
+			executionMode = !planModeEnabled && (state.data.executing ?? false);
 		}
-
-		const entries = ctx.sessionManager.getEntries();
-
-		// Restore persisted state
-		const planModeEntry = entries
-			.filter((e: { type: string; customType?: string }) => e.type === "custom" && e.customType === "plan-mode")
-			.pop() as { data?: { enabled: boolean; todos?: TodoItem[]; executing?: boolean } } | undefined;
-
-		if (planModeEntry?.data) {
-			planModeEnabled = planModeEntry.data.enabled ?? planModeEnabled;
-			todoItems = planModeEntry.data.todos ?? todoItems;
-			executionMode = planModeEntry.data.executing ?? executionMode;
-		}
-
-		// On resume: re-scan messages to rebuild completion state
-		// Only scan messages AFTER the last "plan-mode-execute" to avoid picking up [DONE:n] from previous plans
-		const isResume = planModeEntry !== undefined;
-		if (isResume && executionMode && todoItems.length > 0) {
-			// Find the index of the last plan-mode-execute entry (marks when current execution started)
-			let executeIndex = -1;
-			for (let i = entries.length - 1; i >= 0; i--) {
-				const entry = entries[i] as { type: string; customType?: string };
-				if (entry.customType === "plan-mode-execute") {
-					executeIndex = i;
-					break;
-				}
-			}
-
-			// Only scan messages after the execute marker
-			const messages: AssistantMessage[] = [];
-			for (let i = executeIndex + 1; i < entries.length; i++) {
-				const entry = entries[i];
-				if (entry.type === "message" && "message" in entry && isAssistantMessage(entry.message as AgentMessage)) {
-					messages.push(entry.message as AssistantMessage);
-				}
-			}
-			const allText = messages.map(getTextContent).join("\n");
-			markCompletedSteps(allText, todoItems);
-		}
-
 		if (planModeEnabled) {
+			savedActiveTools = state?.data?.savedActiveTools ?? previousTools;
 			pi.setActiveTools(PLAN_MODE_TOOLS);
+		} else if (executionMode) {
+			savedActiveTools = state?.data?.savedActiveTools ?? previousTools;
+			pi.setActiveTools([...savedActiveTools, PROGRESS_TOOL]);
+		} else {
+			pi.setActiveTools(previousTools);
 		}
 		updateStatus(ctx);
-	});
+	}
+
+	pi.on("session_start", async (_event, ctx) => restoreState(ctx));
+	pi.on("session_tree", async (_event, ctx) => restoreState(ctx));
 }

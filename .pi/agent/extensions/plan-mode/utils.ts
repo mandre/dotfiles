@@ -251,6 +251,7 @@ export interface TodoItem {
 	step: number;
 	text: string;
 	completed: boolean;
+	evidence?: string;
 }
 
 export function cleanStepText(text: string): string {
@@ -258,10 +259,6 @@ export function cleanStepText(text: string): string {
 		.replace(/~~([^~]+)~~/g, "$1") // Remove strikethrough
 		.replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1") // Remove bold/italic
 		.replace(/`([^`]+)`/g, "$1") // Remove code
-		.replace(
-			/^(Use|Run|Execute|Create|Write|Read|Check|Verify|Update|Modify|Add|Remove|Delete|Install)\s+(the\s+)?/i,
-			"",
-		)
 		.replace(/\s+/g, " ")
 		.trim();
 
@@ -292,14 +289,11 @@ export function extractTodoItems(message: string): TodoItem[] {
 	if (!headerMatch) return items;
 
 	const planSection = message.slice(message.indexOf(headerMatch[0]) + headerMatch[0].length);
-	const numberedPattern = /^\s*(?:#{1,6}\s+)?\*{0,2}(\d+)[.)]\*{0,2}\s+\*{0,2}([^*\n]+)/gm;
+	const numberedPattern = /^[ \t]*(?:#{1,6}[ \t]+)?\*{0,2}(\d+)[.)]\*{0,2}[ \t]+([^\n]+)/gm;
 
 	for (const match of planSection.matchAll(numberedPattern)) {
-		const text = match[2]
-			.trim()
-			.replace(/\*{1,2}$/, "")
-			.trim();
-		if (text.length > 5 && !text.startsWith("```") && !text.startsWith("/") && !text.startsWith("-")) {
+		const text = match[2].trim();
+		if (text.length > 5 && !text.startsWith("```") && !text.startsWith("-")) {
 			const cleaned = cleanStepText(text);
 			if (cleaned.length > 3) {
 				items.push({ step: Number(match[1]), text: cleaned, completed: false });
@@ -309,143 +303,29 @@ export function extractTodoItems(message: string): TodoItem[] {
 	return items;
 }
 
-export function extractDoneSteps(message: string): number[] {
-	const steps: number[] = [];
-	for (const match of message.matchAll(/\[DONE:(\d+)\]/gi)) {
-		const step = Number(match[1]);
-		if (Number.isFinite(step)) steps.push(step);
-	}
-	return steps;
+export interface CompletionUpdate {
+	step: number;
+	evidence: string;
 }
 
-/**
- * Detect step completion from natural-language patterns in assistant text.
- * Matches phrases like "Step 3 is done", "completed step 2", "✅ Step 1", etc.
- */
-export function extractNaturalDoneSteps(message: string): number[] {
-	const steps: number[] = [];
-	const patterns = [
-		/✅\s*(?:step\s*)?(\d+)/gi,
-		/step\s+(\d+)\s+(?:is\s+)?(?:done|completed|finished|complete)/gi,
-		/(?:completed|finished|done with|done:?)\s+step\s+(\d+)/gi,
-		/^\s*(?:#{1,3}\s+)?step\s+(\d+)\s*[:\-–—]/gim,
-	];
-	for (const pattern of patterns) {
-		for (const match of message.matchAll(pattern)) {
-			const step = Number(match[1]);
-			if (Number.isFinite(step) && !steps.includes(step)) steps.push(step);
+/** Validate the whole batch before mutating state. Repeated updates are no-ops. */
+export function completeSteps(items: TodoItem[], updates: CompletionUpdate[]): number {
+	if (updates.length === 0) throw new Error("Provide at least one completion update.");
+	for (const update of updates) {
+		if (!Number.isInteger(update.step) || update.step < 1 || !items.some((t) => t.step === update.step)) {
+			throw new Error(`Unknown plan step: ${update.step}`);
+		}
+		if (typeof update.evidence !== "string" || !update.evidence.trim()) {
+			throw new Error(`Completion evidence required for step ${update.step}.`);
 		}
 	}
-	return steps;
-}
-
-export function markCompletedSteps(text: string, items: TodoItem[]): number {
-	// Explicit [DONE:n] markers (highest priority)
-	const doneSteps = extractDoneSteps(text);
-	// Natural-language detection as fallback
-	const naturalSteps = extractNaturalDoneSteps(text);
-
-	const allSteps = [...new Set([...doneSteps, ...naturalSteps])];
 	let marked = 0;
-	for (const step of allSteps) {
-		const item = items.find((t) => t.step === step && !t.completed);
-		if (item) {
+	for (const update of updates) {
+		const item = items.find((t) => t.step === update.step)!;
+		if (!item.completed) {
 			item.completed = true;
+			item.evidence = update.evidence.trim();
 			marked++;
-		}
-	}
-	return marked;
-}
-
-/**
- * Info extracted from an assistant message's tool call blocks,
- * used for content-aware step matching.
- */
-export interface ToolCallInfo {
-	name: string;
-	path?: string;
-	command?: string;
-}
-
-/**
- * Check if a file path matches a plan step's text (case-insensitive).
- * Tries the full relative path first, then progressively shorter
- * trailing path components.
- */
-export function filePathMatchesStep(filePath: string, stepText: string): boolean {
-	const normalizedPath = filePath.toLowerCase().replace(/\\/g, "/");
-	const normalizedStep = stepText.toLowerCase();
-
-	const parts = normalizedPath.split("/");
-	for (let i = 0; i < parts.length; i++) {
-		const suffix = parts.slice(i).join("/");
-		// Require at least 5 chars to avoid matching single-letter directory names
-		if (suffix.length >= 5 && normalizedStep.includes(suffix)) return true;
-	}
-	return false;
-}
-
-/**
- * Check if a bash command corresponds to a plan step.
- * Recognizes common build/test/lint/commit patterns from make, go,
- * cargo, npm, git, and standalone test runners.
- */
-export function bashCommandMatchesStep(command: string, stepText: string): boolean {
-	const normalizedCmd = normalizeCommand(command).toLowerCase();
-	const normalizedStep = stepText.toLowerCase();
-
-	// Build/test/lint via make, go, cargo, npm, yarn
-	const buildToolMatch = normalizedCmd.match(
-		/\b(?:make|go|cargo|npm\s+run|yarn)\s+(build|test|lint|vet|fmt|format|generate(?:-\w+)?)\b/,
-	);
-	if (buildToolMatch) {
-		const action = buildToolMatch[1];
-		if (action === "vet") return normalizedStep.includes("vet") || normalizedStep.includes("lint");
-		if (action.startsWith("generate")) return normalizedStep.includes("generate");
-		return normalizedStep.includes(action);
-	}
-
-	// npm test / pytest / jest (no subcommand after the tool name)
-	if (/\b(?:npm\s+test|pytest|jest)\b/.test(normalizedCmd)) {
-		return normalizedStep.includes("test");
-	}
-
-	// git commit
-	if (/\bgit\s+commit\b/.test(normalizedCmd)) {
-		return normalizedStep.includes("commit");
-	}
-
-	// git push
-	if (/\bgit\s+push\b/.test(normalizedCmd)) {
-		return normalizedStep.includes("push");
-	}
-
-	return false;
-}
-
-/**
- * Match tool calls to plan steps by content (file paths, command keywords).
- * For edit/write calls, matches the file path against step text.
- * For bash calls, matches recognized action keywords against step text.
- * Returns the number of newly marked steps.
- */
-export function matchToolResultsToSteps(toolCalls: ToolCallInfo[], items: TodoItem[]): number {
-	let marked = 0;
-	for (const tc of toolCalls) {
-		if ((tc.name === "edit" || tc.name === "write") && tc.path) {
-			for (const item of items) {
-				if (!item.completed && filePathMatchesStep(tc.path, item.text)) {
-					item.completed = true;
-					marked++;
-				}
-			}
-		} else if (tc.name === "bash" && tc.command) {
-			for (const item of items) {
-				if (!item.completed && bashCommandMatchesStep(tc.command, item.text)) {
-					item.completed = true;
-					marked++;
-				}
-			}
 		}
 	}
 	return marked;

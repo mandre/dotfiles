@@ -1,4 +1,4 @@
-import { extractDoneSteps, extractNaturalDoneSteps, extractTodoItems, markCompletedSteps, cleanStepText, isSafeCommand, normalizeCommand, filePathMatchesStep, bashCommandMatchesStep, matchToolResultsToSteps, type TodoItem, type ToolCallInfo } from "./utils.js";
+import { completeSteps, extractTodoItems, cleanStepText, isSafeCommand, normalizeCommand, type TodoItem } from "./utils.js";
 
 // Simple test runner
 let passed = 0;
@@ -23,33 +23,6 @@ function assertDeepEqual<T>(actual: T, expected: T, message: string): void {
 		console.error(`FAIL: ${message}\n  expected: ${e}\n  actual:   ${a}`);
 	}
 }
-
-// --- extractDoneSteps ---
-
-assertDeepEqual(extractDoneSteps("I completed the task [DONE:1]"), [1], "extractDoneSteps: basic [DONE:1]");
-assertDeepEqual(extractDoneSteps("[DONE:3] and [DONE:5]"), [3, 5], "extractDoneSteps: multiple markers");
-assertDeepEqual(extractDoneSteps("[done:2]"), [2], "extractDoneSteps: case insensitive");
-assertDeepEqual(extractDoneSteps("No markers here"), [], "extractDoneSteps: no markers");
-assertDeepEqual(extractDoneSteps("[DONE:0]"), [0], "extractDoneSteps: step 0");
-
-// --- extractNaturalDoneSteps ---
-
-assertDeepEqual(extractNaturalDoneSteps("✅ Step 1"), [1], "natural: checkmark step");
-assertDeepEqual(extractNaturalDoneSteps("✅ 3"), [3], "natural: checkmark number only");
-assertDeepEqual(extractNaturalDoneSteps("Step 2 is done"), [2], "natural: step N is done");
-assertDeepEqual(extractNaturalDoneSteps("Step 4 completed"), [4], "natural: step N completed");
-assertDeepEqual(extractNaturalDoneSteps("completed step 5"), [5], "natural: completed step N");
-assertDeepEqual(extractNaturalDoneSteps("Finished step 3"), [3], "natural: finished step N");
-assertDeepEqual(extractNaturalDoneSteps("Done with step 7"), [7], "natural: done with step N");
-assertDeepEqual(extractNaturalDoneSteps("## Step 2: Update the config"), [2], "natural: markdown heading step");
-assertDeepEqual(extractNaturalDoneSteps("### Step 1 - Fix the bug"), [1], "natural: heading with dash");
-assertDeepEqual(extractNaturalDoneSteps("Step 2 is done and step 3 completed"), [2, 3], "natural: multiple matches");
-assertDeepEqual(extractNaturalDoneSteps("No step info here"), [], "natural: no matches");
-assertDeepEqual(
-	extractNaturalDoneSteps("✅ Step 1 and step 1 is done"),
-	[1],
-	"natural: deduplicates same step"
-);
 
 // --- extractTodoItems (step number preservation) ---
 
@@ -117,44 +90,6 @@ assertDeepEqual(
 		[1, 3],
 		"extractTodoItems code-fence: filters code fence steps"
 	);
-}
-
-// --- markCompletedSteps (combined detection) ---
-
-{
-	const items: TodoItem[] = [
-		{ step: 1, text: "Fix the bug", completed: false },
-		{ step: 2, text: "Update tests", completed: false },
-		{ step: 3, text: "Add docs", completed: false },
-	];
-	const marked = markCompletedSteps("[DONE:1] and step 3 is done", items);
-	assert(marked === 2, `markCompletedSteps combined: expected 2 marked, got ${marked}`);
-	assert(items[0].completed === true, "markCompletedSteps combined: step 1 completed via [DONE:1]");
-	assert(items[1].completed === false, "markCompletedSteps combined: step 2 still incomplete");
-	assert(items[2].completed === true, "markCompletedSteps combined: step 3 completed via natural");
-}
-
-{
-	// Already-completed items should not be double-counted
-	const items: TodoItem[] = [
-		{ step: 1, text: "Fix the bug", completed: true },
-		{ step: 2, text: "Update tests", completed: false },
-	];
-	const marked = markCompletedSteps("[DONE:1] [DONE:2]", items);
-	assert(marked === 1, `markCompletedSteps already done: expected 1 newly marked, got ${marked}`);
-	assert(items[1].completed === true, "markCompletedSteps already done: step 2 now completed");
-}
-
-{
-	// Step number mismatch: [DONE:4] with no step 4 in items
-	const items: TodoItem[] = [
-		{ step: 1, text: "First", completed: false },
-		{ step: 3, text: "Third", completed: false },
-	];
-	const marked = markCompletedSteps("[DONE:4]", items);
-	assert(marked === 0, "markCompletedSteps mismatch: no step 4, nothing marked");
-	assert(items[0].completed === false, "markCompletedSteps mismatch: step 1 unchanged");
-	assert(items[1].completed === false, "markCompletedSteps mismatch: step 3 unchanged");
 }
 
 // --- extractTodoItems (markdown heading formats) ---
@@ -283,7 +218,7 @@ assert(
 	cleanStepText("~~Re-confirm current state~~ — **Done**.") === "Re-confirm current state — Done.",
 	"cleanStepText: removes strikethrough combined with bold 'Done' annotation",
 );
-assert(cleanStepText("Update the configuration file") === "Configuration file", "cleanStepText: strips action prefix");
+assert(cleanStepText("Update the configuration file") === "Update the configuration file", "cleanStepText: preserves action prefix");
 assert(
 	cleanStepText("A very long step description that exceeds the character limit by quite a bit and keeps going on and on to make absolutely sure we exceed the one hundred and twenty character truncation threshold").length > 120,
 	"cleanStepText: preserves full text without truncation"
@@ -712,56 +647,6 @@ assert(isSafeCommand("echo 'dGVzdA==' | base64 -d"), "base64: piped decode is sa
 assert(!isSafeCommand("dot -Tpng -Gdpi=150 /tmp/diagram.dot -o /path/to/output.png"), "dot: -o writes file is blocked");
 assert(!isSafeCommand("dot -Tsvg input.dot -o output.svg 2>&1"), "dot: svg output is blocked");
 
-// --- markCompletedSteps: partial completion (regression for stale task list bug) ---
-// When a turn contains [DONE:1] for one step but an edit for a *different* step,
-// markCompletedSteps only marks the explicitly tagged step. The turn_end fallback
-// heuristic in index.ts must handle the rest. These tests verify markCompletedSteps
-// reports accurate counts so the heuristic can compare against mutating tool count.
-
-{
-	// Scenario from session 01a066c2: assistant text has [DONE:1] but the edit was
-	// for step 2. markCompletedSteps should mark exactly 1, leaving step 2 for the
-	// fallback heuristic in turn_end.
-	const items: TodoItem[] = [
-		{ step: 1, text: "Edit lsp.lua line 82", completed: false },
-		{ step: 2, text: "Edit lsp.lua line 88", completed: false },
-	];
-	const text = "Looking at line 82 again, no change needed there. [DONE:1]\n\nNow fixing line 88, the actual problem:";
-	const marked = markCompletedSteps(text, items);
-	assert(marked === 1, `markCompletedSteps partial: expected 1 marked, got ${marked}`);
-	assert(items[0].completed === true, "markCompletedSteps partial: step 1 completed via [DONE:1]");
-	assert(items[1].completed === false, "markCompletedSteps partial: step 2 left for fallback heuristic");
-}
-
-{
-	// When [DONE:n] marks one step AND natural language marks a different step,
-	// both should be counted — total marked should equal 2.
-	const items: TodoItem[] = [
-		{ step: 1, text: "Fix the bug", completed: false },
-		{ step: 2, text: "Update tests", completed: false },
-		{ step: 3, text: "Add docs", completed: false },
-	];
-	const text = "[DONE:1] and step 2 is done";
-	const marked = markCompletedSteps(text, items);
-	assert(marked === 2, `markCompletedSteps mixed markers: expected 2 marked, got ${marked}`);
-	assert(items[0].completed === true, "markCompletedSteps mixed: step 1 done");
-	assert(items[1].completed === true, "markCompletedSteps mixed: step 2 done");
-	assert(items[2].completed === false, "markCompletedSteps mixed: step 3 still incomplete");
-}
-
-{
-	// Zero markers found — marked should be 0 so the fallback heuristic can kick in.
-	const items: TodoItem[] = [
-		{ step: 1, text: "Fix the parser", completed: false },
-		{ step: 2, text: "Update config", completed: false },
-	];
-	const text = "Done. The fix is applied.";
-	const marked = markCompletedSteps(text, items);
-	assert(marked === 0, `markCompletedSteps no markers: expected 0 marked, got ${marked}`);
-	assert(items[0].completed === false, "markCompletedSteps no markers: step 1 unchanged");
-	assert(items[1].completed === false, "markCompletedSteps no markers: step 2 unchanged");
-}
-
 // --- isSafeCommand: tmux read-only ---
 
 assert(isSafeCommand("tmux capture-pane -p"), "tmux: capture-pane is safe");
@@ -892,169 +777,35 @@ assert(
 	"cd 2>/dev/null: grep with cd 2>/dev/null prefix is safe",
 );
 
-// --- filePathMatchesStep ---
-
-assert(filePathMatchesStep("internal/controllers/server/actuator.go", "Internal/controllers/server/actuator.go"), "filePath: case-insensitive full path match");
-assert(filePathMatchesStep("internal/controllers/server/actuator.go", "Server/actuator.go edits"), "filePath: trailing components match");
-assert(filePathMatchesStep("internal/controllers/securitygroup/actuator.go", "Internal/controllers/securitygroup/actuator.go"), "filePath: securitygroup full path");
-assert(filePathMatchesStep("src/components/Button.tsx", "Components/Button.tsx: update styles"), "filePath: tsx trailing match");
-assert(!filePathMatchesStep("internal/controllers/server/actuator.go", "Build and lint"), "filePath: no match for unrelated step");
-assert(!filePathMatchesStep("internal/controllers/server/actuator.go", "Commit"), "filePath: no match for commit step");
-assert(!filePathMatchesStep("a/b.go", "Some step text"), "filePath: short path components don't match");
-assert(filePathMatchesStep("path/to/utils.ts", "Update path/to/utils.ts with new function"), "filePath: path embedded in longer step text");
-
-// --- bashCommandMatchesStep ---
-
-// make targets
-assert(bashCommandMatchesStep("make build", "Build and lint"), "bash: make build matches Build");
-assert(bashCommandMatchesStep("make lint", "Build and lint"), "bash: make lint matches lint");
-assert(bashCommandMatchesStep("make test", "Build and test"), "bash: make test matches test");
-assert(!bashCommandMatchesStep("make fmt", "Format code"), "bash: make fmt does not match 'format' (only matches literal 'fmt')");
-assert(bashCommandMatchesStep("make fmt", "Run fmt"), "bash: make fmt matches fmt");
-assert(bashCommandMatchesStep("make generate", "Generate code"), "bash: make generate matches generate");
-assert(bashCommandMatchesStep("make generate-bundle", "Generate code"), "bash: make generate-bundle matches generate");
-
-// make with cd prefix and pipes
-assert(bashCommandMatchesStep("cd /home/user/project && make build 2>&1 | tail -5", "Build and lint"), "bash: make build with cd prefix");
-assert(bashCommandMatchesStep("cd /path && make lint 2>&1 | tail -10", "Build and lint"), "bash: make lint with cd prefix");
-assert(bashCommandMatchesStep("cd /path && make test 2>&1", "Run tests"), "bash: make test with cd prefix matches test");
-
-// go commands
-assert(bashCommandMatchesStep("go build ./...", "Build and lint"), "bash: go build matches build");
-assert(bashCommandMatchesStep("go test ./...", "Run tests"), "bash: go test matches test");
-assert(bashCommandMatchesStep("go vet ./...", "Lint code"), "bash: go vet matches lint");
-assert(bashCommandMatchesStep("go vet ./...", "Run vet"), "bash: go vet matches vet");
-
-// npm/yarn commands
-assert(bashCommandMatchesStep("npm run build", "Build the project"), "bash: npm run build matches build");
-assert(bashCommandMatchesStep("npm run lint", "Lint code"), "bash: npm run lint matches lint");
-assert(bashCommandMatchesStep("npm test", "Run tests"), "bash: npm test matches test");
-assert(bashCommandMatchesStep("yarn build", "Build the project"), "bash: yarn build matches build");
-
-// cargo commands
-assert(bashCommandMatchesStep("cargo build", "Build the project"), "bash: cargo build matches build");
-assert(bashCommandMatchesStep("cargo test", "Run tests"), "bash: cargo test matches test");
-
-// pytest/jest
-assert(bashCommandMatchesStep("pytest tests/ -v", "Run tests"), "bash: pytest matches test");
-assert(bashCommandMatchesStep("jest --coverage", "Run tests"), "bash: jest matches test");
-
-// git commit/push
-assert(bashCommandMatchesStep("git commit -m 'Fix bug'", "Commit"), "bash: git commit matches commit");
-assert(bashCommandMatchesStep("cd /path && git commit -m 'Fix bug'", "Commit changes"), "bash: git commit with cd prefix");
-assert(bashCommandMatchesStep("git push origin main", "Push to remote"), "bash: git push matches push");
-
-// Commands that should NOT match
-assert(!bashCommandMatchesStep("grep pattern file", "Build and lint"), "bash: grep does not match build");
-assert(!bashCommandMatchesStep("cat file.go", "Build and lint"), "bash: cat does not match build");
-assert(!bashCommandMatchesStep("ls -la", "Commit"), "bash: ls does not match commit");
-assert(!bashCommandMatchesStep("git add file.go", "Commit"), "bash: git add does not match commit");
-assert(!bashCommandMatchesStep("git diff --stat", "Build and lint"), "bash: git diff does not match build");
-assert(!bashCommandMatchesStep("git log --oneline", "Commit"), "bash: git log does not match commit");
-assert(!bashCommandMatchesStep("make build", "Commit"), "bash: make build does not match commit");
-assert(!bashCommandMatchesStep("git commit -m 'fix'", "Build and lint"), "bash: git commit does not match build");
-
-// --- matchToolResultsToSteps (integration) ---
+// --- Explicit completion and extraction regressions ---
 
 {
-	// Scenario from session 01a1438a: 5 edit calls covering 7 plan steps
-	// (server/actuator.go has 3 steps, all matched by one edit call)
-	const items: TodoItem[] = [
-		{ step: 1, text: "Internal/controllers/securitygroup/actuator.go", completed: false },
-		{ step: 2, text: "Internal/controllers/flavor/actuator.go", completed: false },
-		{ step: 3, text: "Internal/controllers/user/actuator.go", completed: false },
-		{ step: 4, text: "Internal/controllers/server/actuator.go", completed: false },
-		{ step: 5, text: "Internal/controllers/server/actuator.go", completed: false },
-		{ step: 6, text: "Internal/controllers/server/actuator.go", completed: false },
-		{ step: 7, text: "Internal/controllers/trunk/actuator.go", completed: false },
-		{ step: 8, text: "Build and lint", completed: false },
-		{ step: 9, text: "Commit", completed: false },
-	];
-
-	// First turn: 5 edit calls
-	const editCalls: ToolCallInfo[] = [
-		{ name: "edit", path: "internal/controllers/securitygroup/actuator.go" },
-		{ name: "edit", path: "internal/controllers/flavor/actuator.go" },
-		{ name: "edit", path: "internal/controllers/user/actuator.go" },
-		{ name: "edit", path: "internal/controllers/server/actuator.go" },
-		{ name: "edit", path: "internal/controllers/trunk/actuator.go" },
-	];
-	const editMarked = matchToolResultsToSteps(editCalls, items);
-	assert(editMarked === 7, `session replay edits: expected 7 marked, got ${editMarked}`);
-	assert(items[0].completed, "session replay: step 1 (securitygroup) completed");
-	assert(items[1].completed, "session replay: step 2 (flavor) completed");
-	assert(items[2].completed, "session replay: step 3 (user) completed");
-	assert(items[3].completed, "session replay: step 4 (server) completed");
-	assert(items[4].completed, "session replay: step 5 (server) completed");
-	assert(items[5].completed, "session replay: step 6 (server) completed");
-	assert(items[6].completed, "session replay: step 7 (trunk) completed");
-	assert(!items[7].completed, "session replay: step 8 (build) not yet completed");
-	assert(!items[8].completed, "session replay: step 9 (commit) not yet completed");
-
-	// Second turn: make build
-	const buildCalls: ToolCallInfo[] = [{ name: "bash", command: "cd /path && make build 2>&1 | tail -5" }];
-	const buildMarked = matchToolResultsToSteps(buildCalls, items);
-	assert(buildMarked === 1, `session replay build: expected 1 marked, got ${buildMarked}`);
-	assert(items[7].completed, "session replay: step 8 (build) completed by make build");
-
-	// Third turn: make lint (step 8 already marked, no double-count)
-	const lintCalls: ToolCallInfo[] = [{ name: "bash", command: "cd /path && make lint 2>&1 | tail -10" }];
-	const lintMarked = matchToolResultsToSteps(lintCalls, items);
-	assert(lintMarked === 0, `session replay lint: expected 0 (already marked), got ${lintMarked}`);
-
-	// Fourth turn: git commit
-	const commitCalls: ToolCallInfo[] = [{ name: "bash", command: "cd /path && git commit -m 'Fix something'" }];
-	const commitMarked = matchToolResultsToSteps(commitCalls, items);
-	assert(commitMarked === 1, `session replay commit: expected 1 marked, got ${commitMarked}`);
-	assert(items[8].completed, "session replay: step 9 (commit) completed by git commit");
-
-	// All 9 steps now completed
-	assert(items.every(i => i.completed), "session replay: all 9 steps completed");
+	const items: TodoItem[] = [1, 2, 3, 4].map((step) => ({ step, text: `Task ${step}`, completed: false }));
+	assert(completeSteps(items, [1, 2, 3].map((step) => ({ step, evidence: "Verified reviewer instruction edit." }))) === 3, "one edit can explicitly complete three steps");
+	assert(!items[3].completed, "validation remains incomplete");
+	assert(completeSteps(items, [{ step: 1, evidence: "Duplicate" }, { step: 1, evidence: "Duplicate" }]) === 0, "duplicate updates are idempotent");
+	assert(items[0].evidence === "Verified reviewer instruction edit.", "duplicate preserves original evidence");
+	for (const updates of [[], [{ step: 0, evidence: "Invalid" }], [{ step: 1.5, evidence: "Invalid" }], [{ step: 99, evidence: "Invalid" }], [{ step: 4, evidence: "  " }], [{ step: 4, evidence: "Valid" }, { step: 99, evidence: "Invalid" }]]) {
+		let threw = false;
+		try { completeSteps(items, updates); } catch { threw = true; }
+		assert(threw, "invalid completion batch rejected");
+		assert(!items[3].completed, "invalid batch is atomic");
+	}
+	assert(completeSteps(items, [{ step: 4, evidence: "Manually checked the referenced scenario." }]) === 1, "manual validation can complete separately");
 }
 
 {
-	// Read-only tool calls should not mark any steps
-	const items: TodoItem[] = [
-		{ step: 1, text: "Fix the parser", completed: false },
-		{ step: 2, text: "Build and test", completed: false },
-	];
-	const readOnlyCalls: ToolCallInfo[] = [
-		{ name: "bash", command: "grep -rn 'pattern' src/" },
-		{ name: "bash", command: "cat README.md" },
-		{ name: "bash", command: "git diff --stat" },
-		{ name: "bash", command: "git add file.go" },
-	];
-	const roMarked = matchToolResultsToSteps(readOnlyCalls, items);
-	assert(roMarked === 0, `read-only calls: expected 0 marked, got ${roMarked}`);
-	assert(!items[0].completed, "read-only: step 1 unchanged");
-	assert(!items[1].completed, "read-only: step 2 unchanged");
+	const items = extractTodoItems("Plan:\n1. Update reviewer.md to distinguish **regressions**, **partial fixes**, and **pre-existing issues**.\n2. **Require findings** to explain behavior.\n3. Update /absolute/path/file.ts\n");
+	assert(items.length === 3, "inline bold does not truncate steps");
+	assert(items[0].text === "Update reviewer.md to distinguish regressions, partial fixes, and pre-existing issues.", "full step wording retained");
+	assert(items[1].text === "Require findings to explain behavior.", "bold prefix retained");
+	assert(items[2].text === "Update /absolute/path/file.ts", "action and absolute path retained");
 }
 
 {
-	// Write tool should match like edit
-	const items: TodoItem[] = [
-		{ step: 1, text: "Create src/config.ts", completed: false },
-	];
-	const writeCalls: ToolCallInfo[] = [
-		{ name: "write", path: "src/config.ts" },
-	];
-	const writeMarked = matchToolResultsToSteps(writeCalls, items);
-	assert(writeMarked === 1, `write tool: expected 1 marked, got ${writeMarked}`);
-	assert(items[0].completed, "write tool: step 1 completed");
-}
-
-{
-	// Tool calls without path or command should be ignored
-	const items: TodoItem[] = [
-		{ step: 1, text: "Fix something", completed: false },
-	];
-	const noCalls: ToolCallInfo[] = [
-		{ name: "edit" },
-		{ name: "bash" },
-		{ name: "grep" },
-	];
-	const noMarked = matchToolResultsToSteps(noCalls, items);
-	assert(noMarked === 0, `no-info calls: expected 0 marked, got ${noMarked}`);
+	const items = extractTodoItems("Plan:\n1. **Update all review instructions**\n2. **Validate**\n");
+	assert(items[0].text === "Update all review instructions", "fully bold step is cleaned without losing wording");
+	assert(items[1].text === "Validate", "short bold action is preserved");
 }
 
 // --- Summary ---

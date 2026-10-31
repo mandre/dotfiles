@@ -6,7 +6,6 @@
  * Line 2: 42%/200k ↑in ↓out R… W… CH…% $cost (sub)         extension statuses
  */
 
-import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
@@ -25,13 +24,47 @@ export default function (pi: ExtensionAPI) {
 		ctx.ui.setFooter((tui, theme, footerData) => {
 			requestRender = () => tui.requestRender();
 			const unsub = footerData.onBranchChange(() => tui.requestRender());
+			let cachedUsage: {
+				sessionId: string; leafId: string | null;
+				input: number; output: number; cacheRead: number; cacheWrite: number; cost: number;
+				latestCacheHitRate: number | undefined;
+			} | undefined;
+
+			function getUsage() {
+				const sessionId = ctx.sessionManager.getSessionId();
+				const leafId = ctx.sessionManager.getLeafId();
+				// Appending usage or navigating the tree changes the leaf.
+				if (cachedUsage?.sessionId === sessionId && cachedUsage.leafId === leafId) {
+					return cachedUsage;
+				}
+				let input = 0, output = 0, cacheRead = 0, cacheWrite = 0, cost = 0;
+				let latestCacheHitRate: number | undefined;
+				for (const entry of ctx.sessionManager.getBranch()) {
+					const usage = entry.type === "usage" || entry.type === "compaction" || entry.type === "branch_summary"
+						? entry.usage
+						: entry.type === "message" && (entry.message.role === "assistant" || entry.message.role === "toolResult")
+							? entry.message.usage : undefined;
+					if (!usage) continue;
+					input += usage.input || 0;
+					output += usage.output || 0;
+					cacheRead += usage.cacheRead || 0;
+					cacheWrite += usage.cacheWrite || 0;
+					cost += usage.cost?.total || 0;
+					if (entry.type === "message" && entry.message.role === "assistant") {
+						const promptTokens = usage.input + usage.cacheRead + usage.cacheWrite;
+						latestCacheHitRate = promptTokens > 0 ? usage.cacheRead / promptTokens * 100 : undefined;
+					}
+				}
+				cachedUsage = { sessionId, leafId, input, output, cacheRead, cacheWrite, cost, latestCacheHitRate };
+				return cachedUsage;
+			}
 
 			return {
 				dispose() {
 					unsub();
 					requestRender = undefined;
 				},
-				invalidate() {},
+				invalidate() { cachedUsage = undefined; },
 				render(width: number): string[] {
 					const fmt = (n: number) => {
 						if (n < 1000) return `${n}`;
@@ -81,37 +114,7 @@ export default function (pi: ExtensionAPI) {
 						  theme.fg("dim", `/${fmt(contextWindow)}`)
 						: theme.fg("dim", contextWindow > 0 ? `?/${fmt(contextWindow)}` : "—");
 
-					// Accumulate usage from all sources on the active branch
-					let input = 0, output = 0, cacheRead = 0, cacheWrite = 0, cost = 0;
-					let latestCacheHitRate: number | undefined;
-					for (const e of ctx.sessionManager.getBranch()) {
-						if (e.type === "message" && e.message.role === "assistant") {
-							const m = e.message as AssistantMessage;
-							input += m.usage.input;
-							output += m.usage.output;
-							cacheRead += m.usage.cacheRead;
-							cacheWrite += m.usage.cacheWrite;
-							cost += m.usage.cost.total;
-							const promptTokens = m.usage.input + m.usage.cacheRead + m.usage.cacheWrite;
-							if (promptTokens > 0) {
-								latestCacheHitRate = (m.usage.cacheRead / promptTokens) * 100;
-							}
-						} else if (e.type === "message" && e.message.role === "toolResult" && (e.message as any).usage) {
-							const u = (e.message as any).usage;
-							input += u.input || 0;
-							output += u.output || 0;
-							cacheRead += u.cacheRead || 0;
-							cacheWrite += u.cacheWrite || 0;
-							cost += u.cost?.total || 0;
-						} else if ((e.type === "branch_summary" || e.type === "compaction") && (e as any).usage) {
-							const u = (e as any).usage;
-							input += u.input || 0;
-							output += u.output || 0;
-							cacheRead += u.cacheRead || 0;
-							cacheWrite += u.cacheWrite || 0;
-							cost += u.cost?.total || 0;
-						}
-					}
+					const { input, output, cacheRead, cacheWrite, cost, latestCacheHitRate } = getUsage();
 
 					const dimParts: string[] = [];
 					if (input) dimParts.push(`↑${fmt(input)}`);

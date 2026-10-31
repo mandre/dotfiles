@@ -61,15 +61,15 @@ quickmark p https://github.com/pulls/authored
 " URL redirects
 "
 
-set followpagepatterns.next ^(next|newer|prochain|suivant)\b|→|»|>>
-set followpagepatterns.prev ^(prev(ious)?|older|précédent)\b|←|«|<<
+set followpagepatterns.next ^(next|newer|prochain|suivant)\b|→|»|›|>>|>
+set followpagepatterns.prev ^(prev(ious)?|older|précédent)\b|←|«|‹|<<|<
 
 smoothscrollwizard
 
 colourscheme twilight
 
 set modeindicator false
-set editorcmd ghostty -e vim
+set editorcmd ghostty -e nvim
 
 set findresults 0
 
@@ -82,6 +82,7 @@ set searchurls.gh https://github.com/search?utf8=%E2%9C%93&q=%s&ref=simplesearch
 set searchurls.ghpr https://github.com/pulls?q=is%3Aopen+is%3Apr+author%3A%s+archived%3Afalse+
 set searchurls.tr http://www.wordreference.com/redirect/translation.aspx?w=%s&dict=enfr
 set searchurls.conj http://www.les-verbes.com/conjuguer.php?verbe=%s
+set searchurls.case https://access.redhat.com/support/cases/#/case/%s
 
 " For syntax highlighting see https://github.com/tridactyl/vim-tridactyl
 " vim: set filetype=vim:

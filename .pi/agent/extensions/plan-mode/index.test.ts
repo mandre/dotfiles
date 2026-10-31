@@ -38,6 +38,7 @@ function harness(mode = "tui") {
 		get branch() { return branch; },
 		set branch(value: any[]) { branch = value; },
 		async emit(name: string, event: any = {}) {
+			if (name === "before_agent_start") event.systemPromptOptions ??= { sections: {} };
 			let result: any;
 			for (const handler of handlers.get(name) ?? []) result = await handler(event, ctx);
 			return result;
@@ -245,6 +246,51 @@ await test("a later plan does not inherit completed tasks from an earlier plan",
 	h.branch.push({ type: "message", message: { role: "assistant", content: [{ type: "text", text: "Plan:\n1. Implement a separate task.\n" }] } });
 	await h.command("execute");
 	assert.deepEqual((await steps(h)).map((t: any) => t.completed), [false]);
+});
+
+await test("plan gate blocks inactive, deferred, and nested unapproved tools", async () => {
+	const h = harness();
+	await h.emit("session_start");
+	for (const parentToolCallId of [undefined, "codemode-call", "nested-call/1"]) {
+		for (const toolName of ["edit", "write", "custom_tool", "deferred_mutation", "mcp__server__delete", "plan_progress", "tool_search"]) {
+			const result = await h.emit("tool_call", { toolName, input: {}, parentToolCallId });
+			assert.equal(result.block, true, `${parentToolCallId}: ${toolName}`);
+		}
+		for (const toolName of ["read", "grep", "find", "ls", "web_search", "web_fetch", "questionnaire", "codemode"]) {
+			assert.equal(await h.emit("tool_call", { toolName, input: {}, parentToolCallId }), undefined);
+		}
+		assert.equal(await h.emit("tool_call", { toolName: "bash", input: { command: "git status" }, parentToolCallId }), undefined);
+		for (const command of ["rm file", undefined, null, 42]) {
+			assert.equal((await h.emit("tool_call", { toolName: "bash", input: { command }, parentToolCallId })).block, true);
+		}
+	}
+	await h.command("plan");
+	assert.equal(await h.emit("tool_call", { toolName: "deferred_mutation", input: {} }), undefined);
+	for (const mode of ["json", "print", "rpc"]) {
+		const headless = harness(mode);
+		await headless.emit("session_start");
+		assert.equal(await headless.emit("tool_call", { toolName: "write", input: {} }), undefined);
+	}
+});
+
+await test("structured prompt section preserves other sections for user and custom runs", async () => {
+	const h = harness();
+	await h.emit("session_start");
+	for (const messageType of ["user", "custom"]) {
+		const options = { sections: { other: "Keep this" }, forceSystemPrompt: undefined };
+		assert.equal(await h.emit("before_agent_start", { messageType, systemPromptOptions: options }), undefined);
+		assert.equal(options.sections.other, "Keep this");
+		assert.match((options.sections as any).plan_mode, /\[PLAN MODE ACTIVE\]/);
+		assert.equal(options.forceSystemPrompt, undefined);
+	}
+	await h.command("plan");
+	const options = { sections: { plan_mode: "Stale", other: "Keep this" } };
+	await h.emit("before_agent_start", { systemPromptOptions: options });
+	assert.deepEqual(options.sections, { other: "Keep this" });
+	const headless = harness("json");
+	const headlessOptions = { sections: { plan_mode: "Stale" } };
+	await headless.emit("before_agent_start", { messageType: "custom", systemPromptOptions: headlessOptions });
+	assert.deepEqual(headlessOptions.sections, {});
 });
 
 console.log(`\nExtension tests: ${passed} passed`);

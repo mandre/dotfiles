@@ -5,6 +5,20 @@ toggle read-only planning, then `/execute` to run the extracted numbered plan.
 Use `/todos` to inspect progress or `/done <step>` to confirm a step manually.
 Non-interactive sessions do not enter plan mode.
 
+## Tool enforcement
+
+Planning checks every `tool_call` against its allowlist, including nested calls
+from codemode and tools with `codemode` or `deferred` exposure. Deactivating a
+tool alone does not prevent those exposures from being called. Bash calls must
+also pass the command allowlist. Headless runs remain unrestricted.
+
+This is a workflow guard, not an operating-system sandbox. Allowed shell
+commands and trusted extensions can have side effects. Do not use plan mode
+as a security boundary for untrusted code.
+
+Plan instructions use the structured `plan_mode` system-prompt section, which
+is removed when planning is disabled.
+
 ## Explicit progress
 
 During execution, the agent uses `plan_progress` directly or through codemode:
@@ -49,4 +63,6 @@ For another layout, set `PI_TEST_PACKAGE_ROOT` to the directory containing the
 installed `@earendil-works/pi-coding-agent/package.json`.
 
 Tests exercise pure utilities and extension handlers with a mocked Pi API.
-They do not run a live model or interactive terminal session.
+They do not run a live model or interactive terminal session. For the shared
+extension tests and regular/fullscreen terminal smoke tests, see
+[`../tests/README.md`](../tests/README.md).

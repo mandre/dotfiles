@@ -51,8 +51,9 @@ import { type AutocompleteItem, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { completeSteps, extractTodoItems, isSafeCommand, type TodoItem } from "./utils.js";
 
-// Tools
+// Enforce the same allowlist for direct and nested calls, regardless of exposure.
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch", "codemode"];
+const PLAN_MODE_TOOL_NAMES = new Set(PLAN_MODE_TOOLS);
 
 // Type guard for assistant messages
 function isAssistantMessage(m: AgentMessage): m is AssistantMessage {
@@ -338,13 +339,20 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		handler: async (ctx) => togglePlanMode(ctx),
 	});
 
-	// Block destructive bash commands in plan mode. Never in non-TUI runs (see
-	// session_start): there is no human to toggle plan mode off there.
+	// Inactive codemode/deferred tools remain callable, so activation is not a gate.
+	// Nested calls emit tool_call too and must pass this allowlist independently.
 	pi.on("tool_call", async (event, ctx) => {
-		if (!planModeEnabled || ctx.mode !== "tui" || event.toolName !== "bash") return;
+		if (!planModeEnabled || ctx.mode !== "tui") return;
+		if (!PLAN_MODE_TOOL_NAMES.has(event.toolName)) {
+			return {
+				block: true,
+				reason: `Plan mode is active: tool "${event.toolName}" is not allowlisted. Do not retry through another tool or indirect approach. Describe the intended action as a plan step and wait for the user.`,
+			};
+		}
+		if (event.toolName !== "bash") return;
 
-		const command = event.input.command as string;
-		if (!isSafeCommand(command)) {
+		const command = event.input.command;
+		if (typeof command !== "string" || !isSafeCommand(command)) {
 			blockedBashCallsThisRun++;
 
 			const baseReason = `Plan mode is active: this command is intentionally blocked (not allowlisted).\nDo not retry with a different command, tool, or indirect approach (e.g. cp/mv tricks, chaining, or switching to another tool) to achieve the same effect — describe this as a step in your Plan output instead. (A human can run /plan to exit plan mode; you cannot.)`;
@@ -407,11 +415,9 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		return { messages };
 	});
 
-	// Inject stable plan-mode instructions into the system prompt (most cache-
-	// efficient position — identical every turn, no persistent messages created).
+	// Use a named section so Pi can record prompt deltas instead of a full override.
 	pi.on("before_agent_start", async (event, ctx) => {
-		// Reset once per run (before_agent_start fires once per user prompt,
-		// unlike "context" which fires on every LLM call in the tool loop).
+		// Runs can start from user prompts or extension-triggered custom messages.
 		reconciliationRequested = false;
 		blockedBashCallsThisRun = 0;
 
@@ -419,13 +425,13 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		// able to run /execute, /plan, or answer questionnaire prompts, so a
 		// headless sub-agent forced into "just describe a Plan" mode can never
 		// actually finish its task.
-		if (!planModeEnabled || ctx.mode !== "tui") return;
+		if (!planModeEnabled || ctx.mode !== "tui") {
+			delete event.systemPromptOptions.sections.plan_mode;
+			return;
+		}
 
 		const toolList = PLAN_MODE_TOOLS.join(", ");
-		return {
-			systemPrompt: `${event.systemPrompt}
-
-[PLAN MODE ACTIVE]
+		event.systemPromptOptions.sections.plan_mode = `[PLAN MODE ACTIVE]
 You are in plan mode - a read-only exploration mode for safe code analysis.
 
 Restrictions:
@@ -451,8 +457,7 @@ Plan:
 2. Second step description
 ...
 
-Do NOT attempt to make changes - just describe what you would do.`,
-		};
+Do NOT attempt to make changes - just describe what you would do.`;
 	});
 
 	// Set contextual working message during planning and execution

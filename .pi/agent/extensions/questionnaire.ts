@@ -5,7 +5,7 @@
  * Multiple questions: tab bar navigation between questions
  */
 
-import { keyHint, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { rawKeyHint, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { CURSOR_MARKER, Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
@@ -122,6 +122,9 @@ export default function questionnaire(pi: ExtensionAPI) {
 			const totalTabs = questions.length + 1; // questions + Submit
 
 			const result = await ctx.ui.custom<QuestionnaireResult>((tui, theme, keybindings, done) => {
+				const keyHint = (action: Parameters<typeof keybindings.getKeys>[0], description: string) =>
+					rawKeyHint(keybindings.getKeys(action).join("/"), description);
+
 				// State
 				let currentTab = 0;
 				let optionIndex = 0;
@@ -456,7 +459,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 					handleInput,
 					dispose() { signal?.removeEventListener("abort", abort); },
 				};
-			});
+			}, { blocked: { kind: "question", message: "Answer questionnaire" } });
 
 			if (result.cancelled) {
 				return {

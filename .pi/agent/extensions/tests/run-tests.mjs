@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { stripVTControlCharacters } from "node:util";
 
 await import("../plan-mode/run-tests.mjs");
 const install = join(homedir(), ".pi", "agent", "install");
@@ -14,6 +15,7 @@ const packageRoot = process.env.PI_TEST_PACKAGE_ROOT ?? join(install, "releases"
 	readFileSync(join(install, "current-version"), "utf8").trim(), "node_modules", "@earendil-works", "pi-coding-agent");
 const importFile = (path) => import(pathToFileURL(path).href);
 const { loadExtensions } = await importFile(join(packageRoot, "dist/core/extensions/loader.js"));
+const { validateToolArguments } = await importFile(join(packageRoot, "../pi-ai/dist/utils/validation.js"));
 const { ExtensionRunner, SessionManager, initTheme } = await importFile(join(packageRoot, "dist/index.js"));
 initTheme("dark", false);
 const { KeybindingsManager, TUI_KEYBINDINGS, CURSOR_MARKER, visibleWidth } = await importFile(
@@ -263,22 +265,115 @@ const question = { id: "q", prompt: "Choose a target with a long prompt that wra
 	{ value: "b", label: "Beta" },
 ] };
 const tool = questionnaire.tools.get("questionnaire").definition;
-function dialog(questions, signal, rows = 40) {
+function validateArguments(definition, args) {
+	const input = structuredClone(args);
+	return validateToolArguments(definition, {
+		type: "toolCall", id: "validation-test", name: definition.name,
+		arguments: definition.prepareArguments ? definition.prepareArguments(input) : input,
+	});
+}
+
+await test("real argument validator accepts existing questionnaire, plan and review schemas", async () => {
+	const progress = plan.tools.get("plan_progress").definition;
+	const codeReview = review.tools.get("code_review").definition;
+	for (const [definition, args] of [
+		[tool, { questions: [question] }],
+		[progress, { action: "list" }],
+		[progress, { action: "complete", updates: [{ step: 1, evidence: "Inspected source" }] }],
+		[codeReview, {}],
+		[codeReview, { scope: "staged", range: "HEAD~1..HEAD", path: "file.ts", focus: "Correctness" }],
+		[codeReview, { prUrl: "https://github.com/owner/repo/pull/123" }],
+	]) {
+		const original = structuredClone(args);
+		assert.deepEqual(validateArguments(definition, args), args);
+		assert.deepEqual(args, original);
+	}
+});
+
+await test("real argument validator coerces arguments without mutating stored calls", async () => {
+	const progress = plan.tools.get("plan_progress").definition;
+	const input = { action: "complete", updates: { step: "2", evidence: "Read source" } };
+	assert.deepEqual(validateArguments(progress, input), {
+		action: "complete", updates: [{ step: 2, evidence: "Read source" }],
+	});
+	assert.deepEqual(input.updates, { step: "2", evidence: "Read source" });
+	assert.deepEqual(validateArguments(progress, {
+		action: "complete", updates: [{ step: 2.8, evidence: "Read source" }],
+	}), { action: "complete", updates: [{ step: 2, evidence: "Read source" }] });
+	assert.deepEqual(validateArguments(progress, { action: "list", updates: null }), { action: "list" });
+	assert.deepEqual(validateArguments(tool, { questions: [{ ...question, allowOther: "false" }] }), {
+		questions: [{ ...question, allowOther: false }],
+	});
+	const rawCall = { type: "toolCall", id: "raw", name: tool.name, arguments: {
+		questions: [{ ...question, options: { value: "a", label: "Alpha" }, allowOther: "true" }],
+	} };
+	const stored = structuredClone(rawCall);
+	assert.deepEqual(validateToolArguments(tool, rawCall), { questions: [{ ...question,
+		options: [{ value: "a", label: "Alpha" }], allowOther: true,
+	}] });
+	assert.deepEqual(rawCall, stored);
+});
+
+await test("real argument validator rejects missing, invalid and out-of-bounds arguments", async () => {
+	const progress = plan.tools.get("plan_progress").definition;
+	const codeReview = review.tools.get("code_review").definition;
+	for (const [definition, args, path] of [
+		[tool, {}, "questions"],
+		[tool, { questions: [] }, "questions"],
+		[tool, { questions: [{ options: [] }] }, "questions.0.id"],
+		[tool, { questions: [{ ...question, options: [{ value: "a" }] }] }, "questions.0.options.0.label"],
+		[progress, {}, "action"],
+		[progress, { action: "invalid" }, "action"],
+		[progress, { action: "complete", updates: [] }, "updates"],
+		[progress, { action: "complete", updates: [{ step: 0, evidence: "Read" }] }, "updates.0.step"],
+		[progress, { action: "complete", updates: [{ step: "invalid", evidence: "Read" }] }, "updates.0.step"],
+		[progress, { action: "complete", updates: [{ step: 1, evidence: "" }] }, "updates.0.evidence"],
+		[codeReview, { scope: "invalid" }, "scope"],
+	]) {
+		assert.throws(() => validateArguments(definition, args), (error) => {
+			assert.match(error.message, /Validation failed for tool/);
+			assert(error.message.includes(`- ${path}:`), error.message);
+			return true;
+		}, `${definition.name}: ${JSON.stringify(args)}`);
+	}
+});
+
+function dialog(questions, signal, rows = 40, keyOverrides = {}) {
 	let component;
+	let customOptions;
 	const keybindings = new KeybindingsManager(TUI_KEYBINDINGS, {
 		"tui.select.up": "k", "tui.select.down": "j",
 		"tui.select.confirm": "y", "tui.select.cancel": "q",
+		...keyOverrides,
 	});
 	const result = tool.execute("question", { questions }, signal, undefined, {
-		mode: "tui", ui: { custom(factory) {
+		mode: "tui", ui: { custom(factory, options) {
+			customOptions = options;
 			return new Promise((done) => {
 				component = factory({ requestRender() {}, terminal: { rows, columns: 100 } }, theme, keybindings, done);
 				component.focused = true;
 			});
 		} },
 	});
-	return { component, result };
+	return { component, result, customOptions };
 }
+
+await test("questionnaire reports blocked input and cleans up after submission, cancellation and abort", async () => {
+	for (const finish of ["submit", "cancel", "abort"]) {
+		const controller = new AbortController();
+		const current = dialog([question], controller.signal);
+		assert.deepEqual(current.customOptions, {
+			blocked: { kind: "question", message: "Answer questionnaire" },
+		});
+		assert.equal(getEventListeners(controller.signal, "abort").length, 1);
+		if (finish === "abort") controller.abort();
+		else current.component.handleInput(finish === "submit" ? "y" : "q");
+		assert.equal((await current.result).details.cancelled, finish !== "submit");
+		assert.equal(getEventListeners(controller.signal, "abort").length, 0);
+		current.component.dispose();
+		controller.abort();
+	}
+});
 
 await test("questionnaire is model-only, honors remapped actions, and resizes without invalidation", async () => {
 	assert.equal(tool.exposure, "model-only");
@@ -294,6 +389,32 @@ await test("questionnaire is model-only, honors remapped actions, and resizes wi
 	const cancelled = dialog([question]);
 	cancelled.component.handleInput("q");
 	assert.equal((await cancelled.result).details.cancelled, true);
+});
+
+await test("questionnaire hints use injected bindings in options, editor and submission views", async () => {
+	const hints = (component) => stripVTControlCharacters(component.render(200).join("\n"));
+	const single = dialog([question], undefined, 40, { "tui.select.up": ["k", "ctrl+p"] });
+	assert.match(hints(single.component), /k\/ctrl\+p up • j down • y select • q cancel/);
+	single.component.handleInput("j");
+	single.component.handleInput("k");
+	single.component.handleInput("y");
+	assert.equal((await single.result).details.answers[0].value, "a");
+
+	const multi = dialog([question, { ...question, id: "q2" }]);
+	assert.match(hints(multi.component), /k up • j down • y confirm • q cancel/);
+	multi.component.handleInput("y");
+	multi.component.handleInput("y");
+	assert.match(hints(multi.component), /y submit/);
+	multi.component.handleInput("y");
+	assert.equal((await multi.result).details.answers.length, 2);
+
+	const custom = dialog([{ ...question, options: [] }], undefined, 40, { "tui.input.submit": "ctrl+s" });
+	custom.component.handleInput("y");
+	assert.match(hints(custom.component), /ctrl\+s submit • q cancel/);
+	custom.component.handleInput("q");
+	assert.match(hints(custom.component), /y select • q cancel/);
+	custom.component.handleInput("q");
+	assert.equal((await custom.result).details.cancelled, true);
 });
 
 await test("questionnaire handles multi-question submission and propagates editor focus", async () => {

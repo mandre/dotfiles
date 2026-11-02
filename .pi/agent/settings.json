@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "1.4.0",
+  "lastChangelogVersion": "1.5.0",
   "packages": [
     "npm:@twogiants/pi-anthropic-vertex",
     "npm:@juicesharp/rpiv-web-tools"

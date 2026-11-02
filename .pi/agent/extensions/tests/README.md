@@ -31,8 +31,13 @@ all four extensions through Pi's real extension loader. It checks:
   cache-warming, and unknown-kind usage entries. It uses Pi's `SessionManager`
   to verify branch selection, cache reuse, invalidation, and session changes.
 - Questionnaire model-only exposure, sequential execution, remapped selection
-  actions, multi-question submission, free text, empty options, resize, and
-  editor focus propagation.
+  actions and injected key hints across options/editor/submit views,
+  multi-question submission, free text, empty options, resize, and editor focus
+  propagation. Inline dialogs declare blocked-question metadata and release
+  abort listeners after submission, cancellation, and abort.
+- Real tool-argument validation for questionnaire, plan-progress, and review
+  schemas, including argument preparation, numeric strings, integer truncation,
+  singleton arrays, optional nulls, invalid inputs, and stored-call immutability.
 - Provider-neutral quick-review calls with reasoning and cancellation options,
   using a temporary git repository and a fake model response.
 - Generated review guard loading and real-runner rejection of unknown tools,

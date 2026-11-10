@@ -1,0 +1,12 @@
+{
+  "name": "personal-pi-plan-mode",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "graphql": "16.15.0",
+    "yauzl": "3.4.0"
+  },
+  "devDependencies": {
+    "@types/yauzl": "2.10.3"
+  }
+}

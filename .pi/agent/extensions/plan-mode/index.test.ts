@@ -174,6 +174,18 @@ await test("execution snapshots are append-only and tool results expose updated 
 	assert.deepEqual(options.sections, { other: "Preserve" });
 });
 
+await test("artifact tool is registered and allowed for direct and nested planning calls", async () => {
+	const h = harness();
+	await h.emit("session_start");
+	assert(h.tools.has("github_artifact"));
+	assert(h.active.includes("github_artifact"));
+	for (const parentToolCallId of [undefined, "codemode-call"]) {
+		assert.equal(await h.emit("tool_call", { toolName: "github_artifact", input: { repository: "o/r", artifactId: 1 }, parentToolCallId }), undefined);
+	}
+	assert.equal(await h.emit("tool_call", { toolName: "bash", input: { command: "gh api graphql -f 'query={viewer{login}}'" }, parentToolCallId: "codemode-call" }), undefined);
+	assert.equal((await h.emit("tool_call", { toolName: "bash", input: { command: "gh api graphql -f 'query=mutation { x }'" } })).block, true);
+});
+
 await test("planning tools stay restricted and execute restores original tools", async () => {
 	const h = harness();
 	const original = [...h.active];

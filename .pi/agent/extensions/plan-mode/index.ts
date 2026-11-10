@@ -27,9 +27,10 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { type AutocompleteItem, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { completeSteps, extractTodoItems, isSafeCommand, type TodoItem } from "./utils.js";
+import { registerArtifactTool } from "./artifacts.js";
 
 // Enforce the same allowlist for direct and nested calls, regardless of exposure.
-const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch", "codemode"];
+const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch", "codemode", "github_artifact"];
 const PLAN_MODE_TOOL_NAMES = new Set(PLAN_MODE_TOOLS);
 
 // Type guard for assistant messages
@@ -56,6 +57,7 @@ failed, partial, or unperformed steps unchecked and explain what remains.
 Prose, [DONE:n] markers, and attempted tool calls do not update the tracker.`;
 
 export default function planModeExtension(pi: ExtensionAPI): void {
+	registerArtifactTool(pi);
 	let planModeEnabled = true;
 	let executionMode = false;
 	let todoItems: TodoItem[] = [];

@@ -39,6 +39,17 @@ const allowed = [
 	"gh pr view 123 --json title", "gh issue list", "gh pr diff 123", "gh run view 123", "gh auth status", "gh api repos/foo/bar/pulls/1 --jq '.title'", "curl -s https://example.com | grep title", "gws sheets +read --spreadsheet ID --range Sheet1", "acli jira workitem search --jql 'project = FOO'", "acli jira component list -p OCPBUGS", "acli jira auth status",
 	"pip list --outdated", "pip3 show requests", "pip freeze", "uv pip list", "uv pip tree", "uv version", "go list -m all", "go doc fmt.Println", "go env GOPATH", "go mod graph", "gsutil ls gs://bucket", "oc get pods", "oc logs pod/example", "oc config view", "kubectl describe node example", "kubectl explain pod.spec", "rpm -qa | grep package", "rpm --verify package", "tmux list-panes", "tmux capture-pane -p | head", "man -k printf", "sed -n '1,20p' file",
 ];
+allowed.push(
+	"git status --short; git remote -v; command -v gh",
+	"command -V gh git", "command -v rm code",
+	"git status --short; gh api repos/k-orc/openstack-resource-controller/code-scanning/alerts/18",
+	"gh api graphql -f 'query=query { repository(owner: \"openshift\", name: \"enhancements\") { pullRequest(number: 2174) { reviewThreads(first: 100) { nodes { id isResolved isOutdated path line comments(first: 100) { nodes { body url } } } } } } }'",
+	"gh api graphql -f 'query=# mutation is a comment\nquery Q($name: String!) { repository(owner: \"o\", name: $name) { ...F } } fragment F on Repository { name }' -F name=code",
+	"gh api graphql --method POST --raw-field='query={ viewer { login } }'",
+	"gh api --method=GET search/issues -f q=review",
+	"gh api repos/o/r/pulls/1 --jq '.review'",
+	"rg 'rm|code|git push' src", "git log --grep='git push'", "go doc example/test",
+);
 for (const command of allowed) test(`allow ${command}`, () => assert.equal(isSafeCommand(command), true));
 
 const blocked = [
@@ -47,7 +58,30 @@ const blocked = [
 	"python3 -c 'print(1)'", "python3 script.py", "node script.js", "npx tsx test.ts", "uv run pytest", "uv run flake8", "uv lock --dry-run", "awk 'BEGIN { system(\"anything\") }'", "xargs grep pattern", "env python3 script.py", "for f in *.txt; do cat $f; done", "bash -n script.sh", "ansible-lint", "pdftotext input.pdf /tmp/out", "openssl x509 -in cert.pem", "sed 's/a/b/' file", "sed -i 's/a/b/' file", "sed -n '1w /tmp/file' file",
 	"find . -exec unknown_mutator '{}' ';'", "find . -delete", "find . -fprint /tmp/output", "fd --exec unknown_mutator", "rg --pre unknown_mutator text", "sort -o/tmp/file input", "git diff --output=/tmp/file", "jq --run-tests file", "curl -o /tmp/file https://example.com", "curl --output=/tmp/file URL", "curl -X POST URL", "curl -d body URL", "curl --config file", "gh pr review 1", "gh run download 1 --dir /tmp/out", "gh api endpoint -f key=value", "gh api endpoint --method=POST", "go env -w GOPATH=/tmp", "go vet ./...", "npm audit --fix", "oc project new", "oc apply -f file", "kubectl delete pod name", "docker run image", "rpm -i package.rpm", "tmux send-keys ls Enter", "gh pr merge --help; rm file",
 ];
-for (const command of blocked) test(`block ${command}`, () => assert.equal(isSafeCommand(command), false));
+blocked.push(
+	"command gh pr view 1", "command -p -v gh", "command -v", "command -v -- gh", "command -v gh; rm file",
+	`command -v ${Array(17).fill("gh").join(" ")}`,
+	"gh api graphql -f 'query=mutation { addStar(input: {starrableId: \"x\"}) { clientMutationId } }'",
+	"gh api graphql -f 'query=query Q { viewer { login } } mutation M { deleteIssue(input: {id: \"x\"}) { clientMutationId } }'",
+	"gh api graphql -f 'query=fragment F on User { login } mutation M { x }'",
+	"gh api graphql -f 'query=subscription { x }'",
+	"gh api graphql -f 'query=not graphql'", "gh api graphql -f 'query=query { broken'",
+	"gh api graphql -f 'query=query A {x} query B {y}'", "gh api graphql -f 'query=type Query {x: String}'",
+	"gh api graphql -F query=@request.graphql", "gh api graphql --input request.json",
+	"gh api graphql -f 'query={viewer{login}}' -f 'query=mutation { x }'",
+	"gh api graphql -X GET -f 'query={viewer{login}}'",
+	"gh api repos/o/r/issues -X POST -f title=hello", "gh api repos/o/r/issues --method PATCH",
+	"gh api repos/o/r/issues -XDELETE", "gh api repos/o/r/issues -X GET -X POST", "gh api /graphql -f 'query=mutation { x }'",
+	"gh api graphql -f 'query={viewer{login}}' --unknown value", "gh pr view 1; gh pr review 1 --approve",
+	"gh api repos/gophercloud/gophercloud/actions/artifacts/13132427509/zip | python3 -c 'print(1)'",
+	"gh api 'graphql?query=mutation%20{x}'", "gh api repos/../graphql", "gh api '/graphql/?query=mutation%20{x}'",
+	"gh api 'graphql%3fquery=mutation'", "gh api /%67raphql", "gh api /graphql --method GET",
+	`gh api graphql -f 'query={ ${"x ".repeat(10001)} }'`,
+	`gh api graphql -f 'query=#${"x".repeat(65536)}'`,
+	"git stash clear", "git tag --delete v1", "git config --unset user.name", "gws docs documents batchUpdate",
+	"acli jira run --action deleteIssue", "go env -w=GOPATH=/tmp",
+);
+for (const command of blocked) test(`block ${command.slice(0, 300)}`, () => assert.equal(isSafeCommand(command), false));
 
 test("legacy command normalization remains stable", () => {
 	assert.equal(normalizeCommand("# comment\ncd /path 2>&1; /usr/bin/git log"), "git log");

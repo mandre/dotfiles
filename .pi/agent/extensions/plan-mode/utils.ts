@@ -3,73 +3,7 @@
  * Extracted for testability.
  */
 
-// Destructive commands blocked in plan mode
-const DESTRUCTIVE_PATTERNS = [
-	/\brm\b/i,
-	/\brmdir\b/i,
-	/\bmv\b/i,
-	/\bcp\b/i,
-	/\bmkdir\b/i,
-	/\btouch\b/i,
-	/\bchmod\b/i,
-	/\bchown\b/i,
-	/\bchgrp\b/i,
-	/\bln\b/i,
-	/\btee\b/i,
-	/\btruncate\b/i,
-	/\bdd\b/i,
-	/\bshred\b/i,
-	/(^|[^<2\-])>(?!>)(?!&?\s*(\/dev\/null|\/tmp\/))/,
-	/>>(?!\s*(\/dev\/null|\/tmp\/))/,
-	/\bnpm\s+(install|uninstall|update|ci|link|publish)/i,
-	/\byarn\s+(add|remove|install|publish)/i,
-	/\bpnpm\s+(add|remove|install|publish)/i,
-	/\bpip3?\s+(install|uninstall)/i,
-	/\bapt(-get)?\s+(install|remove|purge|update|upgrade)/i,
-	/\bbrew\s+(install|uninstall|upgrade)/i,
-	/\bgit\s+(add|commit|push|pull|merge(?!-)|rebase|reset|checkout|branch\s+-[dD]|stash(?!\s+(list|show)\b)|cherry-pick|revert|tag\s+(-[adfms]|--delete|--force|--create-reflog)|init|clone)/i,
-	/\bcurl\b[^|]*(-o|--output)\s+(?!\/tmp\/|\/dev\/null)\S+/i,
-	/\bsudo\b/i,
-	/\bsu\b/i,
-	/\bkill\b/i,
-	/\bpkill\b/i,
-	/\bkillall\b/i,
-	/\breboot\b/i,
-	/\bshutdown\b/i,
-	/\bsystemctl\s+(start|stop|restart|enable|disable)/i,
-	/\bservice\s+\S+\s+(start|stop|restart)/i,
-	/\b(vim?|nano|emacs|code|subl)\b/i,
-	/\bacli\b.*\b(createIssue|updateIssue|deleteIssue|addComment|addAttachment|transitionIssue|assignIssue|addVersion|addComponent|deleteVersion|deleteComponent|addWorklog|createFilter|deleteFilter|createBoard|deleteBoard|linkIssue|cloneIssue)\b/i,
-	// acli jira positional subcommands (destructive)
-	/\bacli\s+jira\s+project\s+(create|delete|update|archive|restore)\b/i,
-	/\bacli\s+jira\s+workitem\s+(create|create-bulk|edit|delete|clone|assign|transition|archive|unarchive)\b/i,
-	/\bacli\s+jira\s+workitem\s+comment\s+(create|update|delete)\b/i,
-	/\bacli\s+jira\s+workitem\s+attachment\s+delete\b/i,
-	/\bacli\s+jira\s+workitem\s+link\s+(create|delete)\b/i,
-	/\bacli\s+jira\s+workitem\s+watcher\s+remove\b/i,
-	/\bacli\s+jira\s+board\s+(create|delete)\b/i,
-	/\bacli\s+jira\s+sprint\s+(create|update|delete)\b/i,
-	/\bacli\s+jira\s+filter\s+(update|add-favourite|change-owner|reset-columns)\b/i,
-	/\bacli\s+jira\s+field\s+(create|update|delete|cancel-delete)\b/i,
-	// gws (Google Workspace) destructive operations
-	/\bgws\s+\S+\s+(\S+\s+)?(create|batchUpdate|update|delete|copy|modifyLabels|resolve|hide|unhide|stop)\b/i,
-	/\bgws\s+\S+\s+\+(write|append|upload)\b/i,
-	// gh (GitHub CLI) destructive operations
-	/\bgh\s+(pr|issue)\s+(create|close|merge|delete|edit|reopen)\b/i,
-	/\bgh\s+repo\s+(create|delete|fork|rename|archive)\b/i,
-	/\bgh\s+release\s+(create|delete|edit)\b/i,
-	/\bgh\s+api\b.*(-X\s*(POST|PUT|PATCH|DELETE)|--method\s*(POST|PUT|PATCH|DELETE))/i,
-	// sed in-place editing
-	/\bsed\s+(-[a-zA-Z]*i|--in-place)\b/i,
-	// OpenShift / Kubernetes CLI destructive operations
-	/\b(oc|kubectl)\s+(create|delete|apply|edit|patch|scale|set|rollout|adm|drain|cordon|uncordon|taint|new-app|new-project)\b/i,
-	// Container runtimes (destructive)
-	/\b(podman|docker)\s+(run|rm|rmi|build|push|pull|stop|kill|exec|tag|create|commit)\b/i,
-	// uv package management (not uv run)
-	/\buv\s+(sync|add|remove|init|lock)\b(?!.*--dry-run)/i,
-	// Graphviz output (writes files)
-	/\bdot\b.*-o\b/i,
-];
+import { isSafeGhCommand } from "./github-policy.js";
 
 // Safe read-only commands allowed in plan mode
 const SAFE_PATTERNS = [
@@ -129,11 +63,6 @@ const SAFE_PATTERNS = [
 	/^\s*eza\b/,
 	// Python (data processing, calculations)
 	/^\s*python3?\s/i,
-	// GitHub CLI (read-only operations)
-	/^\s*gh\s+(pr|issue|repo|run|workflow|release)\s+(view|list|diff|checks|status|search|review)\b/i,
-	/^\s*gh\s+auth\s+status\b/i,
-	/^\s*gh\s+api\b/i,
-	/^\s*gh\s+run\s+download\b/i,
 	// Binary inspection
 	/^\s*strings\b/,
 	// Web search
@@ -149,7 +78,7 @@ const SAFE_PATTERNS = [
 	/^\s*bash\s+-n\b/,
 	// Font listing
 	/^\s*fc-list\b/,
-	// Shell loops (destructive body still caught by DESTRUCTIVE_PATTERNS)
+	// Legacy entries below are further restricted by the invocation checks.
 	/^\s*for\b/,
 	// Go toolchain (read-only)
 	/^\s*go\s+(list|version|doc|env|vet|mod\s+(graph|verify|why))\b/i,
@@ -264,6 +193,9 @@ export function isSafeCommand(command: string): boolean {
 		const normalized = normalizeCommand(args[0]);
 		const rest = args.slice(1);
 		if (normalized === "cd") return rest.length === 1 && !rest[0].startsWith("-");
+		if (normalized === "command") return rest.length >= 2 && rest.length <= 17 &&
+			["-v", "-V"].includes(rest[0]) && rest.slice(1).every((name) => /^[a-zA-Z0-9_][a-zA-Z0-9_.+-]*$/.test(name));
+		if (normalized === "gh") return isSafeGhCommand(rest);
 		// Help/version are admitted only for a single invocation with no other arguments.
 		if (rest.length === 1 && ["--help", "--version"].includes(rest[0])) return /^[\w./-]+$/.test(args[0]);
 		if (/^(python3?|node|npx|awk|xargs|env|for|bash|openssl|pdftotext|ansible-lint)$/.test(normalized)) return false;
@@ -273,14 +205,13 @@ export function isSafeCommand(command: string): boolean {
 		if (normalized === "xxd" && (rest.length > 1 || rest.some((arg) => arg.startsWith("-")))) return false;
 		if (normalized === "tmux" && rest[0] === "display-panes") return false;
 		const text = [normalized, ...rest].join(" ");
-		if (DESTRUCTIVE_PATTERNS.some((p) => p.test(text))) return false;
 		// These options execute programs or write files even on inspection commands.
 		if (rest.some((arg) => /^(?:-exec|-execdir|-ok|-okdir|-delete|-fprint\w*|-fls|--exec(?:-batch)?|--pre|--pre-glob|--output|--output-file|--out|--upload-file|--post-file|--post-data|--request|--data\w*|--config)(?:=|$)/.test(arg))) return false;
 		if (normalized === "wget") return false;
 		if (normalized === "curl" && rest.some((arg) => arg.startsWith("-") && !/^(?:-[sSILfik]+|--(?:silent|show-error|head|location|fail|insecure))$/.test(arg))) return false;
-		if (normalized === "gh" && (/\b(?:review|download)\b/.test(text) || rest.some((arg) => /^-[fF]|^--(?:field|raw-field|input|method)(?:=|$)/.test(arg)))) return false;
-		if (normalized === "gws" && /\b(?:export|download)\b/.test(text)) return false;
-		if (normalized === "go" && /\b(?:vet|generate|run|test)\b|(?:^|\s)-w(?:\s|$)/.test(text)) return false;
+		if (normalized === "gws" && rest.slice(0, 3).some((arg) => ["export", "download"].includes(arg))) return false;
+		if (normalized === "acli" && rest.includes("run")) return false;
+		if (normalized === "go" && (["vet", "generate", "run", "test"].includes(rest[0]) || rest.some((arg) => arg === "-w" || arg.startsWith("-w=")))) return false;
 		if (/^(oc|kubectl)$/.test(normalized) && /\b(?:project|watch|proxy|exec)\b/.test(rest[0] ?? "")) return false;
 		if (/^(npm|yarn)$/.test(normalized) && rest.includes("--fix")) return false;
 		if (normalized === "git") {

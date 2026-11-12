@@ -14,7 +14,7 @@ export function isQueryDocument(source: string): boolean {
 }
 
 /** Admit explicit inspection verbs and a bounded subset of gh api arguments. */
-export function isSafeGhCommand(args: string[]): boolean {
+export function isSafeGhCommand(args: string[], allowGraphql = true): boolean {
 	if (args.length === 1 && ["--help", "--version"].includes(args[0])) return true;
 	if (args[0] !== "api") {
 		const verbs: Record<string, string[]> = {
@@ -59,7 +59,7 @@ export function isSafeGhCommand(args: string[]): boolean {
 	if (path.includes("\\") || path.split("/").some((part) => part === "." || part === "..") || /[%?#\x00-\x20\x7f]/.test(path)) return false;
 	if (path.replace(/^\//, "").replace(/\/+$/, "").toLowerCase() === "graphql") {
 		// Alternate encodings and URL query parameters must not bypass document validation.
-		return ["graphql", "/graphql"].includes(endpoint) &&
+		return allowGraphql && ["graphql", "/graphql"].includes(endpoint) &&
 			(method === undefined || method === "POST") && isQueryDocument(fields.get("query") ?? "");
 	}
 	// Fields change gh's default method to POST. REST parameters require explicit GET.

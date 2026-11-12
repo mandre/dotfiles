@@ -3,6 +3,7 @@
 Run from the repository root:
 
 ```sh
+npm ci --prefix .pi/agent/extensions/plan-mode
 node .pi/agent/extensions/tests/run-tests.mjs
 python3 .pi/agent/extensions/tests/pty-smoke.py
 ```
@@ -18,6 +19,12 @@ all four extensions through Pi's real extension loader. It checks:
 
 - Direct and nested tool-call gating, including unapproved deferred/MCP tools,
   Bash validation, tool restoration, and headless modes.
+- GitHub command-aware gating, parsed query-only GraphQL, bounded binary
+  lookups, and historical review-thread/code-scanning denial regressions.
+- Session-scoped scratch downloads through the Bash gate: direct/nested calls,
+  private directory creation, approved GET sources, literal quoting, symlink and
+  existing-file rejection, concurrent noclobber writes, and archive CLI options.
+  Tests use a fake `gh` and local subprocesses, not live downloads.
 - Structured prompt sections for user and custom-message runs, preserving
   unrelated sections and removing stale planning/execution instructions.
 - Reconciliation entry composition across multiple extensions through Pi's real
@@ -53,8 +60,9 @@ all four extensions through Pi's real extension loader. It checks:
   and right-prioritized narrow footer layouts.
 
 The plan utility tests use table-driven cases for the conservative shell subset.
-Old expectations admitting interpreters, test runners, downloads and temporary
-output writes have been replaced with explicit rejection cases. The suites do
+Interpreters, test runners, general downloads and arbitrary temporary output
+writes have explicit rejection cases. Scratch downloads have a separate narrow
+policy; `gh run download` remains blocked because it extracts artifacts. The suites do
 not make live model requests or fetch remote PRs. Context tests assert transcript
 structure; they do not measure provider cache hits, latency, or cost savings.
 

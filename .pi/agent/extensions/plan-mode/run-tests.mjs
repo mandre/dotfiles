@@ -20,4 +20,4 @@ const jiti = createJiti(import.meta.url, {
 });
 await jiti.import(new URL("./utils.test.ts", import.meta.url).href);
 await jiti.import(new URL("./index.test.ts", import.meta.url).href);
-await jiti.import(new URL("./artifacts.test.ts", import.meta.url).href);
+await jiti.import(new URL("./scratch.test.ts", import.meta.url).href);

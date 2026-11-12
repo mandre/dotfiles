@@ -26,11 +26,11 @@ import type { AssistantMessage, TextContent } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { type AutocompleteItem, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-import { completeSteps, extractTodoItems, isSafeCommand, type TodoItem } from "./utils.js";
-import { registerArtifactTool } from "./artifacts.js";
+import { completeSteps, extractTodoItems, isSafeCommand, normalizeCommand, parseShellCommands, type TodoItem } from "./utils.js";
+import { ScratchSpace } from "./scratch.js";
 
 // Enforce the same allowlist for direct and nested calls, regardless of exposure.
-const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch", "codemode", "github_artifact"];
+const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_fetch", "codemode"];
 const PLAN_MODE_TOOL_NAMES = new Set(PLAN_MODE_TOOLS);
 
 // Type guard for assistant messages
@@ -57,7 +57,7 @@ failed, partial, or unperformed steps unchecked and explain what remains.
 Prose, [DONE:n] markers, and attempted tool calls do not update the tracker.`;
 
 export default function planModeExtension(pi: ExtensionAPI): void {
-	registerArtifactTool(pi);
+	const scratch = new ScratchSpace();
 	let planModeEnabled = true;
 	let executionMode = false;
 	let todoItems: TodoItem[] = [];
@@ -341,21 +341,38 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		if (event.toolName !== "bash") return;
 
 		const command = event.input.command;
-		if (typeof command !== "string" || !isSafeCommand(command)) {
-			blockedBashCallsThisRun++;
-
-			const baseReason = `Plan mode is active: this command is intentionally blocked (not allowlisted).\nDo not retry with a different command, tool, or indirect approach (e.g. cp/mv tricks, chaining, or switching to another tool) to achieve the same effect — describe this as a step in your Plan output instead. (A human can run /plan to exit plan mode; you cannot.)`;
-
-			const escalation =
-				blockedBashCallsThisRun >= 2
-					? `\n\nYou've now hit this restriction ${blockedBashCallsThisRun} times in this turn. Stop trying different commands or tools — none of them will work. Respond with plan text instead (add/update a numbered step describing the intended action) and wait for the user.`
-					: "";
-
-			return {
-				block: true,
-				reason: `${baseReason}${escalation}\nCommand: ${command}`,
-			};
+		if (typeof command === "string" && isSafeCommand(command)) {
+			if (parseShellCommands(command)?.some((args) => normalizeCommand(args[0]) === "unzip")) {
+				event.input.timeout = Math.min(Math.max(Number(event.input.timeout) || 60, 1), 60);
+			}
+			return;
 		}
+		if (typeof command === "string") {
+			try {
+				const prepared = await scratch.prepare(command);
+				if (prepared !== null) {
+					event.input.command = prepared;
+					// Bound scratch command runtime.
+					event.input.timeout = Math.min(Math.max(Number(event.input.timeout) || 60, 1), 60);
+					return;
+				}
+			} catch {
+				// Filesystem validation failures leave the command blocked.
+			}
+		}
+		blockedBashCallsThisRun++;
+
+		const baseReason = `Plan mode is active: this command is intentionally blocked (not allowlisted).\nDo not retry with a different command, tool, or indirect approach (e.g. cp/mv tricks, chaining, or switching to another tool) to achieve the same effect — describe this as a step in your Plan output instead. (A human can run /plan to exit plan mode; you cannot.)`;
+
+		const escalation =
+			blockedBashCallsThisRun >= 2
+				? `\n\nYou've now hit this restriction ${blockedBashCallsThisRun} times in this turn. Stop trying different commands or tools — none of them will work. Respond with plan text instead (add/update a numbered step describing the intended action) and wait for the user.`
+				: "";
+
+		return {
+			block: true,
+			reason: `${baseReason}${escalation}\nCommand: ${command}`,
+		};
 	});
 
 	// Legacy cleanup and one-shot mode notices can rebuild Pi's prompt/tool
@@ -427,7 +444,13 @@ You are in plan mode - a read-only exploration mode for safe code analysis.
 Restrictions:
 - Available tools: ${toolList}
 - File modifications are disabled (edit and write are not available)
-- Bash is restricted to an allowlist of read-only commands
+- Bash is restricted to inspection commands and the scratch exceptions below
+- Session scratch root: ${scratch.root}
+- mktemp -d creates a private subdirectory beneath that root (no substitutions)
+- Approved gh api GET or curl GET/HEAD downloads may use one stdout redirect
+  to a new absolute file beneath that root; existing files cannot be overwritten
+- Use unzip -l or unzip -Z1 to list ZIPs, and unzip -p ZIP MEMBER to read text
+- No general extraction, checkout writes, or writes elsewhere under /tmp
 
 This restriction is in effect right now, regardless of what tool access you had earlier in
 this same conversation (e.g. during a previous plan-execution phase). Do not assume write
@@ -447,7 +470,7 @@ Plan:
 2. Second step description
 ...
 
-Do NOT attempt to make changes - just describe what you would do.`;
+Describe project changes as plan steps. Only the scratch exceptions above may write files.`;
 	});
 
 	// Set contextual working message during planning and execution

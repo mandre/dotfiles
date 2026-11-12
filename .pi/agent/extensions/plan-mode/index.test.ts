@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { rm } from "node:fs/promises";
 import planModeExtension from "./index.js";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
@@ -174,16 +175,31 @@ await test("execution snapshots are append-only and tool results expose updated 
 	assert.deepEqual(options.sections, { other: "Preserve" });
 });
 
-await test("artifact tool is registered and allowed for direct and nested planning calls", async () => {
+await test("scratch CLI policy applies to direct and nested planning calls without an artifact tool", async () => {
 	const h = harness();
 	await h.emit("session_start");
-	assert(h.tools.has("github_artifact"));
-	assert(h.active.includes("github_artifact"));
-	for (const parentToolCallId of [undefined, "codemode-call"]) {
-		assert.equal(await h.emit("tool_call", { toolName: "github_artifact", input: { repository: "o/r", artifactId: 1 }, parentToolCallId }), undefined);
-	}
-	assert.equal(await h.emit("tool_call", { toolName: "bash", input: { command: "gh api graphql -f 'query={viewer{login}}'" }, parentToolCallId: "codemode-call" }), undefined);
-	assert.equal((await h.emit("tool_call", { toolName: "bash", input: { command: "gh api graphql -f 'query=mutation { x }'" } })).block, true);
+	assert(!h.tools.has("github_artifact"));
+	assert(!h.active.includes("github_artifact"));
+	assert.equal((await h.emit("tool_call", { toolName: "github_artifact", input: {} })).block, true);
+	const options = { sections: {} as Record<string, string> };
+	await h.emit("before_agent_start", { systemPromptOptions: options });
+	const root = /Session scratch root: (.+)/.exec(options.sections.plan_mode)![1];
+	try {
+		for (const parentToolCallId of [undefined, "codemode-call"]) {
+			const input = { command: "mktemp -d" };
+			assert.equal(await h.emit("tool_call", { toolName: "bash", input, parentToolCallId }), undefined);
+			assert(input.command.includes(root));
+			const download = { command: `gh api repos/o/r/actions/artifacts/1/zip > ${root}/artifact.zip`, timeout: 999 };
+			assert.equal(await h.emit("tool_call", { toolName: "bash", input: download, parentToolCallId }), undefined);
+			assert(download.command.startsWith("set -C; ")); assert.equal(download.timeout, 60);
+		}
+		const archive = { command: `unzip -p ${root}/artifact.zip zaqar.log | head -100`, timeout: 999 };
+		assert.equal(await h.emit("tool_call", { toolName: "bash", input: archive }), undefined);
+		assert.equal(archive.timeout, 60);
+		assert.equal((await h.emit("tool_call", { toolName: "bash", input: { command: "gh api endpoint > /tmp/other.zip" } })).block, true);
+		assert.equal(await h.emit("tool_call", { toolName: "bash", input: { command: "gh api graphql -f 'query={viewer{login}}'" }, parentToolCallId: "codemode-call" }), undefined);
+		assert.equal((await h.emit("tool_call", { toolName: "bash", input: { command: "gh api graphql -f 'query=mutation { x }'" } })).block, true);
+	} finally { await rm(root, { recursive: true, force: true }); }
 });
 
 await test("planning tools stay restricted and execute restores original tools", async () => {

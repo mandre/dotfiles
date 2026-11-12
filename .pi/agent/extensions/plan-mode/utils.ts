@@ -156,8 +156,8 @@ export function normalizeCommand(command: string): string {
 	return cmd;
 }
 
-/** Parse a conservative shell subset. Reject expansion, redirection and execution wrappers. */
-export function isSafeCommand(command: string): boolean {
+/** Tokenize a conservative shell subset without expansions or redirections. */
+export function parseShellCommands(command: string): string[][] | null {
 	const commands: string[][] = [];
 	let words: string[] = [], word = "", quote = "", started = false;
 	const endWord = () => { if (started) words.push(word); word = ""; started = false; };
@@ -165,37 +165,49 @@ export function isSafeCommand(command: string): boolean {
 	for (let i = 0; i < command.length; i++) {
 		const c = command[i];
 		if (c === "\\" && quote !== "'") {
-			if (++i >= command.length || command[i] === "\n") return false;
+			if (++i >= command.length || command[i] === "\n") return null;
 			word += command[i]; started = true; continue;
 		}
 		if (quote) {
 			if (c === quote) quote = "";
 			else {
-				if (quote === '"' && (c === "$" || c === "`")) return false;
+				if (quote === '"' && (c === "$" || c === "`")) return null;
 				word += c;
 			}
 			continue;
 		}
 		if (c === "'" || c === '"') { quote = c; started = true; continue; }
 		if (c === "#" && !started) { while (i < command.length && command[i] !== "\n") i++; endCommand(); continue; }
-		if ("$`<>(){}".includes(c)) return false;
+		if ("$`<>(){}".includes(c)) return null;
 		if (c === ";" || c === "\n" || c === "|" || c === "&") {
-			if (c === "&" && command[i + 1] !== "&") return false;
+			if (c === "&" && command[i + 1] !== "&") return null;
 			if ((c === "&" || c === "|") && command[i + 1] === c) i++;
 			endCommand(); continue;
 		}
 		if (/\s/.test(c)) { endWord(); continue; }
 		word += c; started = true;
 	}
-	if (quote) return false;
+	if (quote) return null;
 	endCommand();
-	return commands.length > 0 && commands.every((args) => {
+	return commands;
+}
+
+/** Check each invocation independently, including pipelines and lists. */
+export function isSafeCommand(command: string): boolean {
+	const commands = parseShellCommands(command);
+	return commands !== null && commands.length > 0 && commands.every((args) => {
 		const normalized = normalizeCommand(args[0]);
 		const rest = args.slice(1);
 		if (normalized === "cd") return rest.length === 1 && !rest[0].startsWith("-");
 		if (normalized === "command") return rest.length >= 2 && rest.length <= 17 &&
 			["-v", "-V"].includes(rest[0]) && rest.slice(1).every((name) => /^[a-zA-Z0-9_][a-zA-Z0-9_.+-]*$/.test(name));
 		if (normalized === "gh") return isSafeGhCommand(rest);
+		if (normalized === "unzip") {
+			if (!rest[1] || rest[1].startsWith("-")) return false;
+			if (["-l", "-Z1"].includes(rest[0])) return rest.length === 2;
+			return rest[0] === "-p" && rest.length >= 3 && rest.length <= 18 &&
+				rest.slice(2).every((member) => member.length > 0 && !member.startsWith("-"));
+		}
 		// Help/version are admitted only for a single invocation with no other arguments.
 		if (rest.length === 1 && ["--help", "--version"].includes(rest[0])) return /^[\w./-]+$/.test(args[0]);
 		if (/^(python3?|node|npx|awk|xargs|env|for|bash|openssl|pdftotext|ansible-lint)$/.test(normalized)) return false;

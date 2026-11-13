@@ -22,6 +22,21 @@ the requested URL. The PR head is refreshed from that repository into a
 repository-qualified local ref on every invocation. Use `/review-diff` or
 `code_review` for remote diff-only reviews without a matching checkout.
 
+Review instructions require a project-consistency pass, including for small
+changes: compare public interfaces, internal naming, implementation patterns,
+error handling, and tests with established conventions. Findings must cite the
+changed location and concrete existing precedents, account for intentional
+deviations and compatibility constraints, and avoid personal style preferences.
+Public-interface mismatches can warrant warnings; minor internal differences
+belong under suggestions. Use a separate `Consistency` label rather than
+claiming a functional regression without evidence.
+
+Deep reviews use `agents/pr-reviewer.md` and can inspect analogous unchanged
+code at the relevant review refs. Quick reviews (`/review-diff` and `code_review`)
+can only compare evidence visible in the supplied diff, including context lines.
+They must state when consistency cannot be verified, not claim repository-wide
+checks. These are model instructions, not deterministic convention enforcement.
+
 Quick review input uses a 120,000-byte diff budget, preserving whole file diffs.
 Oversized files are omitted, not silently included over budget. The prompt
 identifies omissions; `code_review` also returns them as `skippedPaths`.

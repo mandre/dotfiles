@@ -569,7 +569,7 @@ async function getRangeDiff(
 function buildReviewPrompt(diff: string, focus?: string, prTitle?: string): string {
 	const lines: string[] = [];
 
-	lines.push("You are an expert code reviewer. Review the following diff carefully.");
+	lines.push("Review this diff for correctness, security, performance, consistency, and readability.");
 	lines.push("");
 
 	if (prTitle) {
@@ -577,17 +577,12 @@ function buildReviewPrompt(diff: string, focus?: string, prTitle?: string): stri
 		lines.push("");
 	}
 
-	lines.push("Provide a structured review covering:");
-	lines.push("1. **Summary** — Brief description of what the changes do");
-	lines.push("2. **Bugs & Correctness** — Potential bugs, logic errors, edge cases");
-	lines.push("3. **Security** — Security concerns (injection, auth, data exposure, etc.)");
-	lines.push("4. **Performance** — Performance implications or improvements");
-	lines.push("5. **Style & Readability** — Code clarity, naming, structure");
-	lines.push("6. **Suggestions** — Concrete improvements with code examples where helpful");
+	lines.push("Evidence: This is a diff-only review with no repository exploration tools. Use only the supplied changes and context lines; do not invent file contents or claim repository-wide checks. Disclose missing evidence and skipped files.");
+	lines.push("Consistency: Even for small diffs, compare changed public interfaces (API fields, annotations, configuration keys, CLI flags, defaults, behavior), internal naming, implementation patterns, error handling, and test conventions with visible precedents. Cite concrete existing precedents with file paths and line numbers, explain applicability, and recommend alignment. If none are visible, state that consistency could not be verified.");
+	lines.push("Respect established conventions, not personal preferences or mixed patterns; account for intentional deviations, documented reasons, compatibility constraints, and existing public contracts.");
+	lines.push("Label mismatches [Consistency], separately from correctness origins. Public-interface mismatches can warrant warnings for discoverability and future compatibility costs; minor internal differences belong under suggestions. A naming mismatch is not a functional regression or merge blocker without separate impact evidence or an explicit requirement.");
 	lines.push("");
-	lines.push("Be specific — reference file names and line numbers from the diff.");
-	lines.push("If a section has no issues, say so briefly and move on.");
-	lines.push("Keep the review concise and actionable.");
+	lines.push("Output: Start with a brief Summary, then actionable findings ordered by impact, with changed file names and line numbers, evidence, impact, and recommendations. Include suggestions and review limitations when relevant; omit empty sections. If no issues are found, say so briefly.");
 
 	if (focus) {
 		lines.push("");

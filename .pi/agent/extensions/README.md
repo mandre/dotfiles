@@ -1,7 +1,6 @@
 # Personal Pi extensions
 
-Run `/reload` after code changes. Compatibility tests are documented in
-[tests/README.md](tests/README.md).
+Run `/reload` after code changes.
 
 ## Review commands and tool
 

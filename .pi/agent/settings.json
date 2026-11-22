@@ -1,18 +1,16 @@
 {
-  "lastChangelogVersion": "1.5.0",
+  "lastChangelogVersion": "1.6.0",
   "packages": [
-    "npm:@twogiants/pi-anthropic-vertex",
     "npm:@juicesharp/rpiv-web-tools"
   ],
   "theme": "mandre",
   "defaultProvider": "openai",
-  "defaultModel": "gpt-6.1-sol",
+  "defaultModel": "gpt-6.2-sol",
   "defaultThinkingLevel": "high",
   "enabledModels": [
-    "anthropic-vertex/claude-opus-4-6",
     "google-vertex/gemini-3.1-pro-preview",
     "google-vertex/gemini-3.8-flash",
-    "openai/gpt-6.1-sol",
+    "openai/gpt-6.2-sol",
     "enmaas-glm-5-3/rits/zai-org/glm-5-3",
     "anthropic/claude-opus-5-5",
     "anthropic/claude-sonnet-5-5"
